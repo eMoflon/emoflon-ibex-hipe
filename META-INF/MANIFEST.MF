@@ -1,0 +1,32 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: eMoflon::IBeX Unidirectional Model Transformation via Graph Transformation and pattern matching with HiPE
+Bundle-SymbolicName: org.emoflon.ibex.gt.hipe;singleton:=true
+Bundle-Version: 1.0.0.qualifier
+Bundle-Vendor: eMoflon::IBeX Developers
+Bundle-ActivationPolicy: lazy
+Export-Package: org.emoflon.ibex.gt.hipe.runtime
+Require-Bundle: org.eclipse.emf.ecore.xmi,
+ org.emoflon.ibex.common,
+ org.emoflon.ibex.gt,
+ org.gervarro.democles.common;visibility:=reexport,
+ org.gervarro.democles.emf;visibility:=reexport,
+ org.gervarro.democles.interpreter;visibility:=reexport,
+ org.gervarro.democles.interpreter.emf;visibility:=reexport,
+ org.gervarro.democles.interpreter.incremental;visibility:=reexport,
+ org.gervarro.democles.interpreter.incremental.emf;visibility:=reexport,
+ org.gervarro.democles.notification.emf;visibility:=reexport,
+ org.gervarro.democles.plan.incremental.leaf;visibility:=reexport,
+ org.gervarro.democles.specification.emf;visibility:=reexport,
+ org.gervarro.notification;visibility:=reexport,
+ org.gervarro.plan.dynprog;visibility:=reexport,
+ org.gervarro.util;visibility:=reexport,
+ hipe.engine;bundle-version="1.0.0";visibility:=reexport,
+ hipe.generator;bundle-version="1.0.0";visibility:=reexport,
+ hipe.network;bundle-version="0.1.0";visibility:=reexport,
+ hipe.pattern;bundle-version="0.1.0";visibility:=reexport,
+ hipe.searchplan;bundle-version="1.0.0";visibility:=reexport,
+ org.eclipse.xtend.lib;bundle-version="2.17.1";visibility:=reexport,
+ org.eclipse.xtend.lib.macro;bundle-version="2.17.1";visibility:=reexport
+Automatic-Module-Name: org.emoflon.ibex.gt.democles
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8

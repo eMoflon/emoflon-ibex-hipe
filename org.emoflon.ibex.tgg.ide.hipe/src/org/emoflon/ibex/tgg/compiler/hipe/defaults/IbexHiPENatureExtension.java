@@ -1,0 +1,50 @@
+package org.emoflon.ibex.tgg.compiler.hipe.defaults;
+
+import java.util.Arrays;
+
+import org.apache.log4j.Logger;
+import org.eclipse.core.resources.IProject;
+import org.eclipse.core.runtime.CoreException;
+import org.emoflon.ibex.tgg.ide.admin.NatureExtension;
+import org.moflon.core.plugins.manifest.ManifestFileUpdater;
+import org.moflon.core.utilities.LogUtils;
+
+public class IbexHiPENatureExtension implements NatureExtension {
+
+	private Logger logger = Logger.getLogger(IbexHiPENatureExtension.class);
+	
+	@Override
+	public void setUpProject(IProject project) {
+		try {
+			new ManifestFileUpdater().processManifest(project, manifest -> {
+				boolean changed = false;
+				changed |= ManifestFileUpdater.updateDependencies(
+						manifest,
+						Arrays.asList(
+								// Democles deps
+								"org.gervarro.democles.common",
+								"org.gervarro.democles.specification.emf",
+								"org.gervarro.democles.interpreter",
+								"org.gervarro.democles.emf",
+								"org.gervarro.democles.interpreter.emf",
+								"org.gervarro.democles.interpreter.incremental",
+								"org.gervarro.democles.interpreter.incremental.emf",
+								"org.gervarro.democles.interpreter.lightning",
+								"org.gervarro.democles.notification.emf",
+								"org.gervarro.democles.plan",
+								"org.gervarro.democles.plan.emf",
+								"org.gervarro.democles.plan.incremental.leaf",
+								"org.gervarro.util",
+								"org.gervarro.notification",
+								"org.gervarro.plan.dynprog",
+
+								// Ibex Democles deps
+								"org.emoflon.ibex.tgg.runtime.democles"
+						));
+				return changed;
+			});
+		} catch (CoreException e) {
+			LogUtils.error(logger, e);
+		}
+	}
+}
