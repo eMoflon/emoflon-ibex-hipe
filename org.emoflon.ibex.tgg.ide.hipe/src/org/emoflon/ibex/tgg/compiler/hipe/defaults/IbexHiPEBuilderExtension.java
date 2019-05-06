@@ -12,8 +12,8 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 
 	private Logger logger = Logger.getLogger(IbexHiPEBuilderExtension.class);
 	
-	private static final String ENGINE = "DemoclesTGGEngine";
-	private static final String IMPORT = "import org.emoflon.ibex.tgg.runtime.engine.DemoclesTGGEngine;";
+	private static final String ENGINE = "HiPETGGEngine";
+	private static final String IMPORT = "import org.emoflon.ibex.tgg.runtime.engine.HiPETGGEngine;";
 	
 	@Override
 	public void run(IbexTGGBuilder builder, TripleGraphGrammarFile editorModel, TripleGraphGrammarFile flattenedEditorModel) {

@@ -13,7 +13,12 @@ public class GTHiPEExtension implements GTEngineExtension {
 
 	@Override
 	public Set<String> getDependencies() {
-		return new HashSet<String>(Arrays.asList("org.emoflon.ibex.gt.hipe"));
+		return new HashSet<String>(Arrays.asList(
+					// Hipe deps
+				
+					// Ibex Hipe deps
+					"org.emoflon.ibex.gt.hipe"
+				));
 	}
 
 	@Override
