@@ -114,7 +114,9 @@ public class IBeXToHiPEPatternTransformation {
 		}
 		
 		for(IBeXAttributeConstraint constr : context.getAttributeConstraint()) {
-			pattern.getAttributeConstraints().add(transform(pattern, constr));
+			HiPEAttributeConstraint constraint = transform(pattern, constr);
+			if(constraint != null)
+				pattern.getAttributeConstraints().add(constraint);
 		}
 		
 		return pattern;
@@ -155,8 +157,12 @@ public class IBeXToHiPEPatternTransformation {
 		rConstraint.setRightAttribute(transform(constr.getValue()));
 		rConstraint.setType(transform(constr.getRelation()));
 
+		if(rConstraint.getLeftAttribute() == null || rConstraint.getRightAttribute() == null)
+			return null;
+
 		pattern.getAttributes().add(rConstraint.getLeftAttribute());
 		pattern.getAttributes().add(rConstraint.getRightAttribute());
+		
 		
 		return rConstraint;
 	}
@@ -167,7 +173,9 @@ public class IBeXToHiPEPatternTransformation {
 		if(value instanceof IBeXEnumLiteral)
 			return transform((IBeXEnumLiteral) value);
 		if(value instanceof IBeXAttributeParameter)
-			return transform((IBeXAttributeParameter) value);
+			// TODO: implement attribute parameter
+//			return transform((IBeXAttributeParameter) value);
+			return null;
 		if(value instanceof IBeXAttributeExpression)
 			return transform((IBeXAttributeExpression) value);
 		return null;
