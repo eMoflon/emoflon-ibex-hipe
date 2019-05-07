@@ -11,12 +11,12 @@ import hipe.pattern.HiPEAbstractPattern;
  */
 public class HiPEGTMatch extends SimpleMatch {
 	/**
-	 * Creates a new DemoclesGTMatch with the given frame and pattern.
+	 * Creates a new HiPEGTMatch with the given match and pattern.
 	 * 
-	 * @param frame
-	 *            the Democles frame
+	 * @param match
+	 *            the HiPE match
 	 * @param pattern
-	 *            the Democles pattern
+	 *            the HiPE pattern
 	 */
 	public HiPEGTMatch(final ProductionMatch match, final HiPEAbstractPattern pattern) {
 		super(pattern.getName());

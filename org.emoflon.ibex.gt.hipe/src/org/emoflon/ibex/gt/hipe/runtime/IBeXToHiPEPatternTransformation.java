@@ -39,8 +39,8 @@ public class IBeXToHiPEPatternTransformation {
 
 	private HiPEPatternFactory factory;
 	
-	private Map<String, HiPEPattern> name2pattern = new HashMap<>();
-	private Map<IBeXNode, HiPENode> node2node = new HashMap<>();
+	protected Map<String, HiPEPattern> name2pattern = new HashMap<>();
+	protected Map<IBeXNode, HiPENode> node2node = new HashMap<>();
 	
 	public HiPEPatternContainer transform(IBeXPatternSet patternSet) {
 		factory = HiPEPatternFactory.eINSTANCE;
