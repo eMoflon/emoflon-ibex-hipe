@@ -50,10 +50,19 @@ public class IBeXToHiPEPatternTransformation {
 		
 		HiPEPatternContainer container = factory.createHiPEPatternContainer();
 		for(IBeXContext context : patternSet.getContextPatterns()) {
-			if(context instanceof IBeXContextPattern)
-				container.getPatterns().add(transform((IBeXContextPattern) context));
+			if(context instanceof IBeXContextPattern) {
+				IBeXContextPattern pattern = (IBeXContextPattern) context;
+				if(pattern.getSignatureNodes().isEmpty())
+					continue;
+				
+				container.getPatterns().add(transform(pattern));
+			}
 			if(context instanceof IBeXContextAlternatives)
 				for(IBeXContextPattern alternative : ((IBeXContextAlternatives) context).getAlternativePatterns()) {
+					if(alternative.getSignatureNodes().isEmpty()) {
+						continue;
+					}
+					
 					container.getPatterns().add(transform(alternative));
 				}
 		}
