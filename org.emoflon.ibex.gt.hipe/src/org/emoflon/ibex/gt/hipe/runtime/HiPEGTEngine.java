@@ -159,6 +159,7 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 		
 		engineClassName = packageName+".hipe.engine.HiPEEngine";
 		try {
+			HiPEGenerator.generateCode(packageName+".",network);
 			dynamicClasses = HiPEGenerator.generateDynamicClasses(packageName+".",network);
 		} catch (Exception e) {
 			e.printStackTrace();
