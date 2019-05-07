@@ -35,6 +35,7 @@ import hipe.generator.HiPEGenerator;
 import hipe.network.HiPENetwork;
 import hipe.pattern.HiPEAbstractPattern;
 import hipe.pattern.HiPEPatternContainer;
+import hipe.searchplan.mincut.MinCutSearchPlan;
 import hipe.searchplan.simple.SimpleSearchPlan;
 
 /**
@@ -142,6 +143,7 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 	
 	protected void generateHiPENetworkCode() {
 		SimpleSearchPlan searchPlan = new SimpleSearchPlan(patternContainer);
+		//MinCutSearchPlan searchPlan = new MinCutSearchPlan(patternContainer);
 		searchPlan.generateSearchPlan();
 		network = searchPlan.getNetwork();
 		

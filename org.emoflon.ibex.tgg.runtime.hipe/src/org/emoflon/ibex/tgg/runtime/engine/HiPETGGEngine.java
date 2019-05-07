@@ -2,9 +2,7 @@ package org.emoflon.ibex.tgg.runtime.engine;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.eclipse.emf.common.util.URI;
@@ -20,11 +18,6 @@ import org.emoflon.ibex.tgg.compiler.transformations.patterns.ContextPatternTran
 import org.emoflon.ibex.tgg.operational.IBlackInterpreter;
 import org.emoflon.ibex.tgg.operational.defaults.IbexOptions;
 import org.emoflon.ibex.tgg.operational.strategies.OperationalStrategy;
-import org.emoflon.ibex.tgg.runtime.engine.csp.nativeOps.TGGAttributeConstraintAdornmentStrategy;
-import org.emoflon.ibex.tgg.runtime.engine.csp.nativeOps.TGGAttributeConstraintModule;
-import org.emoflon.ibex.tgg.runtime.engine.csp.nativeOps.TGGAttributeConstraintTypeModule;
-import org.emoflon.ibex.tgg.runtime.engine.csp.nativeOps.TGGConstraintComponentBuilder;
-import org.emoflon.ibex.tgg.runtime.engine.csp.nativeOps.TGGNativeOperationBuilder;
 
 import IBeXLanguage.IBeXContextPattern;
 import IBeXLanguage.IBeXPatternSet;
@@ -70,33 +63,7 @@ public class HiPETGGEngine extends HiPEGTEngine implements IBlackInterpreter {
 		generateHiPENetworkCode();
 		savePatternsForDebugging();
 		saveNetworkForDebugging();
-	}
-	
-	//TODO: wtf is this?
-	/*
-	private Optional<TGGConstraintComponentBuilder<VariableRuntime>> handleTGGAttributeConstraints() {
-		if (!this.options.blackInterpSupportsAttrConstrs()) {
-			return Optional.empty();
-		}
-
-		// Handle constraints for the EMF to Java transformation
-		TGGAttributeConstraintModule.INSTANCE.registerConstraintTypes(options.constraintProvider());
-		TypeModule<TGGAttributeConstraintModule> tggAttributeConstraintTypeModule = new TGGAttributeConstraintTypeModule(
-				TGGAttributeConstraintModule.INSTANCE);
-		patternBuilder.addConstraintTypeSwitch(tggAttributeConstraintTypeModule.getConstraintTypeSwitch());
-
-		// Native operation
-		final TGGNativeOperationBuilder<VariableRuntime> tggNativeOperationModule = new TGGNativeOperationBuilder<VariableRuntime>(
-				options.constraintProvider());
-		// Batch operations
-		final GenericOperationBuilder<VariableRuntime> tggBatchOperationModule = new GenericOperationBuilder<VariableRuntime>(
-				tggNativeOperationModule, TGGAttributeConstraintAdornmentStrategy.INSTANCE);
-		retePatternMatcherModule.addOperationBuilder(tggBatchOperationModule);
-
-		// Incremental operation
-		return Optional.of(new TGGConstraintComponentBuilder<VariableRuntime>(tggNativeOperationModule));
-	}
-	*/
+	}	
 	
 	@Override
 	public void monitor(final ResourceSet resourceSet) {
