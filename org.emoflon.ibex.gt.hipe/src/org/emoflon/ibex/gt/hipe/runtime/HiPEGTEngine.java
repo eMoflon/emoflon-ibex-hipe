@@ -34,6 +34,7 @@ import hipe.engine.message.enums.MatchType;
 import hipe.generator.HiPEGenerator;
 import hipe.network.HiPENetwork;
 import hipe.pattern.HiPEAbstractPattern;
+import hipe.pattern.HiPEPartialPattern;
 import hipe.pattern.HiPEPatternContainer;
 import hipe.searchplan.mincut.MinCutSearchPlan;
 import hipe.searchplan.simple.SimpleSearchPlan;
@@ -159,8 +160,13 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 		
 		engineClassName = packageName+".hipe.engine.HiPEEngine";
 		try {
+			double tic = System.currentTimeMillis();
 			HiPEGenerator.generateCode(packageName+".",network);
+			double toc = System.currentTimeMillis();
+			System.out.println("code generation finished after " + (toc-tic)/1000.0 + "s");
 			dynamicClasses = HiPEGenerator.generateDynamicClasses(packageName+".",network);
+			tic = System.currentTimeMillis();
+			System.out.println("compilation finished after " + (tic-toc)/1000.0 + "s");
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -173,6 +179,7 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 	@SuppressWarnings("unchecked")
 	@Override
 	public void monitor(final ResourceSet resourceSet) {
+		double tic = System.currentTimeMillis();
 		for (Resource r : resourceSet.getResources()) {
 			if ("ecore".equals(r.getURI().fileExtension())) {
 				logger.warn("Are you sure your resourceSet should contain a resource for a metamodel?: " + r.getURI());
@@ -208,6 +215,8 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 				});
 		
 		initEngine(resourceSet);
+		double toc = System.currentTimeMillis();
+		System.out.println("engine initialized after " + (toc-tic)/1000.0 + "s");
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -217,29 +226,40 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 		Class<? extends IHiPEEngine> engineClass = (Class<? extends IHiPEEngine>) dynamicClasses.get(engineClassName);
 		
 		try {
+			double tic = System.currentTimeMillis();
 			engine = engineClass.newInstance();
+			double toc = System.currentTimeMillis();
+			System.out.println("dynamic instantiation after " + (toc-tic)/1000.0 + "s");
 		} catch (InstantiationException | IllegalAccessException e) {
 			e.printStackTrace();
 		}
 		
 		try {
+			double tic = System.currentTimeMillis();
 			engine.initialize();
+			double toc = System.currentTimeMillis();
+			System.out.println("initialization after " + (toc-tic)/1000.0 + "s");
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
-		
+		double tic = System.currentTimeMillis();
 		adapter = new HiPEContentAdapter(resourceSet, engine);
+		double toc = System.currentTimeMillis();
+		System.out.println("added adapter after " + (toc-tic)/1000.0 + "s");
 	}
 	
 	@Override
 	public void updateMatches() {
 		// Trigger the Rete network
+		double tic = System.currentTimeMillis();
 		try {
 			addNewMatches(engine.extractData(MatchType.NEW));
 			deleteInvalidMatches(engine.extractData(MatchType.DELETED));
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
+		double toc = System.currentTimeMillis();
+		System.out.println("updated matches after " + (toc-tic)/1000.0 + "s");
 	}
 	
 	private void addNewMatches(Map<String, Collection<ProductionMatch>> allMatches) {
@@ -280,7 +300,7 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 	 */
 	protected void savePatternsForDebugging() {
 		debugPath.ifPresent(path -> {
-			List<HiPEAbstractPattern> sortedPatterns = patterns.values().stream() //
+			List<HiPEAbstractPattern> sortedPatterns = patterns.values().stream()
 					.sorted((p1, p2) -> p1.getName().compareTo(p2.getName())) // alphabetically by name
 					.collect(Collectors.toList());
 			EMFSaveUtils.saveModel(sortedPatterns, path + "/hipe-patterns");
