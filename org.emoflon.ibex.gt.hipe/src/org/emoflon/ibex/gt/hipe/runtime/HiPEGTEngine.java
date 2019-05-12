@@ -2,6 +2,7 @@ package org.emoflon.ibex.gt.hipe.runtime;
 
 import static org.emoflon.ibex.common.collections.CollectionFactory.cfactory;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
@@ -21,11 +22,11 @@ import org.eclipse.emf.ecore.resource.ResourceSet;
 import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
 import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
-
 import org.emoflon.ibex.common.emf.EMFSaveUtils;
 import org.emoflon.ibex.common.operational.IContextPatternInterpreter;
 import org.emoflon.ibex.common.operational.IMatch;
 import org.emoflon.ibex.common.operational.IMatchObserver;
+
 import IBeXLanguage.IBeXPatternSet;
 import hipe.engine.HiPEContentAdapter;
 import hipe.engine.IHiPEEngine;
@@ -34,9 +35,7 @@ import hipe.engine.message.enums.MatchType;
 import hipe.generator.HiPEGenerator;
 import hipe.network.HiPENetwork;
 import hipe.pattern.HiPEAbstractPattern;
-import hipe.pattern.HiPEPartialPattern;
 import hipe.pattern.HiPEPatternContainer;
-import hipe.searchplan.mincut.MinCutSearchPlan;
 import hipe.searchplan.simple.SimpleSearchPlan;
 
 /**
@@ -300,10 +299,15 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 	 */
 	protected void savePatternsForDebugging() {
 		debugPath.ifPresent(path -> {
-			List<HiPEAbstractPattern> sortedPatterns = patterns.values().stream()
-					.sorted((p1, p2) -> p1.getName().compareTo(p2.getName())) // alphabetically by name
-					.collect(Collectors.toList());
-			EMFSaveUtils.saveModel(sortedPatterns, path + "/hipe-patterns");
+			List<HiPEAbstractPattern> patternList = new ArrayList<>();
+			patternList.addAll(patternContainer.getPatterns());
+			patternList.sort((p1, p2) -> p1.getName().compareTo(p2.getName()));
+			patternContainer.getPatterns().clear();
+			patternContainer.getPatterns().addAll(patternList);
+			
+			List<HiPEPatternContainer> containerList = new ArrayList<>();
+			containerList.add(patternContainer);
+			EMFSaveUtils.saveModel(containerList, path + "/hipe-patterns");
 		});
 	}
 	
