@@ -27,6 +27,10 @@ import org.emoflon.ibex.common.operational.IContextPatternInterpreter;
 import org.emoflon.ibex.common.operational.IMatch;
 import org.emoflon.ibex.common.operational.IMatchObserver;
 
+import IBeXLanguage.IBeXContext;
+import IBeXLanguage.IBeXContextAlternatives;
+import IBeXLanguage.IBeXContextPattern;
+import IBeXLanguage.IBeXPattern;
 import IBeXLanguage.IBeXPatternSet;
 import hipe.engine.HiPEContentAdapter;
 import hipe.engine.IHiPEEngine;
@@ -65,13 +69,13 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 	/**
 	 * The HiPE patterns.
 	 */
-	protected Map<String, HiPEAbstractPattern> patterns;
+	protected Map<String, String> patterns;
 	
-	protected HiPEPatternContainer patternContainer;
+	//protected HiPEPatternContainer patternContainer;
 	
 	protected String engineClassName;
 
-	protected Map<String, Class<?>> dynamicClasses;
+	//protected Map<String, Class<?>> dynamicClasses;
 	
 	/**
 	 * The pattern matcher module.
@@ -125,28 +129,35 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 	 */
 	@Override
 	public void initPatterns(final IBeXPatternSet ibexPatternSet) {
-		IBeXToHiPEPatternTransformation transformation = new IBeXToHiPEPatternTransformation();
 		this.ibexPatternSet = ibexPatternSet;
-		setPatterns(transformation.transform(ibexPatternSet));
-		generateHiPENetworkCode();
-		savePatternsForDebugging();
-		saveNetworkForDebugging();
+		setPatterns(this.ibexPatternSet);
+		generateHiPEClassName();
 	}
 	
-	protected void setPatterns(HiPEPatternContainer container) {
-		this.patternContainer = container;
+	protected void setPatterns(IBeXPatternSet ibexPatternSet) {
 		this.patterns = cfactory.createObjectToObjectHashMap();
-		for (HiPEAbstractPattern p : container.getPatterns()) {
-			this.patterns.put(p.getName(), p);
+
+		for(IBeXContext context : ibexPatternSet.getContextPatterns()) {
+			if(context instanceof IBeXContextPattern) {
+				IBeXContextPattern pattern = (IBeXContextPattern) context;
+				if(pattern.getSignatureNodes().isEmpty())
+					continue;
+				
+				patterns.put(context.getName().replace("-", "_"), context.getName());
+			}
+			if(context instanceof IBeXContextAlternatives)
+				for(IBeXContextPattern alternative : ((IBeXContextAlternatives) context).getAlternativePatterns()) {
+					if(alternative.getSignatureNodes().isEmpty()) {
+						continue;
+					}
+					
+					patterns.put(alternative.getName().replace("-", "_"), alternative.getName());
+				}
 		}
 	}
 	
-	protected void generateHiPENetworkCode() {
-		SimpleSearchPlan searchPlan = new SimpleSearchPlan(patternContainer);
-		//MinCutSearchPlan searchPlan = new MinCutSearchPlan(patternContainer);
-		searchPlan.generateSearchPlan();
-		network = searchPlan.getNetwork();
-		
+	protected void generateHiPEClassName() {
+
 		URI patternURI = ibexPatternSet.eResource().getURI();
 		Pattern pattern = Pattern.compile("^(.*src-gen/)(.*)(api/ibex-patterns.xmi)$");
 		Matcher matcher = pattern.matcher(patternURI.toString());
@@ -155,20 +166,9 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 		
 		packageName = packageName.substring(0, packageName.length()-1);
 		packageName = packageName.replace("/", ".");
-		packageName = packageName+".api";
 		
 		engineClassName = packageName+".hipe.engine.HiPEEngine";
-		try {
-			double tic = System.currentTimeMillis();
-			HiPEGenerator.generateCode(packageName+".",network);
-			double toc = System.currentTimeMillis();
-			System.out.println("code generation finished after " + (toc-tic)/1000.0 + "s");
-			dynamicClasses = HiPEGenerator.generateDynamicClasses(packageName+".",network);
-			tic = System.currentTimeMillis();
-			System.out.println("compilation finished after " + (tic-toc)/1000.0 + "s");
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+
 	}
 	
 	/**
@@ -222,9 +222,18 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 	protected void initEngine(final ResourceSet resourceSet) {
 		
 		
-		Class<? extends IHiPEEngine> engineClass = (Class<? extends IHiPEEngine>) dynamicClasses.get(engineClassName);
+		Class<? extends IHiPEEngine> engineClass = null;
+		try {
+			engineClass = (Class<? extends IHiPEEngine>) Class.forName(engineClassName);
+		} catch (ClassNotFoundException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
 		
 		try {
+			if(engineClass == null) {
+				throw new RuntimeException("Engine class: "+engineClassName+ " -> not found!");
+			}
 			double tic = System.currentTimeMillis();
 			engine = engineClass.newInstance();
 			double toc = System.currentTimeMillis();
@@ -286,29 +295,11 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 	@Override
 	public void terminate() {
 		engine.terminate();
-		//matches.clear();
 	}
 
 	@Override
 	public void setDebugPath(final String debugPath) {
 		this.debugPath = Optional.of(debugPath);
-	}
-
-	/**
-	 * Saves the Democles patterns for debugging.
-	 */
-	protected void savePatternsForDebugging() {
-		debugPath.ifPresent(path -> {
-			List<HiPEAbstractPattern> patternList = new ArrayList<>();
-			patternList.addAll(patternContainer.getPatterns());
-			patternList.sort((p1, p2) -> p1.getName().compareTo(p2.getName()));
-			patternContainer.getPatterns().clear();
-			patternContainer.getPatterns().addAll(patternList);
-			
-			List<HiPEPatternContainer> containerList = new ArrayList<>();
-			containerList.add(patternContainer);
-			EMFSaveUtils.saveModel(containerList, path + "/hipe-patterns");
-		});
 	}
 	
 	protected void saveNetworkForDebugging() {
@@ -321,8 +312,8 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 
 	
 
-	protected IMatch createMatch(final ProductionMatch match, final HiPEAbstractPattern pattern) {
-		return new HiPEGTMatch(match, pattern);
+	protected IMatch createMatch(final ProductionMatch match, final String patternName) {
+		return new HiPEGTMatch(match, patternName);
 	}
 
 }

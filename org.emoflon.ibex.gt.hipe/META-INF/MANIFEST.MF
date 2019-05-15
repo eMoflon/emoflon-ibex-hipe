@@ -88,7 +88,8 @@ Require-Bundle: org.eclipse.emf.ecore.xmi,
  org.emoflon.ibex.gt.editor.ui,
  org.eclipse.equinox.registry,
  org.eclipse.core.resources,
- org.moflon.core.plugins
+ org.moflon.core.plugins,
+ org.eclipse.emf.ecore
 Automatic-Module-Name: org.emoflon.ibex.gt.democles
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-ClassPath: jars/,

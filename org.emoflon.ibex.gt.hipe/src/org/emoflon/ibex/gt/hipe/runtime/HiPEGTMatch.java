@@ -1,9 +1,7 @@
 package org.emoflon.ibex.gt.hipe.runtime;
 
 import org.emoflon.ibex.common.operational.SimpleMatch;
-
 import hipe.engine.match.ProductionMatch;
-import hipe.pattern.HiPEAbstractPattern;
 
 
 /**
@@ -18,8 +16,8 @@ public class HiPEGTMatch extends SimpleMatch {
 	 * @param pattern
 	 *            the HiPE pattern
 	 */
-	public HiPEGTMatch(final ProductionMatch match, final HiPEAbstractPattern pattern) {
-		super(pattern.getName());
+	public HiPEGTMatch(final ProductionMatch match, String patternName) {
+		super(patternName);
 		for(String label : match.getLabels()) {
 			put(label, match.getNode(label));
 		}
