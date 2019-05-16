@@ -3,7 +3,9 @@ package org.emoflon.ibex.gt.hipe.ide.codegen;
 import org.emoflon.ibex.gt.editor.ui.builder.GTBuilderExtension;
 import org.emoflon.ibex.gt.hipe.runtime.IBeXToHiPEPatternTransformation;
 import org.moflon.core.plugins.manifest.ManifestFileUpdater;
+import org.moflon.core.utilities.EcoreUtils;
 
+import IBeXLanguage.IBeXLanguagePackage;
 import IBeXLanguage.IBeXPatternSet;
 import hipe.generator.HiPEGenerator;
 import hipe.network.HiPENetwork;
@@ -15,6 +17,7 @@ import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.resource.ResourceSet;
 import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
+import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
 
 import java.io.IOException;
@@ -54,6 +57,7 @@ public class GTHiPEBuilderExtension implements GTBuilderExtension{
 		String patternPath = this.packagePath+"//src-gen//" + packageName + "//api//ibex-patterns.xmi";
 		
 		IBeXPatternSet ibexPatterns = loadIBeXPatterns(patternPath);
+		
 		if(ibexPatterns == null)
 			return;
 		
@@ -116,7 +120,6 @@ public class GTHiPEBuilderExtension implements GTBuilderExtension{
 		if(res == null) {
 			return null;
 		}
-		
 		return (IBeXPatternSet)res.getContents().get(0);
 	}
 	
@@ -124,12 +127,14 @@ public class GTHiPEBuilderExtension implements GTBuilderExtension{
 		Resource.Factory.Registry.INSTANCE.getExtensionToFactoryMap().put("ibex-patterns-for-hipe", new XMIResourceFactoryImpl());
 		ResourceSet rs = new ResourceSetImpl();
 		rs.getResourceFactoryRegistry().getExtensionToFactoryMap().put("xmi", new XMIResourceFactoryImpl());
-
+		rs.getPackageRegistry().put(IBeXLanguagePackage.eNS_URI, IBeXLanguagePackage.eINSTANCE);
+		
 		URI uri = URI.createFileURI(path);
 		Resource modelResource = rs.getResource(uri, true);
+		EcoreUtil.resolveAll(rs);
+		
 		if(modelResource == null)
 			throw new IOException("File did not contain a vaild model.");
-		
 		return modelResource;
 	}
 

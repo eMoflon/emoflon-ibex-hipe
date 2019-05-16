@@ -276,7 +276,7 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 			for(ProductionMatch match : matches) {
 				IMatch iMatch = createMatch(match, patterns.get(patternName));
 				app.addMatch(iMatch);
-				System.out.println("added match: "+iMatch);
+				//System.out.println("added match: "+iMatch);
 			}
 		}
 	}
@@ -287,7 +287,7 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 			for(ProductionMatch match : matches) {
 				IMatch iMatch = createMatch(match, patterns.get(patternName));
 				app.removeMatch(iMatch);
-				System.out.println("deleted match: "+iMatch);
+				//System.out.println("deleted match: "+iMatch);
 			}
 		}
 	}
