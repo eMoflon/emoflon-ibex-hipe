@@ -2,6 +2,8 @@ package org.emoflon.ibex.gt.hipe.runtime;
 
 import static org.emoflon.ibex.common.collections.CollectionFactory.cfactory;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedList;
@@ -235,10 +237,14 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 				throw new RuntimeException("Engine class: "+engineClassName+ " -> not found!");
 			}
 			double tic = System.currentTimeMillis();
-			engine = engineClass.newInstance();
+			Constructor<? extends IHiPEEngine> constructor = engineClass.getDeclaredConstructor();
+			constructor.setAccessible(true);
+			engine = constructor.newInstance();
+			//engine = engineClass.newInstance();
 			double toc = System.currentTimeMillis();
 			System.out.println("dynamic instantiation after " + (toc-tic)/1000.0 + "s");
-		} catch (InstantiationException | IllegalAccessException e) {
+		} catch (InstantiationException | IllegalAccessException | NoSuchMethodException | 
+				SecurityException | IllegalArgumentException | InvocationTargetException e) {
 			e.printStackTrace();
 		}
 		

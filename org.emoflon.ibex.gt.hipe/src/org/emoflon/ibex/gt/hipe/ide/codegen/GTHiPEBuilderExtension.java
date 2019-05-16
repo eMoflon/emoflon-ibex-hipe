@@ -20,6 +20,7 @@ import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
 import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -66,14 +67,38 @@ public class GTHiPEBuilderExtension implements GTBuilderExtension{
 		
 		IFile file = project.getFile(patternPath);
 		this.packagePath = file.getLocation().uptoSegment(file.getLocation().segmentCount()-5).makeAbsolute().toPortableString();
-				
+		
+		File dir = new File(this.packagePath+"/src-gen/" + packageName + "/hipe");
+		if(dir.exists()) {
+			log("Cleaning old source files in root folder: "+this.packagePath+"/src-gen/" + packageName + "/hipe");
+			dir.delete();
+			if(deleteDirectory(dir)) {
+				log("Folder deleted!");
+			}else {
+				log("Folder not deleted..");
+			}
+		}
+		
+		
 		SimpleSearchPlan searchPlan = new SimpleSearchPlan(container);
 		searchPlan.generateSearchPlan();
 		HiPENetwork network = searchPlan.getNetwork();
+		
+		
 		HiPEGenerator.generateCode(packageName+".", this.packagePath, network);
 		
 		double toc = System.currentTimeMillis();
 		Logger.getRootLogger().info(".. complete, took "+ (toc-tic)/1000.0 + " seconds.");	
+	}
+	
+	private static boolean deleteDirectory(File dir) {
+		File[] contents  = dir.listFiles();
+		if(contents != null) {
+			for(File file : contents) {
+				deleteDirectory(file);
+			}
+		}
+		return dir.delete();
 	}
 	
 	private boolean processManifestForProject(final Manifest manifest, IProject project) {
