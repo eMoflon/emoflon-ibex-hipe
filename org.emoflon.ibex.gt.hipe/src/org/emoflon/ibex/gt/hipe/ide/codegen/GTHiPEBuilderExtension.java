@@ -12,6 +12,7 @@ import hipe.network.HiPENetwork;
 import hipe.pattern.HiPEPatternContainer;
 import hipe.searchplan.simple.SimpleSearchPlan;
 
+import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.resource.Resource;
@@ -20,11 +21,24 @@ import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
 import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
 
+import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.FilenameFilter;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.net.URISyntaxException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.function.Function;
 import java.util.jar.Manifest;
 
 import org.apache.log4j.Logger;
@@ -55,10 +69,9 @@ public class GTHiPEBuilderExtension implements GTBuilderExtension{
 		}else {
 			this.packagePath = project.getFullPath().makeAbsolute().toPortableString();
 		}
+		
 		String patternPath = this.packagePath+"//src-gen//" + packageName + "//api//ibex-patterns.xmi";
-		
 		IBeXPatternSet ibexPatterns = loadIBeXPatterns(patternPath);
-		
 		if(ibexPatterns == null)
 			return;
 		
@@ -68,27 +81,148 @@ public class GTHiPEBuilderExtension implements GTBuilderExtension{
 		IFile file = project.getFile(patternPath);
 		this.packagePath = file.getLocation().uptoSegment(file.getLocation().segmentCount()-5).makeAbsolute().toPortableString();
 		
-		File dir = new File(this.packagePath+"/src-gen/" + packageName + "/hipe");
-		if(dir.exists()) {
-			log("Cleaning old source files in root folder: "+this.packagePath+"/src-gen/" + packageName + "/hipe");
-			dir.delete();
-			if(deleteDirectory(dir)) {
-				log("Folder deleted!");
-			}else {
-				log("Folder not deleted..");
-			}
-		}
-		
+		cleanOldCode();
 		
 		SimpleSearchPlan searchPlan = new SimpleSearchPlan(container);
 		searchPlan.generateSearchPlan();
 		HiPENetwork network = searchPlan.getNetwork();
-		
-		
+
 		HiPEGenerator.generateCode(packageName+".", this.packagePath, network);
 		
 		double toc = System.currentTimeMillis();
-		Logger.getRootLogger().info(".. complete, took "+ (toc-tic)/1000.0 + " seconds.");	
+		Logger.getRootLogger().info("Code generation completed in "+ (toc-tic)/1000.0 + " seconds.");	
+		
+		createNewDirectory(this.packagePath+"/jars");
+		File jarsDir1 = findJarsDirectory();
+		File jarsDir2 = new File(this.packagePath+"/jars");
+		copyDirectoryContents(jarsDir1, jarsDir2);
+		
+		log("Updating Manifest..");
+		updateManifest(this.packagePath, project);
+		updateBuildProperties(this.packagePath);
+		log(".. HiPE build complete!");
+	}
+	
+	private void updateManifest(String packagePath, IProject project) {
+		try {
+			IFile manifest = ManifestFileUpdater.getManifestFile(project);
+			File rawManifest = new File(this.packagePath+"/"+manifest.getFullPath().removeFirstSegments(1).toPortableString());
+			BufferedReader br = new BufferedReader(new InputStreamReader(manifest.getContents()));
+			StringBuilder sb = new StringBuilder();
+			
+			String line = br.readLine();
+			boolean bcpFound = false;
+			boolean jarsFound = false;
+			boolean jarWritten = false;
+			while(line != null) {
+				
+				if(line.contains("Bundle-ClassPath:")) {
+					bcpFound = true;
+				}
+				if(line.contains("jars/,")) {
+					jarsFound = true;
+				}
+				if(line.contains("jars/,") && jarWritten) {
+					continue;
+				}
+				
+				sb.append(line+"\n");
+				
+				if(bcpFound && !jarsFound && !jarWritten) {
+					sb.append(" jars/,\n .\n");
+					jarWritten = true;
+				}
+				
+				
+				line = br.readLine();
+			}
+			if(!bcpFound) {
+				jarWritten = true;
+				sb.append("Bundle-ClassPath: jars/,\n .\n");
+			}
+			br.close();
+			
+			if(!jarWritten) {
+				return;
+			}
+			InputStream is = new ByteArrayInputStream(sb.toString().getBytes());
+			OutputStream os = new FileOutputStream(rawManifest);
+	        byte[] buffer = new byte[1024];
+	        int length;
+	        while ((length = is.read(buffer)) > 0) {
+	            os.write(buffer, 0, length);
+	        }
+	        os.close();
+	        is.close();
+			
+			
+		} catch (CoreException | IOException e) {
+			log("ERROR: Failed to update MANIFEST.MF.");
+		}
+	}
+	
+	private void updateBuildProperties(String packagePath) {
+		File buildProps = new File(this.packagePath+"/build.properties");
+		try {
+			BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(buildProps)));
+			StringBuilder sb = new StringBuilder();
+			
+			String line = br.readLine();
+			boolean extraFound = false;
+			boolean jarsFound = false;
+			boolean jarsWritten = false;
+			while(line != null) {
+				
+				if(line.contains("jars.extra.classpath")) {
+					extraFound = true;
+				}
+				if(line.contains("jars/akka-actor_2.12-2.5.19.jar")) {
+					jarsFound = true;
+				}
+				if(line.contains("jars/akka-actor_2.12-2.5.19.jar") && jarsWritten) {
+					continue;
+				}
+				
+				sb.append(line+"\n");
+				
+				if(extraFound && !jarsFound && !jarsWritten) {
+					sb.append("                       jars/akka-actor_2.12-2.5.19.jar,\\\n");
+					sb.append("                       jars/config-1.3.3.jar,\\\n");
+					sb.append("                       jars/scala-java8-compat_2.12-0.8.0.jar,\\\n");
+					sb.append("                       jars/scala-library-2.12.8.jar\n");
+					jarsWritten = true;
+				}
+				
+				line = br.readLine();
+			}
+			
+			if(!extraFound) {
+				jarsWritten = true;
+				sb.append("jars.extra.classpath = jars/akka-actor_2.12-2.5.19.jar,\\\n");
+				sb.append("                       jars/config-1.3.3.jar,\\\n");
+				sb.append("                       jars/scala-java8-compat_2.12-0.8.0.jar,\\\n");
+				sb.append("                       jars/scala-library-2.12.8.jar\n");
+			}
+			br.close();
+			
+			if(!jarsWritten) {
+				return;
+			}
+			
+			InputStream is = new ByteArrayInputStream(sb.toString().getBytes());
+			OutputStream os = new FileOutputStream(buildProps);
+	        byte[] buffer = new byte[1024];
+	        int length;
+	        while ((length = is.read(buffer)) > 0) {
+	            os.write(buffer, 0, length);
+	        }
+	        os.close();
+	        is.close();
+			
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 	
 	private static boolean deleteDirectory(File dir) {
@@ -99,6 +233,78 @@ public class GTHiPEBuilderExtension implements GTBuilderExtension{
 			}
 		}
 		return dir.delete();
+	}
+	
+	private static void createNewDirectory(String path) {
+		File dir = new File(path);
+		if(!dir.exists()) {
+			if(dir.mkdir()) {
+				log("Directory in: "+path+" -> could not be created...");
+			}else {
+				log("Directory in: "+path+" -> created!");
+			}
+		}
+		log("Directory already present in: "+path+" -> nothing to do..");
+	}
+	
+	private static void copyDirectoryContents(File dir1, File dir2) {
+		List<File> contents = Arrays.asList(dir1.listFiles());
+		contents.parallelStream().forEach(content -> {
+			try {
+				InputStream is = new FileInputStream(content);
+		        File dest = new File(dir2.getAbsolutePath()+"/"+content.getName());
+		        
+		        if(!dest.exists()) {
+		        	OutputStream os = new FileOutputStream(dest);
+			        byte[] buffer = new byte[1024];
+			        int length;
+			        while ((length = is.read(buffer)) > 0) {
+			            os.write(buffer, 0, length);
+			        }
+			        os.close();
+		        }
+		        is.close();
+		    } catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} 
+		});
+	}
+	
+	private void cleanOldCode() {
+		File dir = new File(this.packagePath+"/src-gen/" + packageName + "/hipe");
+		if(dir.exists()) {
+			log("Cleaning old source files in root folder: "+this.packagePath+"/src-gen/" + packageName + "/hipe");
+			if(!deleteDirectory(dir)) {
+				log("ERROR: Folder couldn't be deleted!");
+			}
+		}
+	}
+	
+	@SuppressWarnings("null")
+	private File findJarsDirectory() {
+		File currentClass = new File(this.getClass().getProtectionDomain().getCodeSource().getLocation().getPath());
+		
+		Path jarPath = currentClass.toPath();
+		while(jarPath != null || !jarPath.toFile().getName().equals("jars")) {
+			File current = jarPath.toFile();
+			if(current.isDirectory()) {
+				File[] contents = current.listFiles();
+				for(File content : contents) {
+					if(!content.isDirectory())
+						continue;
+					
+					if(content.getName().equals("jars")) {
+						jarPath = content.toPath();
+						return jarPath.toFile();
+					}
+				}
+				jarPath = jarPath.getParent();
+			}else {
+				jarPath = jarPath.getParent();
+			}
+		}
+		return null;
 	}
 	
 	private boolean processManifestForProject(final Manifest manifest, IProject project) {
@@ -117,16 +323,6 @@ public class GTHiPEBuilderExtension implements GTBuilderExtension{
 		}
 
 		return changedBasics || updatedDependencies;
-	}
-	
-	private boolean processManifestForPackage(final Manifest manifest) {
-		String apiPackageName = (packageName.equals("") ? "" : packageName + ".") + "api";
-		boolean updateExports = ManifestFileUpdater.updateExports(manifest,
-				Arrays.asList(apiPackageName, apiPackageName + ".matches", apiPackageName + ".rules"));
-		if (updateExports) {
-			log("Updated exports");
-		}
-		return updateExports;
 	}
 	
 	private static void log(String lg) {
