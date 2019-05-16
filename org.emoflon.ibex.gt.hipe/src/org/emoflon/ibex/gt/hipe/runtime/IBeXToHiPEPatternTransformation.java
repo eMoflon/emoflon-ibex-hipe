@@ -91,30 +91,30 @@ public class IBeXToHiPEPatternTransformation {
 			
 			EMap<IBeXNode, IBeXNode> mapping = inv.getMapping();
 			for(IBeXNode node : mapping.keySet()) {
-				HiPENode srcNode = transform(node);
-				HiPENode trgNode = transform(mapping.get(node));
+				HiPENode srcNode = transform(context, node);
+				HiPENode trgNode = transform(context, mapping.get(node));
 				trgNode.getInvokedBy().add(srcNode);
 			}
 		}
 		
 		for(IBeXNode node : context.getSignatureNodes()) {
-			pattern.getSignatureNodes().add(transform(node));
+			pattern.getNodes().add(transform(context, node));
 		}
 		
 		for(IBeXNode node : context.getLocalNodes()) {
-			pattern.getSignatureNodes().add(transform(node));
+			pattern.getNodes().add(transform(context, node));
 		}
 		
 		for(IBeXEdge edge : context.getLocalEdges()) {
-			pattern.getEdges().add(transform(edge));
+			pattern.getEdges().add(transform(context,edge));
 		}
 		
 		for(IBeXNodePair injectivity : context.getInjectivityConstraints()) {
-			pattern.getNodeConstraints().add(transform(injectivity));
+			pattern.getNodeConstraints().add(transform(context,injectivity));
 		}
 		
 		for(IBeXAttributeConstraint constr : context.getAttributeConstraint()) {
-			HiPEAttributeConstraint constraint = transform(pattern, constr);
+			HiPEAttributeConstraint constraint = transform(context, pattern, constr);
 			if(constraint != null)
 				pattern.getAttributeConstraints().add(constraint);
 		}
@@ -122,40 +122,41 @@ public class IBeXToHiPEPatternTransformation {
 		return pattern;
 	}
 	
-	public HiPENode transform(IBeXNode node) {
+	public HiPENode transform(IBeXContextPattern context, IBeXNode node) {
 		if(node2node.containsKey(node))
 			return node2node.get(node);
 		
 		HiPENode hNode = factory.createHiPENode();
 		hNode.setName(node.getName());
 		hNode.setType(node.getType());
+		hNode.setLocal(context.getLocalNodes().contains(node));
 		
 		node2node.put(node, hNode);
 		
 		return hNode;
 	}
 	
-	private HiPEEdge transform(IBeXEdge edge) {
+	private HiPEEdge transform(IBeXContextPattern context, IBeXEdge edge) {
 		HiPEEdge hEdge = factory.createHiPEEdge();
 		hEdge.setName(edge.getSourceNode().getType().getName() + "_" + edge.getType().getName());
 		hEdge.setType(edge.getType());
-		hEdge.setSource(transform(edge.getSourceNode()));
-		hEdge.setTarget(transform(edge.getTargetNode()));
+		hEdge.setSource(transform(context, edge.getSourceNode()));
+		hEdge.setTarget(transform(context, edge.getTargetNode()));
 		return hEdge;
 	}
 	
-	private UnequalConstraint transform(IBeXNodePair pair) {
+	private UnequalConstraint transform(IBeXContextPattern context, IBeXNodePair pair) {
 		UnequalConstraint constr = factory.createUnequalConstraint();
-		constr.setLeftNode(transform(pair.getValues().get(0)));
-		constr.setRightNode(transform(pair.getValues().get(1)));
+		constr.setLeftNode(transform(context, pair.getValues().get(0)));
+		constr.setRightNode(transform(context, pair.getValues().get(1)));
 		return constr;
 	}
 	
-	private HiPEAttributeConstraint transform(HiPEPattern pattern, IBeXAttributeConstraint constr) {
+	private HiPEAttributeConstraint transform(IBeXContextPattern context, HiPEPattern pattern, IBeXAttributeConstraint constr) {
 		RelationalConstraint rConstraint = factory.createRelationalConstraint();
-		rConstraint.setLeftAttribute(transform(constr.getNode(), constr.getType()));
-		rConstraint.setRightAttribute(transform(constr.getValue()));
-		rConstraint.setType(transform(constr.getRelation()));
+		rConstraint.setLeftAttribute(transform(context, constr.getNode(), constr.getType()));
+		rConstraint.setRightAttribute(transform(context, constr.getValue()));
+		rConstraint.setType(transform(context, constr.getRelation()));
 
 		if(rConstraint.getLeftAttribute() == null || rConstraint.getRightAttribute() == null)
 			return null;
@@ -167,46 +168,46 @@ public class IBeXToHiPEPatternTransformation {
 		return rConstraint;
 	}
 	
-	private HiPEAttribute transform(IBeXAttributeValue value) {
+	private HiPEAttribute transform(IBeXContextPattern context, IBeXAttributeValue value) {
 		if(value instanceof IBeXConstant)
-			return transform((IBeXConstant) value);
+			return transform(context, (IBeXConstant) value);
 		if(value instanceof IBeXEnumLiteral)
-			return transform((IBeXEnumLiteral) value);
+			return transform(context, (IBeXEnumLiteral) value);
 		if(value instanceof IBeXAttributeParameter)
 			// TODO: implement attribute parameter
 //			return transform((IBeXAttributeParameter) value);
 			return null;
 		if(value instanceof IBeXAttributeExpression)
-			return transform((IBeXAttributeExpression) value);
+			return transform(context, (IBeXAttributeExpression) value);
 		return null;
 	}
 	
-	private HiPEAttribute transform(IBeXConstant constant) {
+	private HiPEAttribute transform(IBeXContextPattern context, IBeXConstant constant) {
 		HiPEAttribute attr = factory.createHiPEAttribute();
 		attr.setValue(constant.getValue());
 		return attr;
 	}
 	
-	private HiPEAttribute transform(IBeXEnumLiteral literal) {
+	private HiPEAttribute transform(IBeXContextPattern context, IBeXEnumLiteral literal) {
 		HiPEAttribute attr = factory.createHiPEAttribute();
 		attr.setValue(literal.getLiteral());
 		return attr;
 	}
 	
-	private HiPEAttribute transform(IBeXAttributeParameter attributeParam) {
+	private HiPEAttribute transform(IBeXContextPattern context, IBeXAttributeParameter attributeParam) {
 		HiPEAttribute attr = factory.createHiPEAttribute();
 		attr.setName(attributeParam.getName());
 		return attr;
 	}
 	
-	private HiPEAttribute transform(IBeXAttributeExpression attributeExpr) {
+	private HiPEAttribute transform(IBeXContextPattern context, IBeXAttributeExpression attributeExpr) {
 		HiPEAttribute attr = factory.createHiPEAttribute();
-		attr.setNode(transform(attributeExpr.getNode()));
+		attr.setNode(transform(context, attributeExpr.getNode()));
 		attr.setValue(attributeExpr.getAttribute());
 		return attr;
 	}
 
-	private ComparatorType transform(IBeXRelation relation) {
+	private ComparatorType transform(IBeXContextPattern context, IBeXRelation relation) {
 		switch(relation) {
 		case EQUAL: return ComparatorType.EQUAL;
 		case GREATER: return ComparatorType.GREATER;
@@ -218,11 +219,11 @@ public class IBeXToHiPEPatternTransformation {
 		return null;
 	}
 
-	private HiPEAttribute transform(IBeXNode iBeXNode, EAttribute attr) {
+	private HiPEAttribute transform(IBeXContextPattern context, IBeXNode iBeXNode, EAttribute attr) {
 		HiPEAttribute hAttr = factory.createHiPEAttribute();
 		hAttr.setName(attr.getName());
 		hAttr.setValue(attr);
-		hAttr.setNode(transform(iBeXNode));
+		hAttr.setNode(transform(context, iBeXNode));
 		
 		return hAttr;
 	}
