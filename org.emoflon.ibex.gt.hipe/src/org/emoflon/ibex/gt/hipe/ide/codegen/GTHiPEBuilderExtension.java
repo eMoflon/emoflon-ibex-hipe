@@ -59,7 +59,7 @@ public class GTHiPEBuilderExtension implements GTBuilderExtension{
 
 	@Override
 	public void run(IProject project, IPath packagePath) {
-		Logger.getRootLogger().info("Generating HiPE-Engine code..");
+		Logger.getRootLogger().info("## HiPE ## Generating HiPE-Engine code..");
 		double tic = System.currentTimeMillis();
 		
 		packageName = packagePath.toString().replace("/", ".");
@@ -70,37 +70,47 @@ public class GTHiPEBuilderExtension implements GTBuilderExtension{
 			this.packagePath = project.getFullPath().makeAbsolute().toPortableString();
 		}
 		
+		log("Loading IBeX patterns..");
 		String patternPath = this.packagePath+"//src-gen//" + packageName + "//api//ibex-patterns.xmi";
 		IBeXPatternSet ibexPatterns = loadIBeXPatterns(patternPath);
 		if(ibexPatterns == null)
 			return;
 		
-		IBeXToHiPEPatternTransformation transformation = new IBeXToHiPEPatternTransformation();
-		HiPEPatternContainer container = transformation.transform(ibexPatterns);
-		
 		IFile file = project.getFile(patternPath);
 		this.packagePath = file.getLocation().uptoSegment(file.getLocation().segmentCount()-5).makeAbsolute().toPortableString();
 		
+		log("Cleaning old code..");
 		cleanOldCode();
 		
+		log("Creating jar directory..");
+		createNewDirectory(this.packagePath+"/jars");
+		File jarsDir1 = findJarsDirectory();
+		File jarsDir2 = new File(this.packagePath+"/jars");
+		
+		log("Copying jars..");
+		copyDirectoryContents(jarsDir1, jarsDir2);
+		
+		log("Updating Manifest & build properties..");
+		updateManifest(this.packagePath, project);
+		updateBuildProperties(this.packagePath);
+		
+		log("Converting IBeX to HiPE Patterns..");
+		IBeXToHiPEPatternTransformation transformation = new IBeXToHiPEPatternTransformation();
+		HiPEPatternContainer container = transformation.transform(ibexPatterns);
+		
+		log("Creating search plan & generating Rete network..");
 		SimpleSearchPlan searchPlan = new SimpleSearchPlan(container);
 		searchPlan.generateSearchPlan();
 		HiPENetwork network = searchPlan.getNetwork();
-
+		
+		log("Generating Code..");
 		HiPEGenerator.generateCode(packageName+".", this.packagePath, network);
 		
 		double toc = System.currentTimeMillis();
 		Logger.getRootLogger().info("Code generation completed in "+ (toc-tic)/1000.0 + " seconds.");	
 		
-		createNewDirectory(this.packagePath+"/jars");
-		File jarsDir1 = findJarsDirectory();
-		File jarsDir2 = new File(this.packagePath+"/jars");
-		copyDirectoryContents(jarsDir1, jarsDir2);
 		
-		log("Updating Manifest..");
-		updateManifest(this.packagePath, project);
-		updateBuildProperties(this.packagePath);
-		log(".. HiPE build complete!");
+		log("## HiPE ## --> HiPE build complete!");
 	}
 	
 	private void updateManifest(String packagePath, IProject project) {
@@ -143,6 +153,7 @@ public class GTHiPEBuilderExtension implements GTBuilderExtension{
 			br.close();
 			
 			if(!jarWritten) {
+				log("--> Manifest already up to date.");
 				return;
 			}
 			InputStream is = new ByteArrayInputStream(sb.toString().getBytes());
@@ -206,6 +217,7 @@ public class GTHiPEBuilderExtension implements GTBuilderExtension{
 			br.close();
 			
 			if(!jarsWritten) {
+				log("--> build.properties already up to date.");
 				return;
 			}
 			
@@ -238,13 +250,14 @@ public class GTHiPEBuilderExtension implements GTBuilderExtension{
 	private static void createNewDirectory(String path) {
 		File dir = new File(path);
 		if(!dir.exists()) {
-			if(dir.mkdir()) {
-				log("Directory in: "+path+" -> could not be created...");
+			if(!dir.mkdir()) {
+				log("ERROR: Directory in: "+path+" could not be created!");
 			}else {
-				log("Directory in: "+path+" -> created!");
+				log("--> Directory in: "+path+" created!");
 			}
+		}else {
+			log("--> Directory already present in: "+path+", nothing to do.");
 		}
-		log("Directory already present in: "+path+" -> nothing to do..");
 	}
 	
 	private static void copyDirectoryContents(File dir1, File dir2) {
@@ -274,10 +287,12 @@ public class GTHiPEBuilderExtension implements GTBuilderExtension{
 	private void cleanOldCode() {
 		File dir = new File(this.packagePath+"/src-gen/" + packageName + "/hipe");
 		if(dir.exists()) {
-			log("Cleaning old source files in root folder: "+this.packagePath+"/src-gen/" + packageName + "/hipe");
+			log("--> Cleaning old source files in root folder: "+this.packagePath+"/src-gen/" + packageName + "/hipe");
 			if(!deleteDirectory(dir)) {
 				log("ERROR: Folder couldn't be deleted!");
 			}
+		} else {
+			log("--> No previously generated code found, nothing to do!");
 		}
 	}
 	
@@ -307,24 +322,6 @@ public class GTHiPEBuilderExtension implements GTBuilderExtension{
 		return null;
 	}
 	
-	private boolean processManifestForProject(final Manifest manifest, IProject project) {
-		List<String> dependencies = new ArrayList<String>();
-		dependencies.addAll(Arrays.asList("org.emoflon.ibex.common", "org.emoflon.ibex.gt"));
-		//collectEngineExtensions().forEach(engine -> dependencies.addAll(engine.getDependencies()));
-
-		boolean changedBasics = ManifestFileUpdater.setBasicProperties(manifest, project.getName());
-		if (changedBasics) {
-			log("Initialized MANIFEST.MF.");
-		}
-
-		boolean updatedDependencies = ManifestFileUpdater.updateDependencies(manifest, dependencies);
-		if (updatedDependencies) {
-			log("Updated dependencies");
-		}
-
-		return changedBasics || updatedDependencies;
-	}
-	
 	private static void log(String lg) {
 		Logger.getRootLogger().info(lg);
 	}
@@ -334,7 +331,7 @@ public class GTHiPEBuilderExtension implements GTBuilderExtension{
 		try {
 			res = loadResource(path);
 		} catch (Exception e) {
-			log("Couldn't load ibex pattern set: \n" + e.getMessage());
+			log("ERROR: Couldn't load ibex pattern set: \n" + e.getMessage());
 			e.printStackTrace();
 		}
 		
