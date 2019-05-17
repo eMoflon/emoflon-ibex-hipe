@@ -131,6 +131,14 @@ public class IBeXToHiPEPatternTransformation {
 		hNode.setType(node.getType());
 		hNode.setLocal(context.getLocalNodes().contains(node));
 		
+		node.getType().getEAllAttributes().forEach(eatr -> {
+			HiPEAttribute hAttr = factory.createHiPEAttribute();
+			hAttr.setName(eatr.getName());
+			hAttr.setValue(eatr.getDefaultValue());
+			hAttr.setEAttribute(eatr);
+			hNode.getAttributes().add(hAttr);
+		});
+		
 		node2node.put(node, hNode);
 		
 		return hNode;
