@@ -19,8 +19,8 @@ public class HiPETGGMatch extends HiPEGTMatch implements IMatch {
 	 * @param pattern
 	 *            the HiPE pattern
 	 */
-	public HiPETGGMatch(final ProductionMatch match, final HiPEAbstractPattern pattern) {
-		super(match, pattern);
+	public HiPETGGMatch(final ProductionMatch match, final String patternName) {
+		super(match, patternName);
 	}
 
 	@Override

@@ -18,7 +18,7 @@ class IbexHiPEPlantUMLGenerator extends IbexPlantUMLGenerator {
 			«FOR pi : b.patternInvocations»
 				«var subPrefix = prefix + separator() + j++ + separator()»
 				«visualisePatternBody(pi.invokedPattern, subPrefix)»
-				«FOR param : pi.invokedPattern.signatureNodes»
+				«FOR param : pi.invokedPattern.nodes.filter[n | !n.isLocal]»
 					«IF pi.positive»
 						«identifierFor(param, b, prefix)» #--#
 					«ELSE»
@@ -33,7 +33,7 @@ class IbexHiPEPlantUMLGenerator extends IbexPlantUMLGenerator {
 
 	private static def String visualiseSymbolicParameters(HiPEPattern p, String prefix) {
 		'''
-			«FOR v : p.signatureNodes SEPARATOR "\n"»
+			«FOR v : p.nodes.filter[n | !n.isLocal] SEPARATOR "\n"»
 				class «identifierFor(v, p, prefix)»<< (V,#FF7700)>>
 			«ENDFOR»
 		'''
@@ -42,7 +42,7 @@ class IbexHiPEPlantUMLGenerator extends IbexPlantUMLGenerator {
 	private static def String visualiseIsolatedPatternBody(HiPEPattern b, String prefix) {
 		'''
 			«visualiseSymbolicParameters(b, prefix)»
-			«FOR v : b.localNodes SEPARATOR "\n"»
+			«FOR v : b.nodes.filter[n | n.isLocal] SEPARATOR "\n"»
 				class «identifierFor(v, b, prefix)»<< (L,#B0D8F0)>>
 			«ENDFOR»
 			«FOR ref : b.edges»

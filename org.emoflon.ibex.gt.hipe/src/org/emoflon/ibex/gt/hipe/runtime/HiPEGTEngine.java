@@ -268,12 +268,16 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 		double tic = System.currentTimeMillis();
 		try {
 			addNewMatches(engine.extractData(MatchType.NEW));
+			double toc = System.currentTimeMillis();
+			System.out.println("--> adding matches took: " + (toc-tic)/1000.0 + "s");
 			deleteInvalidMatches(engine.extractData(MatchType.DELETED));
+			double toctoc = System.currentTimeMillis();
+			System.out.println("--> deleting matches took: " + (toctoc-toc)/1000.0 + "s");
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
 		double toc = System.currentTimeMillis();
-		System.out.println("updated matches after " + (toc-tic)/1000.0 + "s");
+		System.out.println("#### updated matches after " + (toc-tic)/1000.0 + "s");
 	}
 	
 	private void addNewMatches(Map<String, Collection<ProductionMatch>> allMatches) {

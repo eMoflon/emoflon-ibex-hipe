@@ -59,20 +59,13 @@ public class HiPETGGEngine extends HiPEGTEngine implements IBlackInterpreter {
 		IBeXToHiPEPatternTransformation transformation = new TGGIBeXToHiPEPatternTransformation(options,
 				patternToRuleMap);
 		this.ibexPatternSet = ibexPatternSet;
-		setPatterns(transformation.transform(ibexPatternSet));
-		generateHiPENetworkCode();
-		savePatternsForDebugging();
-		saveNetworkForDebugging();
+		setPatterns(ibexPatternSet);
+		generateHiPEClassName();
 	}	
 	
 	@Override
 	public void monitor(final ResourceSet resourceSet) {
 		if (options.debug()) {
-			savePatterns(resourceSet, options.projectPath() + "/debug/hipe-patterns.xmi", patterns.values()//
-					.stream()//
-					.sorted((p1, p2) -> p1.getName().compareTo(p2.getName()))//
-					.collect(Collectors.toList()));
-
 			savePatterns(resourceSet, options.projectPath() + "/debug/ibex-patterns.xmi", Arrays.asList(ibexPatterns));
 		}
 
@@ -100,8 +93,8 @@ public class HiPETGGEngine extends HiPEGTEngine implements IBlackInterpreter {
 	}
 
 	@Override
-	protected IMatch createMatch(ProductionMatch match, HiPEAbstractPattern pattern) {
-		return new HiPETGGMatch(match, pattern);
+	protected IMatch createMatch(ProductionMatch match, final String patternName) {
+		return new HiPETGGMatch(match, patternName);
 	}
 	
 }
