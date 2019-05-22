@@ -62,6 +62,7 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 				.map(imp -> imp.getName())
 				.collect(Collectors.toList());
 		
+		/*
 		LogUtils.info(logger, "Building TGG API classes...");
 		try {
 			
@@ -88,7 +89,7 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 		} catch (CoreException e) {
 			LogUtils.error(logger, e);
 		}
-		
+		*/
 		LogUtils.info(logger, "Building TGG options...");
 		IbexOptions opt = createIbexOptions(projectName, projectPath);
 		
