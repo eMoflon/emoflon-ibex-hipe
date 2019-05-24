@@ -37,7 +37,7 @@ import IBeXLanguage.IBeXPatternSet;
 import hipe.engine.HiPEContentAdapter;
 import hipe.engine.IHiPEEngine;
 import hipe.engine.match.ProductionMatch;
-import hipe.engine.message.enums.MatchType;
+import hipe.engine.message.production.ProductionResult;
 import hipe.generator.HiPEGenerator;
 import hipe.network.HiPENetwork;
 import hipe.pattern.HiPEAbstractPattern;
@@ -267,10 +267,11 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 		// Trigger the Rete network
 		double tic = System.currentTimeMillis();
 		try {
-			addNewMatches(engine.extractData(MatchType.NEW));
+			Map<String, ProductionResult> extractData = engine.extractData();
+			addNewMatches(extractData);
 			double toc = System.currentTimeMillis();
 			System.out.println("--> adding matches took: " + (toc-tic)/1000.0 + "s");
-			deleteInvalidMatches(engine.extractData(MatchType.DELETED));
+			deleteInvalidMatches(extractData);
 			double toctoc = System.currentTimeMillis();
 			System.out.println("--> deleting matches took: " + (toctoc-toc)/1000.0 + "s");
 		} catch (InterruptedException e) {
@@ -280,9 +281,9 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 		System.out.println("#### updated matches after " + (toc-tic)/1000.0 + "s");
 	}
 	
-	private void addNewMatches(Map<String, Collection<ProductionMatch>> allMatches) {
-		for(String patternName : allMatches.keySet()) {
-			Collection<ProductionMatch> matches = allMatches.get(patternName);
+	private void addNewMatches(Map<String, ProductionResult> extractData) {
+		for(String patternName : extractData.keySet()) {
+			Collection<ProductionMatch> matches = extractData.get(patternName).getNewMatches();
 			for(ProductionMatch match : matches) {
 				IMatch iMatch = createMatch(match, patterns.get(patternName));
 				app.addMatch(iMatch);
@@ -291,9 +292,9 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 		}
 	}
 	
-	private void deleteInvalidMatches(Map<String, Collection<ProductionMatch>> allMatches) {
-		for(String patternName : allMatches.keySet()) {
-			Collection<ProductionMatch> matches = allMatches.get(patternName);
+	private void deleteInvalidMatches(Map<String, ProductionResult> extractData) {
+		for(String patternName : extractData.keySet()) {
+			Collection<ProductionMatch> matches = extractData.get(patternName).getDeleteMatches();
 			for(ProductionMatch match : matches) {
 				IMatch iMatch = createMatch(match, patterns.get(patternName));
 				app.removeMatch(iMatch);
