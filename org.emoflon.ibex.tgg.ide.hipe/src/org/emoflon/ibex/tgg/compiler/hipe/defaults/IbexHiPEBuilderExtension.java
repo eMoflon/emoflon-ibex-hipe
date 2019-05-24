@@ -13,6 +13,7 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.apache.log4j.Logger;
@@ -20,6 +21,13 @@ import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IncrementalProjectBuilder;
 import org.eclipse.core.runtime.CoreException;
+import org.eclipse.emf.common.util.URI;
+import org.eclipse.emf.ecore.EObject;
+import org.eclipse.emf.ecore.resource.Resource;
+import org.eclipse.emf.ecore.resource.ResourceSet;
+import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
+import org.eclipse.emf.ecore.xmi.XMIResource;
+import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
 import org.emoflon.ibex.gt.hipe.runtime.IBeXToHiPEPatternTransformation;
 import org.emoflon.ibex.tgg.compiler.defaults.DefaultFilesGenerator;
 import org.emoflon.ibex.tgg.compiler.transformations.patterns.ContextPatternTransformation;
@@ -61,35 +69,7 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 		metaModelImports = flattenedEditorModel.getImports().stream()
 				.map(imp -> imp.getName())
 				.collect(Collectors.toList());
-		
-		/*
-		LogUtils.info(logger, "Building TGG API classes...");
-		try {
-			
-			builder.createDefaultRunFile("MODELGEN_App_HiPE", (projectName, fileName) 
-					-> DefaultFilesGenerator.generateModelGenFile(projectName, fileName, ENGINE, IMPORT));
-			builder.createDefaultRunFile("SYNC_App_HiPE", (projectName, fileName) 
-					-> DefaultFilesGenerator.generateSyncAppFile(projectName, fileName, ENGINE, IMPORT));
-			builder.createDefaultRunFile("INITIAL_FWD_App_HiPE", (projectName, fileName) 
-					-> DefaultFilesGenerator.generateInitialFwdAppFile(projectName, fileName, ENGINE, IMPORT));
-			builder.createDefaultRunFile("INITIAL_BWD_App_HiPE", (projectName, fileName) 
-					-> DefaultFilesGenerator.generateInitialBwdAppFile(projectName, fileName, ENGINE, IMPORT));
-			builder.createDefaultRunFile("CC_App_HiPE", (projectName, fileName) 
-					-> DefaultFilesGenerator.generateCCAppFile(projectName, fileName, ENGINE, IMPORT));
-			builder.createDefaultRunFile("CO_App_HiPE", (projectName, fileName) 
-					-> DefaultFilesGenerator.generateCOAppFile(projectName, fileName, ENGINE, IMPORT));
-			builder.createDefaultRunFile("FWD_OPT_App_HiPE", (projectName, fileName) 
-					-> DefaultFilesGenerator.generateFWDOptAppFile(projectName, fileName, ENGINE, IMPORT));
-			builder.createDefaultRunFile("BWD_OPT_App_HiPE", (projectName, fileName) 
-					-> DefaultFilesGenerator.generateBWDOptAppFile(projectName, fileName, ENGINE, IMPORT));
-			builder.createDefaultRunFile("_RegistrationHelper", (projectName, fileName)
-					-> DefaultFilesGenerator.generateRegHelperFile(projectName));
-			builder.enforceDefaultRunFile("_SchemaBasedAutoRegistration", (projectName, fileName)
-					-> DefaultFilesGenerator.generateSchemaAutoRegFile(projectName, editorModel));
-		} catch (CoreException e) {
-			LogUtils.error(logger, e);
-		}
-		*/
+
 		LogUtils.info(logger, "Building TGG options...");
 		IbexOptions opt = createIbexOptions(projectName, projectPath);
 		
@@ -136,6 +116,12 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 		
 		double toc = System.currentTimeMillis();
 		LogUtils.info(logger, "Code generation completed in "+ (toc-tic)/1000.0 + " seconds.");	
+		
+		LogUtils.info(logger, "Saving HiPE patterns and HiPE network..");
+		String debugFolder = projectPath + "/debug";
+		createNewDirectory(debugFolder);
+		saveResource(container, debugFolder+"/hipe-patterns.xmi");
+		saveResource(network, debugFolder+"/hipe-network.xmi");
 		
 		
 		LogUtils.info(logger, "## HiPE ## --> HiPE build complete!");
@@ -383,6 +369,28 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 			}
 		}else {
 			LogUtils.info(logger, "--> Directory already present in: "+path+", nothing to do.");
+		}
+	}
+	
+	private void saveResource(EObject model, String path) {
+		Resource.Factory.Registry.INSTANCE.getExtensionToFactoryMap().put("xmi-resource", new XMIResourceFactoryImpl());
+		ResourceSet rs = new ResourceSetImpl();
+		rs.getResourceFactoryRegistry().getExtensionToFactoryMap().put("xmi", new XMIResourceFactoryImpl());
+		
+		URI uri = URI.createFileURI(path);
+		Resource modelResource = rs.createResource(uri);
+		modelResource.getContents().add(model);
+		
+		Map<Object, Object> saveOptions = ((XMIResource)modelResource).getDefaultSaveOptions();
+		saveOptions.put(XMIResource.OPTION_ENCODING,"UTF-8");
+		saveOptions.put(XMIResource.OPTION_USE_XMI_TYPE, Boolean.TRUE);
+		saveOptions.put(XMIResource.OPTION_SAVE_TYPE_INFORMATION,Boolean.TRUE);
+		saveOptions.put(XMIResource.OPTION_SCHEMA_LOCATION_IMPLEMENTATION, Boolean.TRUE);
+		
+		try {
+			((XMIResource)modelResource).save(saveOptions);
+		} catch (IOException e) {
+			LogUtils.info(logger, "ERROR: Couldn't save debug resource: \n "+e.getMessage());
 		}
 	}
 }

@@ -15,10 +15,12 @@ import hipe.searchplan.simple.SimpleSearchPlan;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.emf.common.util.URI;
+import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.resource.ResourceSet;
 import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
 import org.eclipse.emf.ecore.util.EcoreUtil;
+import org.eclipse.emf.ecore.xmi.XMIResource;
 import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
 
 import java.io.BufferedReader;
@@ -38,6 +40,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 import java.util.jar.Manifest;
 
@@ -109,6 +112,11 @@ public class GTHiPEBuilderExtension implements GTBuilderExtension{
 		double toc = System.currentTimeMillis();
 		Logger.getRootLogger().info("Code generation completed in "+ (toc-tic)/1000.0 + " seconds.");	
 		
+		log("Saving HiPE patterns and HiPE network..");
+		String debugFolder = this.packagePath + "/debug";
+		createNewDirectory(debugFolder);
+		saveResource(container, debugFolder+"/hipe-patterns.xmi");
+		saveResource(network, debugFolder+"/hipe-network.xmi");
 		
 		log("## HiPE ## --> HiPE build complete!");
 	}
@@ -354,6 +362,28 @@ public class GTHiPEBuilderExtension implements GTBuilderExtension{
 		if(modelResource == null)
 			throw new IOException("File did not contain a vaild model.");
 		return modelResource;
+	}
+	
+	public static void saveResource(EObject model, String path) {
+		Resource.Factory.Registry.INSTANCE.getExtensionToFactoryMap().put("xmi-resource", new XMIResourceFactoryImpl());
+		ResourceSet rs = new ResourceSetImpl();
+		rs.getResourceFactoryRegistry().getExtensionToFactoryMap().put("xmi", new XMIResourceFactoryImpl());
+		
+		URI uri = URI.createFileURI(path);
+		Resource modelResource = rs.createResource(uri);
+		modelResource.getContents().add(model);
+		
+		Map<Object, Object> saveOptions = ((XMIResource)modelResource).getDefaultSaveOptions();
+		saveOptions.put(XMIResource.OPTION_ENCODING,"UTF-8");
+		saveOptions.put(XMIResource.OPTION_USE_XMI_TYPE, Boolean.TRUE);
+		saveOptions.put(XMIResource.OPTION_SAVE_TYPE_INFORMATION,Boolean.TRUE);
+		saveOptions.put(XMIResource.OPTION_SCHEMA_LOCATION_IMPLEMENTATION, Boolean.TRUE);
+		
+		try {
+			((XMIResource)modelResource).save(saveOptions);
+		} catch (IOException e) {
+			log("ERROR: Couldn't save debug resource: \n "+e.getMessage());
+		}
 	}
 
 }
