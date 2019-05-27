@@ -9,4 +9,4 @@ Require-Bundle: org.emoflon.ibex.gt.hipe;visibility:=reexport,
  org.emoflon.ibex.tgg.core.runtime,
  org.emoflon.ibex.tgg.core.language,
  org.eclipse.emf.ecore
-Export-Package: org.emoflon.ibex.tgg.runtime.engine
+Export-Package: org.emoflon.ibex.tgg.runtime.hipe

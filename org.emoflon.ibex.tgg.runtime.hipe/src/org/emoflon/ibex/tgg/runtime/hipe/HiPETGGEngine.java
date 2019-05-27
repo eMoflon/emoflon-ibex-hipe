@@ -1,9 +1,8 @@
-package org.emoflon.ibex.tgg.runtime.engine;
+package org.emoflon.ibex.tgg.runtime.hipe;
 
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.EObject;
@@ -22,7 +21,6 @@ import org.emoflon.ibex.tgg.operational.strategies.OperationalStrategy;
 import IBeXLanguage.IBeXContextPattern;
 import IBeXLanguage.IBeXPatternSet;
 import hipe.engine.match.ProductionMatch;
-import hipe.pattern.HiPEAbstractPattern;
 import language.TGGNamedElement;
 
 /**

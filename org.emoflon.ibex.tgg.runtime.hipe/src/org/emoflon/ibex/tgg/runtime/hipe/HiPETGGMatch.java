@@ -1,4 +1,4 @@
-package org.emoflon.ibex.tgg.runtime.engine;
+package org.emoflon.ibex.tgg.runtime.hipe;
 
 import org.emoflon.ibex.gt.hipe.runtime.HiPEGTMatch;
 import org.emoflon.ibex.tgg.operational.matches.IMatch;

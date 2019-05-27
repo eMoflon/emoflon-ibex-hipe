@@ -1,4 +1,4 @@
-package org.emoflon.ibex.tgg.runtime.engine;
+package org.emoflon.ibex.tgg.runtime.hipe;
 
 import java.util.Map;
 
