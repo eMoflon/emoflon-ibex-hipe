@@ -35,13 +35,15 @@ public class ManifestHelper {
 	public void loadManifest(IFile manifest) throws CoreException, IOException {
 		InputStreamReader ir = new InputStreamReader(manifest.getContents());
 		BufferedReader br = new BufferedReader(ir);
-		lines = br.lines().map(line -> line+"\n").collect(Collectors.toCollection(ArrayList::new));
+		lines = br.lines()
+				.map(line ->line+"\n").collect(Collectors.toCollection(ArrayList::new));
+		
 		this.manifest = lines.stream().collect(Collectors.joining());
+		
 		br.close();
 		ir.close();
 		
 		findSections();
-		System.out.println("Manifest contents: \n"+this.manifest+"#EOF");
 	}
 	
 	private void findSections() {
@@ -138,6 +140,9 @@ public class ManifestHelper {
 	}
 	
 	public void updateManifest(File output) throws IOException {
+		if(!touched) {
+			return;
+		}
 		sectionsToManifest();
 		InputStream is = new ByteArrayInputStream(manifest.getBytes());
 		OutputStream os = new FileOutputStream(output);
