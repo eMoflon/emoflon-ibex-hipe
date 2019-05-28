@@ -14,6 +14,7 @@ import hipe.searchplan.simple.SimpleSearchPlan;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
+import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.resource.Resource;
@@ -47,6 +48,8 @@ import java.util.jar.Manifest;
 import org.apache.log4j.Logger;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
+import org.eclipse.core.resources.IResource;
+import org.eclipse.core.resources.IncrementalProjectBuilder;
 
 public class GTHiPEBuilderExtension implements GTBuilderExtension{
 
@@ -57,7 +60,11 @@ public class GTHiPEBuilderExtension implements GTBuilderExtension{
 	
 	@Override
 	public void run(IProject project) {
-		//Logger.getRootLogger().info("HiPE plugin extension test 1: " + project.getProjectRelativePath().toString());
+		try {
+			project.getWorkspace().getRoot().refreshLocal(IResource.DEPTH_INFINITE, new NullProgressMonitor());
+		} catch (CoreException e) {
+			log("ERROR: "+e.getMessage());
+		}
 	}
 
 	@Override
@@ -118,62 +125,38 @@ public class GTHiPEBuilderExtension implements GTBuilderExtension{
 		saveResource(container, debugFolder+"/hipe-patterns.xmi");
 		saveResource(network, debugFolder+"/hipe-network.xmi");
 		
+		log("Refreshing workspace and cleaning build ..");
+		try {
+			project.getWorkspace().getRoot().refreshLocal(IResource.DEPTH_INFINITE, new NullProgressMonitor());
+			project.build(IncrementalProjectBuilder.CLEAN_BUILD, new NullProgressMonitor());
+		} catch (CoreException e) {
+			log("ERROR: "+e.getMessage());
+		}
+		
 		log("## HiPE ## --> HiPE build complete!");
 	}
 	
 	private void updateManifest(String packagePath, IProject project) {
 		try {
 			IFile manifest = ManifestFileUpdater.getManifestFile(project);
+			ManifestHelper helper = new ManifestHelper();
+			helper.loadManifest(manifest);
+			
+			if(!helper.containsSection("Bundle-ClassPath")) {
+				helper.appendSection("Bundle-ClassPath");
+			}
+			
+			if(!helper.sectionContainsContent("Bundle-ClassPath", "jars/")) {
+				helper.addContentToSection("Bundle-ClassPath", "jars/");
+			}
+			
+			if(!helper.sectionContainsContent("Bundle-ClassPath", ".")) {
+				helper.addContentToSection("Bundle-ClassPath", ".");
+			}
+			
 			File rawManifest = new File(this.packagePath+"/"+manifest.getFullPath().removeFirstSegments(1).toPortableString());
-			BufferedReader br = new BufferedReader(new InputStreamReader(manifest.getContents()));
-			StringBuilder sb = new StringBuilder();
 			
-			String line = br.readLine();
-			boolean bcpFound = false;
-			boolean jarsFound = false;
-			boolean jarWritten = false;
-			while(line != null) {
-				
-				if(line.contains("Bundle-ClassPath:")) {
-					bcpFound = true;
-				}
-				if(line.contains("jars/,")) {
-					jarsFound = true;
-				}
-				if(line.contains("jars/,") && jarWritten) {
-					continue;
-				}
-				
-				sb.append(line+"\n");
-				
-				if(bcpFound && !jarsFound && !jarWritten) {
-					sb.append(" jars/,\n .\n");
-					jarWritten = true;
-				}
-				
-				
-				line = br.readLine();
-			}
-			if(!bcpFound) {
-				jarWritten = true;
-				sb.append("Bundle-ClassPath: jars/,\n .\n");
-			}
-			br.close();
-			
-			if(!jarWritten) {
-				log("--> Manifest already up to date.");
-				return;
-			}
-			InputStream is = new ByteArrayInputStream(sb.toString().getBytes());
-			OutputStream os = new FileOutputStream(rawManifest);
-	        byte[] buffer = new byte[1024];
-	        int length;
-	        while ((length = is.read(buffer)) > 0) {
-	            os.write(buffer, 0, length);
-	        }
-	        os.close();
-	        is.close();
-			
+			helper.updateManifest(rawManifest);
 			
 		} catch (CoreException | IOException e) {
 			log("ERROR: Failed to update MANIFEST.MF.");
