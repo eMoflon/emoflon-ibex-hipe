@@ -159,73 +159,50 @@ public class GTHiPEBuilderExtension implements GTBuilderExtension{
 			helper.updateManifest(rawManifest);
 			
 		} catch (CoreException | IOException e) {
-			log("ERROR: Failed to update MANIFEST.MF.");
+			log("ERROR: Failed to update MANIFEST.MF \n"+e.getMessage());
 		}
 	}
 	
 	private void updateBuildProperties(String packagePath) {
 		File buildProps = new File(this.packagePath+"/build.properties");
+		BuildPropertiesHelper helper = new BuildPropertiesHelper();
 		try {
-			BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(buildProps)));
-			StringBuilder sb = new StringBuilder();
+			helper.loadProperties(buildProps);
 			
-			String line = br.readLine();
-			boolean extraFound = false;
-			boolean jarsFound = false;
-			boolean jarsWritten = false;
-			while(line != null) {
-				
-				if(line.contains("jars.extra.classpath")) {
-					extraFound = true;
-				}
-				if(line.contains("jars/akka-actor_2.12-2.5.19.jar")) {
-					jarsFound = true;
-				}
-				if(line.contains("jars/akka-actor_2.12-2.5.19.jar") && jarsWritten) {
-					continue;
-				}
-				
-				sb.append(line+"\n");
-				
-				if(extraFound && !jarsFound && !jarsWritten) {
-					sb.append("                       jars/akka-actor_2.12-2.5.19.jar,\\\n");
-					sb.append("                       jars/config-1.3.3.jar,\\\n");
-					sb.append("                       jars/scala-java8-compat_2.12-0.8.0.jar,\\\n");
-					sb.append("                       jars/scala-library-2.12.8.jar\n");
-					jarsWritten = true;
-				}
-				
-				line = br.readLine();
+			if(!helper.containsSection("source..")) {
+				helper.appendSection("source..");
 			}
 			
-			if(!extraFound) {
-				jarsWritten = true;
-				sb.append("jars.extra.classpath = jars/akka-actor_2.12-2.5.19.jar,\\\n");
-				sb.append("                       jars/config-1.3.3.jar,\\\n");
-				sb.append("                       jars/scala-java8-compat_2.12-0.8.0.jar,\\\n");
-				sb.append("                       jars/scala-library-2.12.8.jar\n");
-			}
-			br.close();
-			
-			if(!jarsWritten) {
-				log("--> build.properties already up to date.");
-				return;
+			if(!helper.sectionContainsContent("source..", "src-gen/")) {
+				helper.addContentToSection("source..", "src-gen/");
 			}
 			
-			InputStream is = new ByteArrayInputStream(sb.toString().getBytes());
-			OutputStream os = new FileOutputStream(buildProps);
-	        byte[] buffer = new byte[1024];
-	        int length;
-	        while ((length = is.read(buffer)) > 0) {
-	            os.write(buffer, 0, length);
-	        }
-	        os.close();
-	        is.close();
+			if(!helper.containsSection("jars.extra.classpath")) {
+				helper.appendSection("jars.extra.classpath");
+			}
 			
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			if(!helper.sectionContainsContent("jars.extra.classpath", "jars/akka-actor_2.12-2.5.19.jar")) {
+				helper.addContentToSection("jars.extra.classpath", "jars/akka-actor_2.12-2.5.19.jar");
+			}
+			
+			if(!helper.sectionContainsContent("jars.extra.classpath", "jars/config-1.3.3.jar")) {
+				helper.addContentToSection("jars.extra.classpath", "jars/config-1.3.3.jar");
+			}
+			
+			if(!helper.sectionContainsContent("jars.extra.classpath", "jars/scala-java8-compat_2.12-0.8.0.jar")) {
+				helper.addContentToSection("jars.extra.classpath", "jars/scala-java8-compat_2.12-0.8.0.jar");
+			}
+			
+			if(!helper.sectionContainsContent("jars.extra.classpath", "jars/scala-library-2.12.8.jar")) {
+				helper.addContentToSection("jars.extra.classpath", "jars/scala-library-2.12.8.jar");
+			}
+			
+			helper.updateProperties(buildProps);
+			
+		} catch (CoreException | IOException e) {
+			log("ERROR: Failed to update build.properties \n"+e.getMessage());
 		}
+		
 	}
 	
 	private static boolean deleteDirectory(File dir) {
