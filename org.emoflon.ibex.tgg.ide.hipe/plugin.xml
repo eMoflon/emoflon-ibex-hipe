@@ -9,8 +9,10 @@
       </diagramTextProvider>
    </extension>
    <extension
+         id="zHipeTGGExtension"
          point="org.emoflon.ibex.tgg.ide.IbexTGGBuilderExtension">
       <builder_extension
+            build_before_all="false"
             class="org.emoflon.ibex.tgg.compiler.hipe.defaults.IbexHiPEBuilderExtension">
       </builder_extension>
    </extension>
