@@ -212,6 +212,7 @@ public class IBeXToHiPEPatternTransformation {
 		HiPEAttribute attr = factory.createHiPEAttribute();
 		attr.setNode(transform(context, attributeExpr.getNode()));
 		attr.setValue(attributeExpr.getAttribute());
+		attr.setEAttribute(attributeExpr.getAttribute());
 		return attr;
 	}
 
@@ -232,7 +233,8 @@ public class IBeXToHiPEPatternTransformation {
 		hAttr.setName(attr.getName());
 		hAttr.setValue(attr);
 		hAttr.setNode(transform(context, iBeXNode));
-		
+		hAttr.setEAttribute(attr);
+
 		return hAttr;
 	}
 
