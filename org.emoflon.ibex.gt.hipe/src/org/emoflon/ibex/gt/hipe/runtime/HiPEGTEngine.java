@@ -180,7 +180,6 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 	}
 	
 	protected void generateHiPEClassName() {
-
 		URI patternURI = ibexPatternSet.eResource().getURI();
 		Pattern pattern = Pattern.compile("^(.*src-gen/)(.*)(api/ibex-patterns.xmi)$");
 		Matcher matcher = pattern.matcher(patternURI.toString());
@@ -191,7 +190,10 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 		packageName = packageName.replace("/", ".");
 		
 		engineClassName = packageName+".hipe.engine.HiPEEngine";
-
+	}
+	
+	protected void generateHiPEClassName(String projectName) {
+		engineClassName = projectName.replace("/", ".")+".hipe.engine.HiPEEngine";
 	}
 	
 	/**

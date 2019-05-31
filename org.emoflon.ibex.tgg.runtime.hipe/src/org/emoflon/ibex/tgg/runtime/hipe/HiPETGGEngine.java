@@ -58,7 +58,7 @@ public class HiPETGGEngine extends HiPEGTEngine implements IBlackInterpreter {
 				patternToRuleMap);
 		this.ibexPatternSet = ibexPatternSet;
 		setPatterns(ibexPatternSet);
-		generateHiPEClassName();
+		generateHiPEClassName(options.projectName());
 	}	
 	
 	@Override
