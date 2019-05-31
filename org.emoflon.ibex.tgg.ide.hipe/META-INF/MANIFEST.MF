@@ -25,6 +25,7 @@ Require-Bundle: org.apache.log4j,
  org.emoflon.ibex.gt.hipe,
  org.eclipse.emf.codegen.ecore,
  org.eclipse.emf.ecore.xmi,
- org.eclipse.emf.common
+ org.eclipse.emf.common,
+ org.moflon.emf.codegen
 Export-Package: org.emoflon.ibex.tgg.compiler.hipe.defaults,
  org.emoflon.ibex.tgg.ide.hipe.visualisation

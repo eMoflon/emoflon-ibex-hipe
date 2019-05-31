@@ -17,6 +17,7 @@ import org.eclipse.emf.codegen.ecore.genmodel.generator.GenBaseGeneratorAdapter;
 import org.eclipse.emf.common.util.BasicMonitor;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.EPackage;
+import org.eclipse.emf.ecore.impl.EPackageRegistryImpl;
 import org.eclipse.emf.ecore.resource.ContentHandler;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
@@ -26,6 +27,10 @@ import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
 import org.eclipse.emf.ecore.xmi.impl.XMIResourceImpl;
 import org.emoflon.ibex.tgg.operational.defaults.IbexOptions;
 import org.emoflon.ibex.tgg.operational.strategies.sync.SYNC;
+import org.moflon.core.utilities.MoflonUtil;
+import org.moflon.emf.codegen.StandalonePackageDescriptor;
+import org.moflon.emf.codegen.resource.GenModelResource;
+import org.moflon.emf.codegen.resource.GenModelResourceFactory;
 
 public class OperationalStrategyImpl extends SYNC {
 
@@ -47,8 +52,7 @@ public class OperationalStrategyImpl extends SYNC {
 	@Override
 	protected void createAndPrepareResourceSet() {
 		 rs = new ResourceSetImpl();
-		 rs.getResourceFactoryRegistry().getExtensionToFactoryMap()
-			.put(Resource.Factory.Registry.DEFAULT_EXTENSION, new XMIResourceFactoryImpl());
+		 loadDefaultSettings();
 	}
 
 	@Override
@@ -58,11 +62,20 @@ public class OperationalStrategyImpl extends SYNC {
 		}
 		String metaModelLocation = options.projectPath() + "/model/" + options.projectName() + ".ecore";
 		String genModelLocation = options.projectPath() + "/model/" + options.projectName() + ".genmodel";
-		loadAndRegisterCorrMetamodel(metaModelLocation);
-		generateMetaModelCode(metaModelLocation, genModelLocation);
+		EPackage metaModel = loadAndRegisterCorrMetamodel(metaModelLocation);
+		generateMetaModelCode(metaModelLocation, genModelLocation, metaModel);
 	}
 	
-	protected void generateMetaModelCode(String metaModelLocation, String genModelLocation) {
+	public void loadDefaultSettings() {
+		rs.getPackageRegistry().put("http://www.eclipse.org/emf/2002/GenModel",
+				new StandalonePackageDescriptor("org.eclipse.emf.codegen.ecore.genmodel.GenModelPackage"));
+
+		rs.getResourceFactoryRegistry().getExtensionToFactoryMap().put("genmodel",
+				new GenModelResourceFactory());
+		rs.getResourceFactoryRegistry().getExtensionToFactoryMap().put("xmi", new XMIResourceFactoryImpl());
+	}
+	
+	protected void generateMetaModelCode(String metaModelLocation, String genModelLocation, EPackage metaModel) {
 		URI modelDirUri = URI.createURI(options.projectPath() + "/model/");
 		modelDirUri =  modelDirUri.resolve(base);
 		URI metaModelUri = URI.createURI(metaModelLocation);
@@ -70,12 +83,22 @@ public class OperationalStrategyImpl extends SYNC {
 		URI genModelUri = URI.createURI(genModelLocation);
 		genModelUri = genModelUri.resolve(base);
 		
+		final GenModelResource genModelResource = (GenModelResource) rs.createResource(genModelUri);
 		GenModel genModel = GenModelFactory.eINSTANCE.createGenModel();
 		
-        genModel.setComplianceLevel(GenJDKLevel.JDK80_LITERAL);
+		genModelResource.getContents().add(genModel);
+
+		adjustRegistry(genModel);
+
+		loadDefaultGenModelContent(genModel);
+		 
+        //genModel.setComplianceLevel(GenJDKLevel.JDK80_LITERAL);
         genModel.setModelDirectory(options.projectPath()+"/src-gen/");
         genModel.getForeignModel().add(new Path(metaModelUri.path()).lastSegment());
         genModel.setModelName(options.projectName());
+        genModel.setModelPluginID(options.projectName());
+        genModel.setSuppressEMFMetaData(false);
+        
         List<EPackage> ePack = new LinkedList<>();
         ePack.add(options.getCorrMetamodel());
         for(EPackage pack : importedPackages) {
@@ -84,8 +107,17 @@ public class OperationalStrategyImpl extends SYNC {
         genModel.initialize(ePack);
         
         genModel.reconcile();
-        genModel.setCanGenerate(true);
-        genModel.setValidateModel(true);
+        //genModel.setCanGenerate(true);
+        //genModel.setValidateModel(true);
+        //genModel.setCodeFormatting(true);
+        //genModel.setImporterID("org.eclipse.emf.importer.ecore");
+        //genModel.setOperationReflection(true);
+        //genModel.setUpdateClasspath(false);
+        //genModel.setSuppressEMFMetaData(false);
+        
+        for (final GenPackage genPackage : genModel.getGenPackages()) {
+			setDefaultPackagePrefixes(genPackage);
+		}
         
         GenPackage genPackage = (GenPackage)genModel.getGenPackages().get(0);
         genPackage.setPrefix(options.projectName());
@@ -95,9 +127,8 @@ public class OperationalStrategyImpl extends SYNC {
         generator.generate(genModel, GenBaseGeneratorAdapter.MODEL_PROJECT_TYPE, options.projectName(), new BasicMonitor.Printing(System.out));
 
         try {
-            final XMIResourceImpl genModelResource = new XMIResourceImpl(genModelUri);
             genModelResource.getDefaultSaveOptions().put(XMLResource.OPTION_ENCODING, "UTF-8");
-            genModelResource.getContents().add(genModel);
+            genModelResource.getDefaultSaveOptions().put(XMLResource.OPTION_EXTENDED_META_DATA, Boolean.TRUE);
             genModelResource.save(Collections.EMPTY_MAP);
         } catch (IOException e) {
             String msg = null;
@@ -108,6 +139,31 @@ public class OperationalStrategyImpl extends SYNC {
             }
             throw new RuntimeException(msg, e);
         }
+	}
+	
+	protected void adjustRegistry(final GenModel genModel) {
+		// Ugly hack added by gervarro: GenModel has to be screwed
+		final EPackage.Registry registry = rs.getPackageRegistry();
+		rs.setPackageRegistry(new EPackageRegistryImpl(registry));
+		genModel.getExtendedMetaData();
+		rs.setPackageRegistry(registry);
+	}
+	
+	public void loadDefaultGenModelContent(final GenModel genModel) {
+		genModel.setComplianceLevel(GenJDKLevel.JDK80_LITERAL);
+		//genModel.setModelName(genModel.eResource().getURI().trimFileExtension().lastSegment());
+		genModel.setImporterID("org.eclipse.emf.importer.ecore");
+		genModel.setCodeFormatting(true);
+		genModel.setOperationReflection(true);
+		genModel.setUpdateClasspath(false);
+		genModel.setCanGenerate(true);
+	}
+	
+	private void setDefaultPackagePrefixes(final GenPackage genPackage) {
+		genPackage.setPrefix(MoflonUtil.lastCapitalizedSegmentOf(genPackage.getPrefix()));
+		for (final GenPackage subPackage : genPackage.getSubGenPackages()) {
+			setDefaultPackagePrefixes(subPackage);
+		}
 	}
 
 }
