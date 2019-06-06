@@ -10,6 +10,7 @@ import IBeXLanguage.IBeXAttributeConstraint;
 import IBeXLanguage.IBeXAttributeExpression;
 import IBeXLanguage.IBeXAttributeParameter;
 import IBeXLanguage.IBeXAttributeValue;
+import IBeXLanguage.IBeXCSP;
 import IBeXLanguage.IBeXConstant;
 import IBeXLanguage.IBeXContext;
 import IBeXLanguage.IBeXContextAlternatives;
@@ -21,13 +22,13 @@ import IBeXLanguage.IBeXNodePair;
 import IBeXLanguage.IBeXPatternInvocation;
 import IBeXLanguage.IBeXPatternSet;
 import IBeXLanguage.IBeXRelation;
+import IBeXLanguage.impl.IBeXContextPatternImpl;
 import hipe.pattern.ComparatorType;
-import hipe.pattern.HiPEAbstractPattern;
+import hipe.pattern.ComplexConstraint;
 import hipe.pattern.HiPEAttribute;
 import hipe.pattern.HiPEAttributeConstraint;
 import hipe.pattern.HiPEEdge;
 import hipe.pattern.HiPENode;
-import hipe.pattern.HiPEPartialPattern;
 import hipe.pattern.HiPEPattern;
 import hipe.pattern.HiPEPatternContainer;
 import hipe.pattern.HiPEPatternFactory;
@@ -41,6 +42,8 @@ public class IBeXToHiPEPatternTransformation {
 	
 	protected Map<String, HiPEPattern> name2pattern = new HashMap<>();
 	protected Map<IBeXNode, HiPENode> node2node = new HashMap<>();
+	
+	private int csp_id = 0;
 	
 	public HiPEPatternContainer transform(IBeXPatternSet patternSet) {
 		factory = HiPEPatternFactory.eINSTANCE;
@@ -119,6 +122,10 @@ public class IBeXToHiPEPatternTransformation {
 				pattern.getAttributeConstraints().add(constraint);
 		}
 		
+		for(IBeXCSP csp : context.getCsps()) {
+			pattern.getAttributeConstraints().add(transform(context, pattern, csp));
+		}
+		
 		return pattern;
 	}
 	
@@ -130,14 +137,6 @@ public class IBeXToHiPEPatternTransformation {
 		hNode.setName(node.getName());
 		hNode.setType(node.getType());
 		hNode.setLocal(context.getLocalNodes().contains(node));
-		
-		node.getType().getEAllAttributes().forEach(eatr -> {
-			HiPEAttribute hAttr = factory.createHiPEAttribute();
-			hAttr.setName(eatr.getName());
-			hAttr.setValue(eatr.getDefaultValue());
-			hAttr.setEAttribute(eatr);
-			hNode.getAttributes().add(hAttr);
-		});
 		
 		node2node.put(node, hNode);
 		
@@ -171,7 +170,6 @@ public class IBeXToHiPEPatternTransformation {
 
 		pattern.getAttributes().add(rConstraint.getLeftAttribute());
 		pattern.getAttributes().add(rConstraint.getRightAttribute());
-		
 		
 		return rConstraint;
 	}
@@ -226,6 +224,44 @@ public class IBeXToHiPEPatternTransformation {
 		case UNEQUAL: return ComparatorType.UNEQUAL;
 		}
 		return null;
+	}
+	
+	private HiPEAttributeConstraint transform(IBeXContextPattern context, HiPEPattern pattern, IBeXCSP csp) {
+		ComplexConstraint cConstraint = factory.createComplexConstraint();
+		String initCode = csp.getPackage() + "." + getCSPName(csp.getName()) + " csp_" + csp_id + " = new " + csp.getPackage() + "." + getCSPName(csp.getName()) + "();\n";
+		for(IBeXAttributeValue value : csp.getValues()) {
+			initCode += "csp_" + csp_id + ".getVariables().add(new org.emoflon.ibex.tgg.operational.csp.RuntimeTGGAttributeConstraintVariable(true, ";
+			if(value instanceof IBeXAttributeExpression ) {
+				IBeXAttributeExpression iExpr = (IBeXAttributeExpression) value;
+				initCode += iExpr.getNode().getName() + ".get" + iExpr.getAttribute().getName().substring(0, 1).toUpperCase() + iExpr.getAttribute().getName().substring(1) + "()";
+				HiPEAttribute hAttr = transform(context, iExpr);
+				cConstraint.getAttributes().add(hAttr);
+				pattern.getAttributes().add(hAttr);
+				initCode += ", \"" + iExpr.getAttribute().getEType().getInstanceClassName() + "\"));\n";
+			}
+			if(value instanceof IBeXConstant) {
+				IBeXConstant iConst= (IBeXConstant) value;
+				initCode += iConst.getValue();
+				HiPEAttribute hAttr = transform(context, iConst);
+				cConstraint.getAttributes().add(hAttr);
+				pattern.getAttributes().add(hAttr);
+				initCode += ", \"" + iConst.getValue().getClass().getName() + "\"));\n";
+			}
+		}
+		initCode += "csp_" + csp_id + ".solve();\n";
+		
+		cConstraint.setInitializationCode(initCode);
+		cConstraint.setPredicateCode("csp_" + csp_id + ".isSatisfied()");
+		
+		csp_id++;
+		return cConstraint;
+	}
+	
+	private String getCSPName(String name) {
+		if(name.startsWith("eq_"))
+			return "Eq";
+		
+		return name.substring(0, 1).toUpperCase() + name.substring(1);
 	}
 
 	private HiPEAttribute transform(IBeXContextPattern context, IBeXNode iBeXNode, EAttribute attr) {
