@@ -55,7 +55,7 @@ public class IBeXToHiPEPatternTransformation {
 		for(IBeXContext context : patternSet.getContextPatterns()) {
 			if(context instanceof IBeXContextPattern) {
 				IBeXContextPattern pattern = (IBeXContextPattern) context;
-				if(pattern.getSignatureNodes().isEmpty())
+				if(pattern.getSignatureNodes().isEmpty() && pattern.getLocalNodes().isEmpty())
 					continue;
 				
 				container.getPatterns().add(transform(pattern));
