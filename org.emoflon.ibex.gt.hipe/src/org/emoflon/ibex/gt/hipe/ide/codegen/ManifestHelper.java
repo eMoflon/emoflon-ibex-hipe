@@ -17,14 +17,18 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.runtime.CoreException;
 
+import jdk.nashorn.internal.ir.Block;
+
 public class ManifestHelper {
 	
 	private String manifest;
+	private String original;
 	private ArrayList<String> lines;
 	private Map<Integer, Section> idex2sections = new LinkedHashMap<>();
 	private Map<String, Section> sections = new LinkedHashMap<>();
@@ -35,8 +39,37 @@ public class ManifestHelper {
 	public void loadManifest(IFile manifest) throws CoreException, IOException {
 		InputStreamReader ir = new InputStreamReader(manifest.getContents());
 		BufferedReader br = new BufferedReader(ir);
-		lines = br.lines()
-				.map(line ->line+"\n").collect(Collectors.toCollection(ArrayList::new));
+		original = br.lines()
+				.map(line -> line+"\n")
+				.collect(Collectors.joining());
+		br.close();
+		ir.close();
+		
+		ir = new InputStreamReader(manifest.getContents());
+		br = new BufferedReader(ir);
+		
+		String raw = br.lines()
+				.map(line -> {
+					if(line.contains(",") && !line.contains(": ")) {
+						return "###"+line;
+					}
+					if(line.contains(": ")) {
+						return "\n"+line;
+					}
+					if(!line.contains(": ")) {
+						return line.trim();
+					}
+					return line;
+				})
+				.collect(Collectors.joining());
+		
+		raw = raw.replaceAll("###", "\n");
+		raw = raw.replaceAll(",", ",\n ");
+		
+		lines = Pattern.compile("\n").splitAsStream(raw)
+				.filter(line -> line.trim().length()>0)
+				.map(line -> line+"\n")
+				.collect(Collectors.toCollection(ArrayList::new));
 		
 		this.manifest = lines.stream().collect(Collectors.joining());
 		
@@ -149,7 +182,7 @@ public class ManifestHelper {
 	}
 	
 	public void updateManifest(File output) throws IOException {
-		if(!touched) {
+		if(!touched && original.equals(manifest)) {
 			return;
 		}
 		sectionsToManifest();
