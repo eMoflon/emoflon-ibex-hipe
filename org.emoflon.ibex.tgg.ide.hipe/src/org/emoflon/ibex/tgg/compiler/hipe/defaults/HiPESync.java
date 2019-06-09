@@ -7,6 +7,7 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.emf.codegen.ecore.generator.Generator;
 import org.eclipse.emf.codegen.ecore.genmodel.GenJDKLevel;
@@ -32,12 +33,12 @@ import org.moflon.emf.codegen.StandalonePackageDescriptor;
 import org.moflon.emf.codegen.resource.GenModelResource;
 import org.moflon.emf.codegen.resource.GenModelResourceFactory;
 
-public class OperationalStrategyImpl extends SYNC {
+public class HiPESync extends SYNC {
 
 	private List<String> metaModelImports;
 	private List<EPackage> importedPackages = new LinkedList<>();
 	
-	public OperationalStrategyImpl(IbexOptions options, List<String> metaModelImports) throws IOException {
+	public HiPESync(IbexOptions options, List<String> metaModelImports) throws IOException {
 		super(options);
 		this.metaModelImports = metaModelImports;
 		
@@ -91,9 +92,8 @@ public class OperationalStrategyImpl extends SYNC {
 		adjustRegistry(genModel);
 
 		loadDefaultGenModelContent(genModel);
-		 
-        //genModel.setComplianceLevel(GenJDKLevel.JDK80_LITERAL);
-        genModel.setModelDirectory(options.projectPath()+"/src-gen/");
+		
+        genModel.setModelDirectory(options.projectPath()+"/gen/");
         genModel.getForeignModel().add(new Path(metaModelUri.path()).lastSegment());
         genModel.setModelName(options.projectName());
         genModel.setModelPluginID(options.projectName());
@@ -101,30 +101,26 @@ public class OperationalStrategyImpl extends SYNC {
         
         List<EPackage> ePack = new LinkedList<>();
         ePack.add(options.getCorrMetamodel());
+        
+        /*
         for(EPackage pack : importedPackages) {
         	genModel.addImport(pack.getNsURI());
         }
-        genModel.initialize(ePack);
-        
-        genModel.reconcile();
-        //genModel.setCanGenerate(true);
-        //genModel.setValidateModel(true);
-        //genModel.setCodeFormatting(true);
-        //genModel.setImporterID("org.eclipse.emf.importer.ecore");
-        //genModel.setOperationReflection(true);
-        //genModel.setUpdateClasspath(false);
-        //genModel.setSuppressEMFMetaData(false);
+
         
         for (final GenPackage genPackage : genModel.getGenPackages()) {
-			setDefaultPackagePrefixes(genPackage);
+        	setDefaultPackagePrefixes(genPackage);
 		}
+        */
+        genModel.initialize(ePack);
+        genModel.reconcile();
         
         GenPackage genPackage = (GenPackage)genModel.getGenPackages().get(0);
         genPackage.setPrefix(options.projectName());
         
         Generator generator = new Generator();
         generator.setInput(genModel);
-        generator.generate(genModel, GenBaseGeneratorAdapter.MODEL_PROJECT_TYPE, options.projectName(), new BasicMonitor.Printing(System.out));
+        generator.generate(genModel, GenBaseGeneratorAdapter.MODEL_PROJECT_TYPE, options.projectName(), BasicMonitor.toMonitor(new NullProgressMonitor()));
 
         try {
             genModelResource.getDefaultSaveOptions().put(XMLResource.OPTION_ENCODING, "UTF-8");
@@ -151,12 +147,12 @@ public class OperationalStrategyImpl extends SYNC {
 	
 	public void loadDefaultGenModelContent(final GenModel genModel) {
 		genModel.setComplianceLevel(GenJDKLevel.JDK80_LITERAL);
-		//genModel.setModelName(genModel.eResource().getURI().trimFileExtension().lastSegment());
 		genModel.setImporterID("org.eclipse.emf.importer.ecore");
 		genModel.setCodeFormatting(true);
 		genModel.setOperationReflection(true);
-		genModel.setUpdateClasspath(false);
+		//genModel.setUpdateClasspath(true);
 		genModel.setCanGenerate(true);
+		genModel.setSuppressEMFMetaData(false);
 	}
 	
 	private void setDefaultPackagePrefixes(final GenPackage genPackage) {

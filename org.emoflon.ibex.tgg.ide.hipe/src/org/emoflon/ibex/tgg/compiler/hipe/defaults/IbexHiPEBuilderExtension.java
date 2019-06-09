@@ -81,7 +81,7 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 		LogUtils.info(logger, "Building TGG operational strategy...");
 		OperationalStrategy strategy = null;
 		try {
-			strategy = new OperationalStrategyImpl(opt, metaModelImports);
+			strategy = new HiPESync(opt, metaModelImports);
 		} catch (IOException e) {
 			LogUtils.error(logger, e);
 			return;
@@ -130,6 +130,7 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 		
 		LogUtils.info(logger, "Refreshing workspace and cleaning build ..");
 		try {
+			builder.getProject().touch(new NullProgressMonitor());
 			builder.getProject().getWorkspace().getRoot().refreshLocal(IResource.DEPTH_INFINITE, new NullProgressMonitor());
 			builder.getProject().build(IncrementalProjectBuilder.CLEAN_BUILD, new NullProgressMonitor());
 		} catch (CoreException e) {
@@ -146,30 +147,6 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 		options.projectName(projectName);
 		options.projectPath(projectPath);
 		options.debug(false);
-		/*
-		String fullyQualifiedName = "org.emoflon.ibex.tgg.operational.csp.constraints.factories." 
-										+ projectName.toLowerCase() 
-										+ ".UserDefinedRuntimeTGGAttrConstraintFactory";
-		
-		Class<? extends RuntimeTGGAttrConstraintFactory> constraintFactory = null;
-		try {
-			constraintFactory = (Class<? extends RuntimeTGGAttrConstraintFactory>) Class.forName(fullyQualifiedName);
-		} catch (ClassNotFoundException e1) {
-			// TODO Auto-generated catch block
-			LogUtils.error(logger, e1);
-			return options;
-		}
-		
-		try {
-			options.userDefinedConstraints(constraintFactory.newInstance());
-		} catch (InstantiationException e) {
-			// TODO Auto-generated catch block
-			LogUtils.error(logger, e);
-		} catch (IllegalAccessException e) {
-			// TODO Auto-generated catch block
-			LogUtils.error(logger, e);
-		}
-		*/
 		return options;
 	}
 	
@@ -252,6 +229,10 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 			
 			if(!helper.sectionContainsContent("source..", "src-gen/")) {
 				helper.addContentToSection("source..", "src-gen/");
+			}
+			
+			if(!helper.sectionContainsContent("source..", "gen/")) {
+				helper.addContentToSection("source..", "gen/");
 			}
 			
 			if(!helper.containsSection("jars.extra.classpath")) {
