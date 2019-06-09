@@ -3,6 +3,8 @@ package org.emoflon.ibex.gt.hipe.ide.codegen;
 import org.emoflon.ibex.gt.editor.ui.builder.GTBuilderExtension;
 import org.emoflon.ibex.gt.hipe.runtime.IBeXToHiPEPatternTransformation;
 import org.moflon.core.plugins.manifest.ManifestFileUpdater;
+import org.moflon.core.utilities.ClasspathUtil;
+
 import IBeXLanguage.IBeXLanguagePackage;
 import IBeXLanguage.IBeXPatternSet;
 import hipe.generator.HiPEGenerator;
@@ -34,6 +36,7 @@ import java.util.List;
 import java.util.Map;
 import org.apache.log4j.Logger;
 import org.eclipse.core.resources.IFile;
+import org.eclipse.core.resources.IFolder;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IncrementalProjectBuilder;
@@ -90,6 +93,13 @@ public class GTHiPEBuilderExtension implements GTBuilderExtension{
 		log("Updating Manifest & build properties..");
 		updateManifest(this.packagePath, project);
 		updateBuildProperties(this.packagePath);
+		IFolder srcGenFolder = project.getFolder("src-gen");
+		try {
+			ClasspathUtil.makeSourceFolderIfNecessary(srcGenFolder);
+		} catch (CoreException e1) {
+			// TODO Auto-generated catch block
+			log("ERROR: "+e1.getMessage());
+		}
 		
 		log("Converting IBeX to HiPE Patterns..");
 		IBeXToHiPEPatternTransformation transformation = new IBeXToHiPEPatternTransformation();

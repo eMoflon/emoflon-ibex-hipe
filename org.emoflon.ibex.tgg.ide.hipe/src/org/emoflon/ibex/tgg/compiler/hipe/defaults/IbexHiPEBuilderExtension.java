@@ -18,6 +18,7 @@ import java.util.stream.Collectors;
 
 import org.apache.log4j.Logger;
 import org.eclipse.core.resources.IFile;
+import org.eclipse.core.resources.IFolder;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IncrementalProjectBuilder;
@@ -42,6 +43,7 @@ import org.emoflon.ibex.tgg.operational.csp.constraints.factories.RuntimeTGGAttr
 import org.emoflon.ibex.tgg.operational.defaults.IbexOptions;
 import org.emoflon.ibex.tgg.operational.strategies.OperationalStrategy;
 import org.moflon.core.plugins.manifest.ManifestFileUpdater;
+import org.moflon.core.utilities.ClasspathUtil;
 import org.moflon.core.utilities.LogUtils;
 import org.moflon.tgg.mosl.tgg.TripleGraphGrammarFile;
 
@@ -106,6 +108,15 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 		LogUtils.info(logger, "Updating Manifest & build properties..");
 		updateManifest(projectPath, builder.getProject());
 		updateBuildProperties(projectPath);
+		IFolder srcGenFolder = builder.getProject().getFolder("src-gen");
+		IFolder genFolder = builder.getProject().getFolder("gen");
+		try {
+			ClasspathUtil.makeSourceFolderIfNecessary(srcGenFolder);
+			ClasspathUtil.makeSourceFolderIfNecessary(genFolder);
+		} catch (CoreException e1) {
+			// TODO Auto-generated catch block
+			LogUtils.info(logger, "ERROR: "+e1.getMessage());
+		}
 		
 		LogUtils.info(logger, "Converting IBeX to HiPE Patterns..");
 		IBeXToHiPEPatternTransformation transformation = new IBeXToHiPEPatternTransformation();
@@ -130,7 +141,6 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 		
 		LogUtils.info(logger, "Refreshing workspace and cleaning build ..");
 		try {
-			builder.getProject().touch(new NullProgressMonitor());
 			builder.getProject().getWorkspace().getRoot().refreshLocal(IResource.DEPTH_INFINITE, new NullProgressMonitor());
 			builder.getProject().build(IncrementalProjectBuilder.CLEAN_BUILD, new NullProgressMonitor());
 		} catch (CoreException e) {
