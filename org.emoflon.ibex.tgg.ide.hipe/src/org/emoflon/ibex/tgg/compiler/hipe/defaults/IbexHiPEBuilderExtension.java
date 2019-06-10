@@ -45,6 +45,7 @@ import org.emoflon.ibex.tgg.operational.strategies.OperationalStrategy;
 import org.moflon.core.plugins.manifest.ManifestFileUpdater;
 import org.moflon.core.utilities.ClasspathUtil;
 import org.moflon.core.utilities.LogUtils;
+import org.moflon.core.utilities.MoflonUtil;
 import org.moflon.tgg.mosl.tgg.TripleGraphGrammarFile;
 
 import IBeXLanguage.IBeXPatternSet;
@@ -129,6 +130,37 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 		
 		LogUtils.info(logger, "Generating Code..");
 		HiPEGenerator.generateCode(projectName+".", projectPath, network);
+		
+		try {
+			String srcModel = flattenedEditorModel.getSchema().getSourceTypes().get(0).getName();
+			String trgModel = flattenedEditorModel.getSchema().getTargetTypes().get(0).getName();
+			
+			File srcPkg = new File(projectPath+"/gen/"+srcModel);
+			if(!(srcPkg.exists() && srcPkg.isDirectory())) {
+				srcModel = srcModel.substring(0, 1).toUpperCase() + srcModel.substring(1);
+				srcPkg = new File(projectPath+"/gen/" + srcModel);
+				if(!(srcPkg.exists() && srcPkg.isDirectory())) {
+					throw new RuntimeException("Src package not found.");
+				}
+			}
+			
+			File trgPkg = new File(projectPath+"/gen/"+trgModel);
+			if(!(trgPkg.exists() && trgPkg.isDirectory())) {
+				trgModel = trgModel.substring(0, 1).toUpperCase() + trgModel.substring(1);
+				trgPkg = new File(projectPath+"/gen/" + trgModel);
+				if(!(trgPkg.exists() && trgPkg.isDirectory())) {
+					throw new RuntimeException("Trg package not found.");
+				}
+			}
+			
+			final String src = srcModel;
+			final String trg = trgModel;
+			
+			builder.createDefaultRunFile("_GeneratedRegistrationHelper", (projectName, fileName)
+					-> HiPEFilesGenerator.generateRegHelperFile(projectName, src, trg));
+		} catch (CoreException e1) {
+			LogUtils.info(logger, "ERROR: "+e1.getMessage());
+		}
 		
 		double toc = System.currentTimeMillis();
 		LogUtils.info(logger, "Code generation completed in "+ (toc-tic)/1000.0 + " seconds.");	
