@@ -11,6 +11,8 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -55,7 +57,6 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 
 	private Logger logger = Logger.getLogger(IbexHiPEBuilderExtension.class);
 	
-	private static final String ENGINE = "HiPETGGEngine";
 	private static final String IMPORT = "import org.emoflon.ibex.tgg.runtime.engine.HiPETGGEngine;";
 	
 	private String projectName;
@@ -79,18 +80,16 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 		IbexOptions opt = createIbexOptions(projectName, projectPath);
 		
 		LogUtils.info(logger, "Building TGG operational strategy...");
-		OperationalStrategy strategy = null;
+		Collection<OperationalStrategy> strategies = new HashSet<>();
 		try {
-			strategy = new OperationalStrategyImpl(opt, metaModelImports);
+			strategies.add(new HiPESYNC(opt, metaModelImports));
+//			strategies.add(new HiPECC(opt, metaModelImports));
+//			strategies.add(new HiPECO(opt, metaModelImports));
 		} catch (IOException e) {
 			LogUtils.error(logger, e);
 			return;
 		}
-		
-		LogUtils.info(logger, "Compiling ibex patterns from TGG patterns...");
-		ContextPatternTransformation compiler = new ContextPatternTransformation(opt, strategy);
-		IBeXPatternSet ibexPatterns = compiler.transform();
-		
+
 		projectPath = builder.getProject().getLocation().toPortableString();
 		LogUtils.info(logger, "Cleaning old code..");
 		cleanOldCode();
@@ -107,26 +106,41 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 		updateManifest(projectPath, builder.getProject());
 		updateBuildProperties(projectPath);
 		
-		LogUtils.info(logger, "Converting IBeX to HiPE Patterns..");
-		IBeXToHiPEPatternTransformation transformation = new IBeXToHiPEPatternTransformation();
-		HiPEPatternContainer container = transformation.transform(ibexPatterns);
 		
-		LogUtils.info(logger, "Creating search plan & generating Rete network..");
-		SimpleSearchPlan searchPlan = new SimpleSearchPlan(container);
-		searchPlan.generateSearchPlan();
-		HiPENetwork network = searchPlan.getNetwork();
-		
-		LogUtils.info(logger, "Generating Code..");
-		HiPEGenerator.generateCode(projectName+".", projectPath, network);
-		
-		double toc = System.currentTimeMillis();
-		LogUtils.info(logger, "Code generation completed in "+ (toc-tic)/1000.0 + " seconds.");	
-		
-		LogUtils.info(logger, "Saving HiPE patterns and HiPE network..");
-		String debugFolder = projectPath + "/debug";
-		createNewDirectory(debugFolder);
-		saveResource(container, debugFolder+"/hipe-patterns.xmi");
-		saveResource(network, debugFolder+"/hipe-network.xmi");
+		for(OperationalStrategy strategy : strategies) {
+			LogUtils.info(logger, strategy.getClass().getName() + ": Compiling ibex patterns from TGG patterns...");
+			ContextPatternTransformation compiler = new ContextPatternTransformation(opt, strategy);
+			IBeXPatternSet ibexPatterns = compiler.transform();
+			
+			LogUtils.info(logger,  strategy.getClass().getName() + ": Converting IBeX to HiPE Patterns..");
+			IBeXToHiPEPatternTransformation transformation = new IBeXToHiPEPatternTransformation();
+			HiPEPatternContainer container = transformation.transform(ibexPatterns);
+			
+			LogUtils.info(logger,  strategy.getClass().getName() + ": Creating search plan & generating Rete network..");
+			SimpleSearchPlan searchPlan = new SimpleSearchPlan(container);
+			searchPlan.generateSearchPlan();
+			HiPENetwork network = searchPlan.getNetwork();
+			
+			LogUtils.info(logger,  strategy.getClass().getName() + ": Generating Code..");
+			if(strategy instanceof HiPESYNC) 
+				HiPEGenerator.generateCode(projectName+".sync.", projectPath, network);
+			else if(strategy instanceof HiPECC) 
+				HiPEGenerator.generateCode(projectName+".cc.", projectPath, network);
+			else if(strategy instanceof HiPECO) 
+				HiPEGenerator.generateCode(projectName+".co.", projectPath, network);
+			else
+				throw new RuntimeException("Unsupported Operational Strategy detected");
+			
+			
+			double toc = System.currentTimeMillis();
+			LogUtils.info(logger,  strategy.getClass().getName() + ": Code generation completed in "+ (toc-tic)/1000.0 + " seconds.");	
+			
+			LogUtils.info(logger,  strategy.getClass().getName() + ": Saving HiPE patterns and HiPE network..");
+			String debugFolder = projectPath + "/debug";
+			createNewDirectory(debugFolder);
+			saveResource(container, debugFolder+"/" +  strategy.getClass().getName() + "hipe-patterns.xmi");
+			saveResource(network, debugFolder+"/" +  strategy.getClass().getName() + "hipe-network.xmi");
+		}
 		
 		LogUtils.info(logger, "Refreshing workspace and cleaning build ..");
 		try {

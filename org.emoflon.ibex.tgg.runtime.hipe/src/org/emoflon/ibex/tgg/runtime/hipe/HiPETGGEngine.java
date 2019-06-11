@@ -17,6 +17,8 @@ import org.emoflon.ibex.tgg.compiler.transformations.patterns.ContextPatternTran
 import org.emoflon.ibex.tgg.operational.IBlackInterpreter;
 import org.emoflon.ibex.tgg.operational.defaults.IbexOptions;
 import org.emoflon.ibex.tgg.operational.strategies.OperationalStrategy;
+import org.emoflon.ibex.tgg.operational.strategies.opt.CO;
+import org.emoflon.ibex.tgg.operational.strategies.opt.cc.CC;
 
 import IBeXLanguage.IBeXContextPattern;
 import IBeXLanguage.IBeXPatternSet;
@@ -60,6 +62,19 @@ public class HiPETGGEngine extends HiPEGTEngine implements IBlackInterpreter {
 		setPatterns(ibexPatternSet);
 		generateHiPEClassName(options.projectName());
 	}	
+	
+	@Override
+	protected void generateHiPEClassName(String projectName) {
+		if(strategy instanceof CC) {
+			engineClassName = projectName.replace("/", ".")+".cc.hipe.engine.HiPEEngine";	
+		}
+		else if(strategy instanceof CO) {
+			engineClassName = projectName.replace("/", ".")+".co.hipe.engine.HiPEEngine";	
+		}
+		else {
+			engineClassName = projectName.replace("/", ".")+".sync.hipe.engine.HiPEEngine";	
+		}
+	}
 	
 	@Override
 	public void monitor(final ResourceSet resourceSet) {
