@@ -2,7 +2,6 @@ package org.emoflon.ibex.tgg.compiler.hipe.defaults;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -19,13 +18,9 @@ import org.eclipse.emf.common.util.BasicMonitor;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.EPackage;
 import org.eclipse.emf.ecore.impl.EPackageRegistryImpl;
-import org.eclipse.emf.ecore.resource.ContentHandler;
-import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
-import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.eclipse.emf.ecore.xmi.XMLResource;
 import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
-import org.eclipse.emf.ecore.xmi.impl.XMIResourceImpl;
 import org.emoflon.ibex.tgg.operational.defaults.IbexOptions;
 import org.emoflon.ibex.tgg.operational.strategies.sync.SYNC;
 import org.moflon.core.utilities.MoflonUtil;
@@ -33,12 +28,12 @@ import org.moflon.emf.codegen.StandalonePackageDescriptor;
 import org.moflon.emf.codegen.resource.GenModelResource;
 import org.moflon.emf.codegen.resource.GenModelResourceFactory;
 
-public class HiPESync extends SYNC {
+public class HiPESYNC extends SYNC {
 
 	private List<String> metaModelImports;
 	private List<EPackage> importedPackages = new LinkedList<>();
 	
-	public HiPESync(IbexOptions options, List<String> metaModelImports) throws IOException {
+	public HiPESYNC(IbexOptions options, List<String> metaModelImports) throws IOException {
 		super(options);
 		this.metaModelImports = metaModelImports;
 		
@@ -101,17 +96,7 @@ public class HiPESync extends SYNC {
         
         List<EPackage> ePack = new LinkedList<>();
         ePack.add(options.getCorrMetamodel());
-        
-        /*
-        for(EPackage pack : importedPackages) {
-        	genModel.addImport(pack.getNsURI());
-        }
 
-        
-        for (final GenPackage genPackage : genModel.getGenPackages()) {
-        	setDefaultPackagePrefixes(genPackage);
-		}
-        */
         genModel.initialize(ePack);
         genModel.reconcile();
         
@@ -150,11 +135,12 @@ public class HiPESync extends SYNC {
 		genModel.setImporterID("org.eclipse.emf.importer.ecore");
 		genModel.setCodeFormatting(true);
 		genModel.setOperationReflection(true);
-		//genModel.setUpdateClasspath(true);
+		genModel.setUpdateClasspath(false);
 		genModel.setCanGenerate(true);
 		genModel.setSuppressEMFMetaData(false);
 	}
 	
+	@SuppressWarnings("unused")
 	private void setDefaultPackagePrefixes(final GenPackage genPackage) {
 		genPackage.setPrefix(MoflonUtil.lastCapitalizedSegmentOf(genPackage.getPrefix()));
 		for (final GenPackage subPackage : genPackage.getSubGenPackages()) {

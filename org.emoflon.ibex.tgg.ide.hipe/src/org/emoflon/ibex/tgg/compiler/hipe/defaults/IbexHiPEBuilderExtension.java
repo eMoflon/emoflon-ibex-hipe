@@ -1,19 +1,15 @@
 package org.emoflon.ibex.tgg.compiler.hipe.defaults;
 
-import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -25,7 +21,6 @@ import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IncrementalProjectBuilder;
 import org.eclipse.core.runtime.CoreException;
-import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.EObject;
@@ -37,17 +32,14 @@ import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
 import org.emoflon.ibex.gt.hipe.ide.codegen.BuildPropertiesHelper;
 import org.emoflon.ibex.gt.hipe.ide.codegen.ManifestHelper;
 import org.emoflon.ibex.gt.hipe.runtime.IBeXToHiPEPatternTransformation;
-import org.emoflon.ibex.tgg.compiler.defaults.DefaultFilesGenerator;
 import org.emoflon.ibex.tgg.compiler.transformations.patterns.ContextPatternTransformation;
 import org.emoflon.ibex.tgg.ide.admin.BuilderExtension;
 import org.emoflon.ibex.tgg.ide.admin.IbexTGGBuilder;
-import org.emoflon.ibex.tgg.operational.csp.constraints.factories.RuntimeTGGAttrConstraintFactory;
 import org.emoflon.ibex.tgg.operational.defaults.IbexOptions;
 import org.emoflon.ibex.tgg.operational.strategies.OperationalStrategy;
 import org.moflon.core.plugins.manifest.ManifestFileUpdater;
 import org.moflon.core.utilities.ClasspathUtil;
 import org.moflon.core.utilities.LogUtils;
-import org.moflon.core.utilities.MoflonUtil;
 import org.moflon.tgg.mosl.tgg.TripleGraphGrammarFile;
 
 import IBeXLanguage.IBeXPatternSet;
@@ -58,9 +50,7 @@ import hipe.searchplan.simple.SimpleSearchPlan;
 
 public class IbexHiPEBuilderExtension implements BuilderExtension {
 
-	private Logger logger = Logger.getLogger(IbexHiPEBuilderExtension.class);
-	
-	private static final String IMPORT = "import org.emoflon.ibex.tgg.runtime.engine.HiPETGGEngine;";
+	private static Logger logger = Logger.getLogger(IbexHiPEBuilderExtension.class);
 	
 	private String projectName;
 	private String projectPath;
@@ -70,7 +60,6 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 	@Override
 	public void run(IbexTGGBuilder builder, TripleGraphGrammarFile editorModel, TripleGraphGrammarFile flattenedEditorModel) {
 		LogUtils.info(logger, "Starting HiPE TGG builder ... ");
-		double tic = System.currentTimeMillis();
 		
 		projectName = builder.getProject().getName();
 		projectPath = projectName;
@@ -86,14 +75,24 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 		Collection<OperationalStrategy> strategies = new HashSet<>();
 		try {
 			strategies.add(new HiPESYNC(opt, metaModelImports));
+			// These classes do not exist...
 //			strategies.add(new HiPECC(opt, metaModelImports));
 //			strategies.add(new HiPECO(opt, metaModelImports));
 		} catch (IOException e) {
 			LogUtils.error(logger, e);
 			return;
 		}
-
+		
+		// create the actual project path
 		projectPath = builder.getProject().getLocation().toPortableString();
+		
+		LogUtils.info(logger, "Building missing app stubs...");
+		try {
+			generateRegHelperStub(builder, flattenedEditorModel);
+		}catch(Exception e) {
+			LogUtils.error(logger, e);
+		}
+		
 		LogUtils.info(logger, "Cleaning old code..");
 		cleanOldCode();
 		
@@ -115,8 +114,9 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 			ClasspathUtil.makeSourceFolderIfNecessary(genFolder);
 		} catch (CoreException e1) {
 			// TODO Auto-generated catch block
-			LogUtils.info(logger, "ERROR: "+e1.getMessage());
+			LogUtils.error(logger, e1.getMessage());
 		}
+		
 		
 		
 		for(OperationalStrategy strategy : strategies) {
@@ -134,15 +134,18 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 			HiPENetwork network = searchPlan.getNetwork();
 			
 			LogUtils.info(logger,  strategy.getClass().getName() + ": Generating Code..");
+			double tic = System.currentTimeMillis();
 			if(strategy instanceof HiPESYNC) 
 				HiPEGenerator.generateCode(projectName+".sync.", projectPath, network);
+			/* Classes are missing..
+			 * 
 			else if(strategy instanceof HiPECC) 
 				HiPEGenerator.generateCode(projectName+".cc.", projectPath, network);
 			else if(strategy instanceof HiPECO) 
 				HiPEGenerator.generateCode(projectName+".co.", projectPath, network);
+			*/
 			else
 				throw new RuntimeException("Unsupported Operational Strategy detected");
-			
 			
 			double toc = System.currentTimeMillis();
 			LogUtils.info(logger,  strategy.getClass().getName() + ": Code generation completed in "+ (toc-tic)/1000.0 + " seconds.");	
@@ -153,63 +156,19 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 			saveResource(container, debugFolder+"/" +  strategy.getClass().getName() + "hipe-patterns.xmi");
 			saveResource(network, debugFolder+"/" +  strategy.getClass().getName() + "hipe-network.xmi");
 		}
-		
-		LogUtils.info(logger, "Generating Code..");
-		HiPEGenerator.generateCode(projectName+".", projectPath, network);
-		
-		try {
-			String srcModel = flattenedEditorModel.getSchema().getSourceTypes().get(0).getName();
-			String trgModel = flattenedEditorModel.getSchema().getTargetTypes().get(0).getName();
-			
-			File srcPkg = new File(projectPath+"/gen/"+srcModel);
-			if(!(srcPkg.exists() && srcPkg.isDirectory())) {
-				srcModel = srcModel.substring(0, 1).toUpperCase() + srcModel.substring(1);
-				srcPkg = new File(projectPath+"/gen/" + srcModel);
-				if(!(srcPkg.exists() && srcPkg.isDirectory())) {
-					throw new RuntimeException("Src package not found.");
-				}
-			}
-			
-			File trgPkg = new File(projectPath+"/gen/"+trgModel);
-			if(!(trgPkg.exists() && trgPkg.isDirectory())) {
-				trgModel = trgModel.substring(0, 1).toUpperCase() + trgModel.substring(1);
-				trgPkg = new File(projectPath+"/gen/" + trgModel);
-				if(!(trgPkg.exists() && trgPkg.isDirectory())) {
-					throw new RuntimeException("Trg package not found.");
-				}
-			}
-			
-			final String src = srcModel;
-			final String trg = trgModel;
-			
-			builder.createDefaultRunFile("_GeneratedRegistrationHelper", (projectName, fileName)
-					-> HiPEFilesGenerator.generateRegHelperFile(projectName, src, trg));
-		} catch (CoreException e1) {
-			LogUtils.info(logger, "ERROR: "+e1.getMessage());
-		}
-		
-		double toc = System.currentTimeMillis();
-		LogUtils.info(logger, "Code generation completed in "+ (toc-tic)/1000.0 + " seconds.");	
-		
-		LogUtils.info(logger, "Saving HiPE patterns and HiPE network..");
-		String debugFolder = projectPath + "/debug";
-		createNewDirectory(debugFolder);
-		saveResource(container, debugFolder+"/hipe-patterns.xmi");
-		saveResource(network, debugFolder+"/hipe-network.xmi");
+
 		
 		LogUtils.info(logger, "Refreshing workspace and cleaning build ..");
 		try {
 			builder.getProject().getWorkspace().getRoot().refreshLocal(IResource.DEPTH_INFINITE, new NullProgressMonitor());
 			builder.getProject().build(IncrementalProjectBuilder.CLEAN_BUILD, new NullProgressMonitor());
 		} catch (CoreException e) {
-			LogUtils.info(logger, "ERROR: "+e.getMessage());
+			LogUtils.error(logger, e.getMessage());
 		}
 		
 		LogUtils.info(logger, "## HiPE ## --> HiPE build complete!");
 	}
 	
-	
-	@SuppressWarnings("unchecked")
 	public IbexOptions createIbexOptions(String projectName, String projectPath) {
 		IbexOptions options = new IbexOptions();
 		options.projectName(projectName);
@@ -218,12 +177,41 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 		return options;
 	}
 	
+	public void generateRegHelperStub(IbexTGGBuilder builder, TripleGraphGrammarFile flattenedEditorModel) throws Exception {
+		String srcModel = flattenedEditorModel.getSchema().getSourceTypes().get(0).getName();
+		String trgModel = flattenedEditorModel.getSchema().getTargetTypes().get(0).getName();
+		
+		File srcPkg = new File(projectPath+"/gen/"+srcModel);
+		if(!(srcPkg.exists() && srcPkg.isDirectory())) {
+			srcModel = srcModel.substring(0, 1).toUpperCase() + srcModel.substring(1);
+			srcPkg = new File(projectPath+"/gen/" + srcModel);
+			if(!(srcPkg.exists() && srcPkg.isDirectory())) {
+				throw new RuntimeException("Src package not found.");
+			}
+		}
+		
+		File trgPkg = new File(projectPath+"/gen/"+trgModel);
+		if(!(trgPkg.exists() && trgPkg.isDirectory())) {
+			trgModel = trgModel.substring(0, 1).toUpperCase() + trgModel.substring(1);
+			trgPkg = new File(projectPath+"/gen/" + trgModel);
+			if(!(trgPkg.exists() && trgPkg.isDirectory())) {
+				throw new RuntimeException("Trg package not found.");
+			}
+		}
+		
+		final String src = srcModel;
+		final String trg = trgModel;
+		
+		builder.createDefaultRunFile("_GeneratedRegistrationHelper", (projectName, fileName)
+				-> HiPEFilesGenerator.generateRegHelperFile(projectName, src, trg));
+	}
+	
 	private void cleanOldCode() {
 		File dir = new File(projectPath+"/src-gen/" + projectName + "/hipe");
 		if(dir.exists()) {
 			LogUtils.info(logger, "--> Cleaning old source files in root folder: "+projectPath+"/src-gen/" + projectName + "/hipe");
 			if(!deleteDirectory(dir)) {
-				LogUtils.info(logger, "ERROR: Folder couldn't be deleted!");
+				LogUtils.error(logger, "Folder couldn't be deleted!");
 
 			}
 		} else {
@@ -281,7 +269,7 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 			helper.updateManifest(rawManifest);
 			
 		} catch (CoreException | IOException e) {
-			LogUtils.info(logger, "ERROR: Failed to update MANIFEST.MF \n"+e.getMessage());
+			LogUtils.error(logger, "Failed to update MANIFEST.MF \n"+e.getMessage());
 		}
 	}
 	
@@ -326,7 +314,7 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 			helper.updateProperties(buildProps);
 			
 		} catch (CoreException | IOException e) {
-			LogUtils.info(logger, "ERROR: Failed to update build.properties \n"+e.getMessage());
+			LogUtils.error(logger, "Failed to update build.properties. \n"+e.getMessage());
 		}
 		
 	}
@@ -349,8 +337,7 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 		        }
 		        is.close();
 		    } catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+		    	LogUtils.error(logger, "Failed to copy required jars. \n"+e.getMessage());
 			} 
 		});
 	}
@@ -369,7 +356,7 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 		File dir = new File(path);
 		if(!dir.exists()) {
 			if(!dir.mkdir()) {
-				LogUtils.info(logger, "ERROR: Directory in: "+path+" could not be created!");
+				LogUtils.error(logger, "Directory in: "+path+" could not be created!");
 			}else {
 				LogUtils.info(logger, "--> Directory in: "+path+" created!");
 			}
@@ -396,7 +383,7 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 		try {
 			((XMIResource)modelResource).save(saveOptions);
 		} catch (IOException e) {
-			LogUtils.info(logger, "ERROR: Couldn't save debug resource: \n "+e.getMessage());
+			LogUtils.error(logger, "Couldn't save debug resource: \n "+e.getMessage());
 		}
 	}
 }

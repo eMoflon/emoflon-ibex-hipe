@@ -6,7 +6,6 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
@@ -14,8 +13,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-
 import org.apache.log4j.Logger;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.EObject;
@@ -35,17 +32,12 @@ import org.gervarro.democles.specification.emf.EMFDemoclesPatternMetamodelPlugin
 import IBeXLanguage.IBeXContext;
 import IBeXLanguage.IBeXContextAlternatives;
 import IBeXLanguage.IBeXContextPattern;
-import IBeXLanguage.IBeXPattern;
 import IBeXLanguage.IBeXPatternSet;
 import hipe.engine.HiPEContentAdapter;
 import hipe.engine.IHiPEEngine;
 import hipe.engine.match.ProductionMatch;
 import hipe.engine.message.production.ProductionResult;
-import hipe.generator.HiPEGenerator;
 import hipe.network.HiPENetwork;
-import hipe.pattern.HiPEAbstractPattern;
-import hipe.pattern.HiPEPatternContainer;
-import hipe.searchplan.simple.SimpleSearchPlan;
 
 /**
  * Engine for (unidirectional) graph transformations with HiPE.
@@ -67,20 +59,11 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 	protected IBeXPatternSet ibexPatternSet;
 
 	/**
-	 * The matches.
-	 */
-	//protected Map<ProductionMatch, Map<String, IMatch>> matches;
-
-	/**
 	 * The HiPE patterns.
 	 */
 	protected Map<String, String> patterns;
 	
-	//protected HiPEPatternContainer patternContainer;
-	
 	protected String engineClassName;
-
-	//protected Map<String, Class<?>> dynamicClasses;
 	
 	/**
 	 * The pattern matcher module.
@@ -107,7 +90,6 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 	 */
 	public HiPEGTEngine() {
 		this.patterns = cfactory.createObjectToObjectHashMap();
-		//this.matches = cfactory.createObjectToObjectHashMap();
 	}
 	
 //	@Override

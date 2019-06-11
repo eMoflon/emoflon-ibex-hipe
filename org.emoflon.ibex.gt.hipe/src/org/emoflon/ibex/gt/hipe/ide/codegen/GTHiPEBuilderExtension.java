@@ -4,6 +4,7 @@ import org.emoflon.ibex.gt.editor.ui.builder.GTBuilderExtension;
 import org.emoflon.ibex.gt.hipe.runtime.IBeXToHiPEPatternTransformation;
 import org.moflon.core.plugins.manifest.ManifestFileUpdater;
 import org.moflon.core.utilities.ClasspathUtil;
+import org.moflon.core.utilities.LogUtils;
 
 import IBeXLanguage.IBeXLanguagePackage;
 import IBeXLanguage.IBeXPatternSet;
@@ -44,6 +45,7 @@ import org.eclipse.core.resources.IncrementalProjectBuilder;
 public class GTHiPEBuilderExtension implements GTBuilderExtension{
 
 	public static final String BUILDER_ID = "org.emoflon.ibex.gt.editor.ui.hipe.builder";
+	private static Logger logger = Logger.getLogger(GTHiPEBuilderExtension.class);
 	
 	private String packageName;
 	private String packagePath;
@@ -53,13 +55,13 @@ public class GTHiPEBuilderExtension implements GTBuilderExtension{
 		try {
 			project.getWorkspace().getRoot().refreshLocal(IResource.DEPTH_INFINITE, new NullProgressMonitor());
 		} catch (CoreException e) {
-			log("ERROR: "+e.getMessage());
+			LogUtils.error(logger, e.getMessage());
 		}
 	}
 
 	@Override
 	public void run(IProject project, IPath packagePath) {
-		Logger.getRootLogger().info("## HiPE ## Generating HiPE-Engine code..");
+		LogUtils.info(logger, "## HiPE ## Generating HiPE-Engine code..");
 		double tic = System.currentTimeMillis();
 		
 		packageName = packagePath.toString().replace("/", ".");
@@ -70,7 +72,7 @@ public class GTHiPEBuilderExtension implements GTBuilderExtension{
 			this.packagePath = project.getFullPath().makeAbsolute().toPortableString();
 		}
 		
-		log("Loading IBeX patterns..");
+		LogUtils.info(logger, "Loading IBeX patterns..");
 		String patternPath = this.packagePath+"//src-gen//" + packageName + "//api//ibex-patterns.xmi";
 		IBeXPatternSet ibexPatterns = loadIBeXPatterns(patternPath);
 		if(ibexPatterns == null)
@@ -79,18 +81,18 @@ public class GTHiPEBuilderExtension implements GTBuilderExtension{
 		IFile file = project.getFile(patternPath);
 		this.packagePath = file.getLocation().uptoSegment(file.getLocation().segmentCount()-5).makeAbsolute().toPortableString();
 		
-		log("Cleaning old code..");
+		LogUtils.info(logger, "Cleaning old code..");
 		cleanOldCode();
 		
-		log("Creating jar directory..");
+		LogUtils.info(logger, "Creating jar directory..");
 		createNewDirectory(this.packagePath+"/jars");
 		File jarsDir1 = findJarsDirectory();
 		File jarsDir2 = new File(this.packagePath+"/jars");
 		
-		log("Copying jars..");
+		LogUtils.info(logger, "Copying jars..");
 		copyDirectoryContents(jarsDir1, jarsDir2);
 		
-		log("Updating Manifest & build properties..");
+		LogUtils.info(logger, "Updating Manifest & build properties..");
 		updateManifest(this.packagePath, project);
 		updateBuildProperties(this.packagePath);
 		IFolder srcGenFolder = project.getFolder("src-gen");
@@ -98,39 +100,39 @@ public class GTHiPEBuilderExtension implements GTBuilderExtension{
 			ClasspathUtil.makeSourceFolderIfNecessary(srcGenFolder);
 		} catch (CoreException e1) {
 			// TODO Auto-generated catch block
-			log("ERROR: "+e1.getMessage());
+			LogUtils.error(logger, e1.getMessage());
 		}
 		
-		log("Converting IBeX to HiPE Patterns..");
+		LogUtils.info(logger, "Converting IBeX to HiPE Patterns..");
 		IBeXToHiPEPatternTransformation transformation = new IBeXToHiPEPatternTransformation();
 		HiPEPatternContainer container = transformation.transform(ibexPatterns);
 		
-		log("Creating search plan & generating Rete network..");
+		LogUtils.info(logger, "Creating search plan & generating Rete network..");
 		SimpleSearchPlan searchPlan = new SimpleSearchPlan(container);
 		searchPlan.generateSearchPlan();
 		HiPENetwork network = searchPlan.getNetwork();
 		
-		log("Generating Code..");
+		LogUtils.info(logger, "Generating Code..");
 		HiPEGenerator.generateCode(packageName+".", this.packagePath, network);
 		
 		double toc = System.currentTimeMillis();
-		Logger.getRootLogger().info("Code generation completed in "+ (toc-tic)/1000.0 + " seconds.");	
+		LogUtils.info(logger, "Code generation completed in "+ (toc-tic)/1000.0 + " seconds.");	
 		
-		log("Saving HiPE patterns and HiPE network..");
+		LogUtils.info(logger, "Saving HiPE patterns and HiPE network..");
 		String debugFolder = this.packagePath + "/debug";
 		createNewDirectory(debugFolder);
 		saveResource(container, debugFolder+"/hipe-patterns.xmi");
 		saveResource(network, debugFolder+"/hipe-network.xmi");
 		
-		log("Refreshing workspace and cleaning build ..");
+		LogUtils.info(logger, "Refreshing workspace and cleaning build ..");
 		try {
 			project.getWorkspace().getRoot().refreshLocal(IResource.DEPTH_INFINITE, new NullProgressMonitor());
 			project.build(IncrementalProjectBuilder.CLEAN_BUILD, new NullProgressMonitor());
 		} catch (CoreException e) {
-			log("ERROR: "+e.getMessage());
+			LogUtils.error(logger, e.getMessage());
 		}
 		
-		log("## HiPE ## --> HiPE build complete!");
+		LogUtils.info(logger, "## HiPE ## --> HiPE build complete!");
 	}
 	
 	private void updateManifest(String packagePath, IProject project) {
@@ -156,7 +158,7 @@ public class GTHiPEBuilderExtension implements GTBuilderExtension{
 			helper.updateManifest(rawManifest);
 			
 		} catch (CoreException | IOException e) {
-			log("ERROR: Failed to update MANIFEST.MF \n"+e.getMessage());
+			LogUtils.error(logger, "Failed to update MANIFEST.MF \n"+e.getMessage());
 		}
 	}
 	
@@ -197,7 +199,7 @@ public class GTHiPEBuilderExtension implements GTBuilderExtension{
 			helper.updateProperties(buildProps);
 			
 		} catch (CoreException | IOException e) {
-			log("ERROR: Failed to update build.properties \n"+e.getMessage());
+			LogUtils.error(logger, "Failed to update build.properties \n"+e.getMessage());
 		}
 		
 	}
@@ -216,12 +218,12 @@ public class GTHiPEBuilderExtension implements GTBuilderExtension{
 		File dir = new File(path);
 		if(!dir.exists()) {
 			if(!dir.mkdir()) {
-				log("ERROR: Directory in: "+path+" could not be created!");
+				LogUtils.error(logger, "Directory in: "+path+" could not be created!");
 			}else {
-				log("--> Directory in: "+path+" created!");
+				LogUtils.info(logger, "--> Directory in: "+path+" created!");
 			}
 		}else {
-			log("--> Directory already present in: "+path+", nothing to do.");
+			LogUtils.info(logger, "--> Directory already present in: "+path+", nothing to do.");
 		}
 	}
 	
@@ -243,8 +245,7 @@ public class GTHiPEBuilderExtension implements GTBuilderExtension{
 		        }
 		        is.close();
 		    } catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+		    	LogUtils.error(logger, "Failed to copy required jars. \n"+e.getMessage());
 			} 
 		});
 	}
@@ -252,12 +253,12 @@ public class GTHiPEBuilderExtension implements GTBuilderExtension{
 	private void cleanOldCode() {
 		File dir = new File(this.packagePath+"/src-gen/" + packageName + "/hipe");
 		if(dir.exists()) {
-			log("--> Cleaning old source files in root folder: "+this.packagePath+"/src-gen/" + packageName + "/hipe");
+			LogUtils.info(logger, "--> Cleaning old source files in root folder: "+this.packagePath+"/src-gen/" + packageName + "/hipe");
 			if(!deleteDirectory(dir)) {
-				log("ERROR: Folder couldn't be deleted!");
+				LogUtils.error(logger, "Folder couldn't be deleted!");
 			}
 		} else {
-			log("--> No previously generated code found, nothing to do!");
+			LogUtils.info(logger, "--> No previously generated code found, nothing to do!");
 		}
 	}
 	
@@ -287,16 +288,12 @@ public class GTHiPEBuilderExtension implements GTBuilderExtension{
 		return null;
 	}
 	
-	private static void log(String lg) {
-		Logger.getRootLogger().info(lg);
-	}
-	
 	private static IBeXPatternSet loadIBeXPatterns(String path) {
 		Resource res = null;
 		try {
 			res = loadResource(path);
 		} catch (Exception e) {
-			log("ERROR: Couldn't load ibex pattern set: \n" + e.getMessage());
+			LogUtils.error(logger, "Couldn't load ibex pattern set: \n" + e.getMessage());
 			e.printStackTrace();
 		}
 		
@@ -339,7 +336,7 @@ public class GTHiPEBuilderExtension implements GTBuilderExtension{
 		try {
 			((XMIResource)modelResource).save(saveOptions);
 		} catch (IOException e) {
-			log("ERROR: Couldn't save debug resource: \n "+e.getMessage());
+			LogUtils.error(logger, "Couldn't save debug resource: \n "+e.getMessage());
 		}
 	}
 

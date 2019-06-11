@@ -22,7 +22,6 @@ import IBeXLanguage.IBeXNodePair;
 import IBeXLanguage.IBeXPatternInvocation;
 import IBeXLanguage.IBeXPatternSet;
 import IBeXLanguage.IBeXRelation;
-import IBeXLanguage.impl.IBeXContextPatternImpl;
 import hipe.pattern.ComparatorType;
 import hipe.pattern.ComplexConstraint;
 import hipe.pattern.HiPEAttribute;
