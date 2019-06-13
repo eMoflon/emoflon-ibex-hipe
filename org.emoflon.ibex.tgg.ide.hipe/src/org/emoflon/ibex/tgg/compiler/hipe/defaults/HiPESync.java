@@ -2,13 +2,14 @@ package org.emoflon.ibex.tgg.compiler.hipe.defaults;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
-import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.emf.codegen.ecore.generator.Generator;
+import org.eclipse.emf.codegen.ecore.genmodel.GenBase;
 import org.eclipse.emf.codegen.ecore.genmodel.GenJDKLevel;
 import org.eclipse.emf.codegen.ecore.genmodel.GenModel;
 import org.eclipse.emf.codegen.ecore.genmodel.GenModelFactory;
@@ -87,25 +88,39 @@ public class HiPESYNC extends SYNC {
 		adjustRegistry(genModel);
 
 		loadDefaultGenModelContent(genModel);
-		
-        genModel.setModelDirectory(options.projectPath()+"/gen/");
+		 
+        //genModel.setComplianceLevel(GenJDKLevel.JDK80_LITERAL);
+        genModel.setModelDirectory(options.projectPath()+"/src-gen/");
         genModel.getForeignModel().add(new Path(metaModelUri.path()).lastSegment());
         genModel.setModelName(options.projectName());
         genModel.setModelPluginID(options.projectName());
         genModel.setSuppressEMFMetaData(false);
+        genModel.setCanGenerate(true);
+        genModel.setContainmentProxies(false);
+        genModel.setDynamicTemplates(false);
+        genModel.setGenerateSchema(true);
+        genModel.setUpdateClasspath(true);
         
         List<EPackage> ePack = new LinkedList<>();
         ePack.add(options.getCorrMetamodel());
-
+        for(EPackage pack : importedPackages) {
+        	genModel.addImport(pack.getNsURI());
+        }
         genModel.initialize(ePack);
+
+        genModel.validate();
         genModel.reconcile();
         
-        GenPackage genPackage = (GenPackage)genModel.getGenPackages().get(0);
+        for (final GenPackage genPackage : genModel.getGenPackages()) {
+			setDefaultPackagePrefixes(genPackage);
+		}
+        
+        GenPackage genPackage = (GenPackage) genModel.getGenPackages().get(0);
         genPackage.setPrefix(options.projectName());
         
-        Generator generator = new Generator();
+        HiPEGenGenerator generator = new HiPEGenGenerator();
         generator.setInput(genModel);
-        generator.generate(genModel, GenBaseGeneratorAdapter.MODEL_PROJECT_TYPE, options.projectName(), BasicMonitor.toMonitor(new NullProgressMonitor()));
+        generator.generate(genModel, GenBaseGeneratorAdapter.MODEL_PROJECT_TYPE, options.projectName(), new BasicMonitor.Printing(System.out), ePack.get(0).getName());
 
         try {
             genModelResource.getDefaultSaveOptions().put(XMLResource.OPTION_ENCODING, "UTF-8");
@@ -132,15 +147,14 @@ public class HiPESYNC extends SYNC {
 	
 	public void loadDefaultGenModelContent(final GenModel genModel) {
 		genModel.setComplianceLevel(GenJDKLevel.JDK80_LITERAL);
+		//genModel.setModelName(genModel.eResource().getURI().trimFileExtension().lastSegment());
 		genModel.setImporterID("org.eclipse.emf.importer.ecore");
 		genModel.setCodeFormatting(true);
 		genModel.setOperationReflection(true);
 		genModel.setUpdateClasspath(false);
 		genModel.setCanGenerate(true);
-		genModel.setSuppressEMFMetaData(false);
 	}
 	
-	@SuppressWarnings("unused")
 	private void setDefaultPackagePrefixes(final GenPackage genPackage) {
 		genPackage.setPrefix(MoflonUtil.lastCapitalizedSegmentOf(genPackage.getPrefix()));
 		for (final GenPackage subPackage : genPackage.getSubGenPackages()) {

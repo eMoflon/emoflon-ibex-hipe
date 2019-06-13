@@ -75,9 +75,8 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 		Collection<OperationalStrategy> strategies = new HashSet<>();
 		try {
 			strategies.add(new HiPESYNC(opt, metaModelImports));
-			// These classes do not exist...
-//			strategies.add(new HiPECC(opt, metaModelImports));
-//			strategies.add(new HiPECO(opt, metaModelImports));
+			strategies.add(new HiPECC(opt, metaModelImports));
+			strategies.add(new HiPECO(opt, metaModelImports));
 		} catch (IOException e) {
 			LogUtils.error(logger, e);
 			return;
@@ -137,13 +136,10 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 			double tic = System.currentTimeMillis();
 			if(strategy instanceof HiPESYNC) 
 				HiPEGenerator.generateCode(projectName+".sync.", projectPath, network);
-			/* Classes are missing..
-			 * 
 			else if(strategy instanceof HiPECC) 
 				HiPEGenerator.generateCode(projectName+".cc.", projectPath, network);
 			else if(strategy instanceof HiPECO) 
 				HiPEGenerator.generateCode(projectName+".co.", projectPath, network);
-			*/
 			else
 				throw new RuntimeException("Unsupported Operational Strategy detected");
 			
@@ -186,7 +182,7 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 			srcModel = srcModel.substring(0, 1).toUpperCase() + srcModel.substring(1);
 			srcPkg = new File(projectPath+"/gen/" + srcModel);
 			if(!(srcPkg.exists() && srcPkg.isDirectory())) {
-				throw new RuntimeException("Src package not found.");
+//				throw new RuntimeException("Src package not found.");
 			}
 		}
 		
@@ -195,7 +191,7 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 			trgModel = trgModel.substring(0, 1).toUpperCase() + trgModel.substring(1);
 			trgPkg = new File(projectPath+"/gen/" + trgModel);
 			if(!(trgPkg.exists() && trgPkg.isDirectory())) {
-				throw new RuntimeException("Trg package not found.");
+//				throw new RuntimeException("Trg package not found.");
 			}
 		}
 		
