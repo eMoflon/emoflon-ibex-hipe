@@ -50,7 +50,8 @@ import hipe.searchplan.simple.SimpleSearchPlan;
 
 public class IbexHiPEBuilderExtension implements BuilderExtension {
 
-	private static Logger logger = Logger.getLogger(IbexHiPEBuilderExtension.class);
+	private static final Logger logger = Logger.getLogger(IbexHiPEBuilderExtension.class);
+	private static final String IMPORT = "import org.emoflon.ibex.tgg.runtime.hipe.HiPETGGEngine;";
 	
 	private String projectName;
 	private String projectPath;
@@ -87,7 +88,8 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 		
 		LogUtils.info(logger, "Building missing app stubs...");
 		try {
-			generateRegHelperStub(builder, flattenedEditorModel);
+			generateDefaultRegHelper(builder, flattenedEditorModel);
+			generateDefaultStubs(builder, editorModel, flattenedEditorModel);
 		}catch(Exception e) {
 			LogUtils.error(logger, e);
 		}
@@ -173,7 +175,32 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 		return options;
 	}
 	
-	public void generateRegHelperStub(IbexTGGBuilder builder, TripleGraphGrammarFile flattenedEditorModel) throws Exception {
+	public void generateDefaultStubs(IbexTGGBuilder builder, TripleGraphGrammarFile editorModel, TripleGraphGrammarFile flattenedEditorModel) throws CoreException {
+		builder.createDefaultDebugRunFile(HiPEFilesGenerator.MODELGEN_APP, (projectName, fileName) 
+				-> HiPEFilesGenerator.generateModelGenDebugFile(projectName, fileName, IMPORT));
+		builder.createDefaultRunFile(HiPEFilesGenerator.MODELGEN_APP, (projectName, fileName) 
+				-> HiPEFilesGenerator.generateModelGenFile(projectName, fileName, IMPORT));
+		builder.createDefaultRunFile(HiPEFilesGenerator.SYNC_APP, (projectName, fileName) 
+				-> HiPEFilesGenerator.generateSyncAppFile(projectName, fileName, IMPORT));
+		builder.createDefaultRunFile(HiPEFilesGenerator.INITIAL_FWD_APP, (projectName, fileName) 
+				-> HiPEFilesGenerator.generateInitialFwdAppFile(projectName, fileName, IMPORT));
+		builder.createDefaultRunFile(HiPEFilesGenerator.INITIAL_BWD_APP, (projectName, fileName) 
+				-> HiPEFilesGenerator.generateInitialBwdAppFile(projectName, fileName, IMPORT));
+		builder.createDefaultRunFile(HiPEFilesGenerator.CC_APP, (projectName, fileName) 
+				-> HiPEFilesGenerator.generateCCAppFile(projectName, fileName, IMPORT));
+		builder.createDefaultRunFile(HiPEFilesGenerator.CO_APP, (projectName, fileName) 
+				-> HiPEFilesGenerator.generateCOAppFile(projectName, fileName, IMPORT));
+		builder.createDefaultRunFile(HiPEFilesGenerator.FWD_OPT_APP, (projectName, fileName) 
+				-> HiPEFilesGenerator.generateFWDOptAppFile(projectName, fileName, IMPORT));
+		builder.createDefaultRunFile(HiPEFilesGenerator.BWD_OPT_APP, (projectName, fileName) 
+				-> HiPEFilesGenerator.generateBWDOptAppFile(projectName, fileName, IMPORT));
+		builder.createDefaultRunFile(HiPEFilesGenerator.REGISTRATION_HELPER, (projectName, fileName)
+				-> HiPEFilesGenerator.generateRegHelperFile(projectName));
+		builder.enforceDefaultRunFile(HiPEFilesGenerator.SCHEMA_BASED_AUTO_REG, (projectName, fileName)
+				-> HiPEFilesGenerator.generateSchemaAutoRegFile(projectName, editorModel));
+	}
+	
+	public void generateDefaultRegHelper(IbexTGGBuilder builder, TripleGraphGrammarFile flattenedEditorModel) throws Exception {
 		String srcModel = flattenedEditorModel.getSchema().getSourceTypes().get(0).getName();
 		String trgModel = flattenedEditorModel.getSchema().getTargetTypes().get(0).getName();
 		
@@ -198,8 +225,8 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 		final String src = srcModel;
 		final String trg = trgModel;
 		
-		builder.createDefaultRunFile("_GeneratedRegistrationHelper", (projectName, fileName)
-				-> HiPEFilesGenerator.generateRegHelperFile(projectName, src, trg));
+		builder.createDefaultRunFile(HiPEFilesGenerator.DEFAULT_REGISTRATION_HELPER, (projectName, fileName)
+				-> HiPEFilesGenerator.generateDefaultRegHelperFile(projectName, src, trg));
 	}
 	
 	private void cleanOldCode() {

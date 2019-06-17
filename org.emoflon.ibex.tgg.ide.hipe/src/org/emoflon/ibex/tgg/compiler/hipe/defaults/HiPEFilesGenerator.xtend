@@ -5,7 +5,47 @@ import org.moflon.core.utilities.MoflonUtil
 
 class HiPEFilesGenerator extends DefaultFilesGenerator {
 	
-	def static String generateRegHelperFile(String projectName, String src, String trg) {
+	public static final String DEFAULT_REGISTRATION_HELPER = "DefaultRegistrationHelper";
+	public static final String MODELGEN_APP = "MODELGEN_App"; 
+	public static final String SYNC_APP = "SYNC_App";
+	public static final String INITIAL_FWD_APP = "INITIAL_FWD_App";
+	public static final String INITIAL_BWD_APP = "INITIAL_BWD_App";
+	public static final String CC_APP = "CC_App";
+	public static final String CO_APP = "CO_App";
+	public static final String FWD_OPT_APP = "FWD_OPT_App";
+	public static final String BWD_OPT_APP = "BWD_OPT_App";
+	public static final String REGISTRATION_HELPER = "_RegistrationHelper";
+	public static final String SCHEMA_BASED_AUTO_REG = "_SchemaBasedAutoRegistration";
+	 	
+	def static String generateRegHelperFile(String projectName) {
+		'''
+			package org.emoflon.ibex.tgg.run.«MoflonUtil.lastCapitalizedSegmentOf(projectName).toLowerCase»;
+			
+			import java.io.IOException;
+			
+			import org.eclipse.emf.ecore.resource.ResourceSet;
+			import org.emoflon.ibex.tgg.operational.csp.constraints.factories.«MoflonUtil.lastCapitalizedSegmentOf(projectName).toLowerCase».UserDefinedRuntimeTGGAttrConstraintFactory;
+			import org.emoflon.ibex.tgg.operational.defaults.IbexOptions;
+			import org.emoflon.ibex.tgg.operational.strategies.OperationalStrategy;
+			import org.emoflon.ibex.tgg.run.«MoflonUtil.lastCapitalizedSegmentOf(projectName).toLowerCase».DefaultRegistrationHelper;
+			
+			public class _RegistrationHelper {
+			
+				/** Load and register source and target metamodels */
+				public static void registerMetamodels(ResourceSet rs, OperationalStrategy strategy) throws IOException {
+					// Replace to register generated code or handle other URI-related requirements
+					DefaultRegistrationHelper.registerMetamodels(strategy);
+				}
+			
+				/** Create default options **/
+				public static IbexOptions createIbexOptions() {
+					return DefaultRegistrationHelper.createIbexOptions();
+				}
+			}
+		'''
+	}
+	
+	def static String generateDefaultRegHelperFile(String projectName, String src, String trg) {
 		val srcProject = src.toFirstUpper
 		val trgProject = trg.toFirstUpper
 		'''
@@ -27,7 +67,7 @@ class HiPEFilesGenerator extends DefaultFilesGenerator {
 			import «src».impl.«srcProject»PackageImpl;
 			import «trg».impl.«trgProject»PackageImpl;
 			
-			public class _RegistrationHelper {
+			public class «DEFAULT_REGISTRATION_HELPER» {
 			
 				/** Load and register source and target metamodels */
 				public static void registerMetamodels(ResourceSet rs, OperationalStrategy strategy) throws IOException {

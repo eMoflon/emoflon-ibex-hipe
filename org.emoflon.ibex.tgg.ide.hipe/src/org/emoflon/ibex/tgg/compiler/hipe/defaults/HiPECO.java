@@ -87,7 +87,7 @@ public class HiPECO extends CO {
 		loadDefaultGenModelContent(genModel);
 		 
         //genModel.setComplianceLevel(GenJDKLevel.JDK80_LITERAL);
-        genModel.setModelDirectory(options.projectPath()+"/src-gen/");
+        genModel.setModelDirectory(options.projectPath()+"/gen/");
         genModel.getForeignModel().add(new Path(metaModelUri.path()).lastSegment());
         genModel.setModelName(options.projectName());
         genModel.setModelPluginID(options.projectName());
@@ -96,7 +96,7 @@ public class HiPECO extends CO {
         genModel.setContainmentProxies(false);
         genModel.setDynamicTemplates(false);
         genModel.setGenerateSchema(true);
-        genModel.setUpdateClasspath(true);
+        genModel.setUpdateClasspath(false);
         
         List<EPackage> ePack = new LinkedList<>();
         ePack.add(options.getCorrMetamodel());
