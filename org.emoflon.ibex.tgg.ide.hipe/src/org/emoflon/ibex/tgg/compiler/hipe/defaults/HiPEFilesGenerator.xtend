@@ -34,7 +34,7 @@ class HiPEFilesGenerator extends DefaultFilesGenerator {
 				/** Load and register source and target metamodels */
 				public static void registerMetamodels(ResourceSet rs, OperationalStrategy strategy) throws IOException {
 					// Replace to register generated code or handle other URI-related requirements
-					DefaultRegistrationHelper.registerMetamodels(strategy);
+					DefaultRegistrationHelper.registerMetamodels(rs, strategy);
 				}
 			
 				/** Create default options **/
@@ -45,9 +45,7 @@ class HiPEFilesGenerator extends DefaultFilesGenerator {
 		'''
 	}
 	
-	def static String generateDefaultRegHelperFile(String projectName, String src, String trg) {
-		val srcProject = src.toFirstUpper
-		val trgProject = trg.toFirstUpper
+	def static String generateDefaultRegHelperFile(String projectName, String srcProject, String trgProject, String srcPkg, String trgPkg) {
 		'''
 			package org.emoflon.ibex.tgg.run.«MoflonUtil.lastCapitalizedSegmentOf(projectName).toLowerCase»;
 			
@@ -61,19 +59,20 @@ class HiPEFilesGenerator extends DefaultFilesGenerator {
 			import org.emoflon.ibex.tgg.operational.strategies.OperationalStrategy;
 			import org.emoflon.ibex.tgg.operational.strategies.opt.BWD_OPT;
 			import org.emoflon.ibex.tgg.operational.strategies.opt.FWD_OPT;
+			import org.emoflon.ibex.tgg.runtime.hipe.HiPETGGEngine;
 			
 			import «projectName».«projectName»Package;
 			import «projectName».impl.«projectName»PackageImpl;
-			import «src».impl.«srcProject»PackageImpl;
-			import «trg».impl.«trgProject»PackageImpl;
+			import «srcPkg».impl.«srcPkg.toFirstUpper»PackageImpl;
+			import «trgPkg».impl.«trgPkg.toFirstUpper»PackageImpl;
 			
 			public class «DEFAULT_REGISTRATION_HELPER» {
 			
 				/** Load and register source and target metamodels */
 				public static void registerMetamodels(ResourceSet rs, OperationalStrategy strategy) throws IOException {
 					// Load and register source and target metamodels
-					EPackage «srcProject.toFirstLower»Pack = null;
-					EPackage «trgProject.toFirstLower»Pack = null;
+					EPackage «srcProject.toLowerCase»Pack = null;
+					EPackage «trgProject.toLowerCase»Pack = null;
 					
 					«projectName»PackageImpl.init();
 					rs.getPackageRegistry().put("platform:/resource/«projectName»/model/«projectName».ecore", «projectName»Package.eINSTANCE);
@@ -81,32 +80,33 @@ class HiPEFilesGenerator extends DefaultFilesGenerator {
 							
 					if(strategy instanceof FWD_OPT) {
 						Resource res = strategy.loadResource("platform:/resource/«trgProject»/model/«trgProject».ecore");
-						«trgProject.toFirstLower»Pack = (EPackage) res.getContents().get(0);
+						«trgProject.toLowerCase»Pack = (EPackage) res.getContents().get(0);
 						rs.getResources().remove(res);
 					}
 							
 					if(strategy instanceof BWD_OPT) {
 						Resource res = strategy.loadResource("platform:/resource/«srcProject»/model/«srcProject».ecore");
-						«srcProject.toFirstLower»Pack = (EPackage) res.getContents().get(0);
+						«srcProject.toLowerCase»Pack = (EPackage) res.getContents().get(0);
 						rs.getResources().remove(res);
 					}
 					
-					if(«srcProject.toFirstLower»Pack == null)
-						«srcProject.toFirstLower»Pack = «srcProject»PackageImpl.init();
+					if(«srcProject.toLowerCase»Pack == null)
+						«srcProject.toLowerCase»Pack = «srcPkg.toFirstUpper»PackageImpl.init();
 							
-					if(«trgProject.toFirstLower»Pack == null)
-						«trgProject.toFirstLower»Pack = «trgProject»PackageImpl.init();
+					if(«trgProject.toLowerCase»Pack == null)
+						«trgProject.toLowerCase»Pack = «trgPkg.toFirstUpper»PackageImpl.init();
 						
-					rs.getPackageRegistry().put("platform:/resource/«srcProject»/model/«srcProject».ecore", «srcProject.toFirstLower»Pack);
-				    rs.getPackageRegistry().put("platform:/plugin/«srcProject»/model/«srcProject».ecore", «srcProject.toFirstLower»Pack);	
+					rs.getPackageRegistry().put("platform:/resource/«srcProject»/model/«srcProject».ecore", «srcProject.toLowerCase»Pack);
+				    rs.getPackageRegistry().put("platform:/plugin/«srcProject»/model/«srcProject».ecore", «srcProject.toLowerCase»Pack);	
 						
-					rs.getPackageRegistry().put("platform:/resource/«trgProject»/model/«trgProject».ecore", «trgProject.toFirstLower»Pack);
-					rs.getPackageRegistry().put("platform:/plugin/«trgProject»/model/«trgProject».ecore", «trgProject.toFirstLower»Pack);
+					rs.getPackageRegistry().put("platform:/resource/«trgProject»/model/«trgProject».ecore", «trgProject.toLowerCase»Pack);
+					rs.getPackageRegistry().put("platform:/plugin/«trgProject»/model/«trgProject».ecore", «trgProject.toLowerCase»Pack);
 				}
 			
 				/** Create default options **/
 				public static IbexOptions createIbexOptions() {
 					IbexOptions options = new IbexOptions();
+					options.setBlackInterpreter(new HiPETGGEngine());
 					options.projectName("«MoflonUtil.lastCapitalizedSegmentOf(projectName)»");
 					options.projectPath("«projectName»");
 					options.debug(false);

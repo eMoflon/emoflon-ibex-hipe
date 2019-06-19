@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
@@ -17,10 +18,13 @@ import java.util.stream.Collectors;
 import org.apache.log4j.Logger;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IFolder;
+import org.eclipse.core.resources.IPathVariableManager;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
+import org.eclipse.core.resources.IWorkspace;
 import org.eclipse.core.resources.IncrementalProjectBuilder;
 import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.EObject;
@@ -86,9 +90,28 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 		// create the actual project path
 		projectPath = builder.getProject().getLocation().toPortableString();
 		
+		String srcModel = flattenedEditorModel.getSchema().getSourceTypes().get(0).getName();
+		String trgModel = flattenedEditorModel.getSchema().getTargetTypes().get(0).getName();
+		IProject srcProject = getProjectInWorkspace(srcModel, builder.getProject().getWorkspace());
+		IProject trgProject = getProjectInWorkspace(trgModel, builder.getProject().getWorkspace());
+		
+		String srcPkgName = null;
+		String trgPkgName = null;
+		String srcProjectName = null;
+		String trgProjectName = null;
+		
+		if(srcProject != null) {
+			srcPkgName = getRootPackageName(srcProject);
+			srcProjectName = srcProject.getName();
+		}
+		if(trgProject != null) {
+			trgPkgName = getRootPackageName(trgProject);
+			trgProjectName = trgProject.getName();
+		}
+		
 		LogUtils.info(logger, "Building missing app stubs...");
 		try {
-			generateDefaultRegHelper(builder, flattenedEditorModel);
+			generateDefaultRegHelper(builder, srcProject, trgProject, srcPkgName, trgPkgName);
 			generateDefaultStubs(builder, editorModel, flattenedEditorModel);
 		}catch(Exception e) {
 			LogUtils.error(logger, e);
@@ -106,7 +129,7 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 		copyDirectoryContents(jarsDir1, jarsDir2);
 		
 		LogUtils.info(logger, "Updating Manifest & build properties..");
-		updateManifest(projectPath, builder.getProject());
+		updateManifest(projectPath, builder.getProject(), srcProjectName, trgProjectName);
 		updateBuildProperties(projectPath);
 		IFolder srcGenFolder = builder.getProject().getFolder("src-gen");
 		IFolder genFolder = builder.getProject().getFolder("gen");
@@ -200,33 +223,19 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 				-> HiPEFilesGenerator.generateSchemaAutoRegFile(projectName, editorModel));
 	}
 	
-	public void generateDefaultRegHelper(IbexTGGBuilder builder, TripleGraphGrammarFile flattenedEditorModel) throws Exception {
-		String srcModel = flattenedEditorModel.getSchema().getSourceTypes().get(0).getName();
-		String trgModel = flattenedEditorModel.getSchema().getTargetTypes().get(0).getName();
-		
-		File srcPkg = new File(projectPath+"/gen/"+srcModel);
-		if(!(srcPkg.exists() && srcPkg.isDirectory())) {
-			srcModel = srcModel.substring(0, 1).toUpperCase() + srcModel.substring(1);
-			srcPkg = new File(projectPath+"/gen/" + srcModel);
-			if(!(srcPkg.exists() && srcPkg.isDirectory())) {
-//				throw new RuntimeException("Src package not found.");
-			}
+	public void generateDefaultRegHelper(IbexTGGBuilder builder, IProject srcProject, IProject trgProject, String srcPkg, String trgPkg) throws Exception {
+		if(srcProject == null || trgProject == null) {
+			LogUtils.info(logger, "Project belonging to src or trg model could not be found in the workspace. "
+					+ "Therefore, the default registration helper file could not be created.");
+			return;
 		}
-		
-		File trgPkg = new File(projectPath+"/gen/"+trgModel);
-		if(!(trgPkg.exists() && trgPkg.isDirectory())) {
-			trgModel = trgModel.substring(0, 1).toUpperCase() + trgModel.substring(1);
-			trgPkg = new File(projectPath+"/gen/" + trgModel);
-			if(!(trgPkg.exists() && trgPkg.isDirectory())) {
-//				throw new RuntimeException("Trg package not found.");
-			}
+		if(srcPkg == null || trgPkg == null) {
+			LogUtils.info(logger, "Source code belonging to src or trg model could not be found in the workspace. "
+					+ "Therefore, the default registration helper file could not be created.");
+			return;
 		}
-		
-		final String src = srcModel;
-		final String trg = trgModel;
-		
 		builder.createDefaultRunFile(HiPEFilesGenerator.DEFAULT_REGISTRATION_HELPER, (projectName, fileName)
-				-> HiPEFilesGenerator.generateDefaultRegHelperFile(projectName, src, trg));
+				-> HiPEFilesGenerator.generateDefaultRegHelperFile(projectName, srcProject.getName(), trgProject.getName(), srcPkg, trgPkg));
 	}
 	
 	private void cleanOldCode() {
@@ -269,7 +278,7 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 		return null;
 	}
 	
-	private void updateManifest(String packagePath, IProject project) {
+	private void updateManifest(String packagePath, IProject project, String srcPkg, String trgPkg) {
 		try {
 			IFile manifest = ManifestFileUpdater.getManifestFile(project);
 			ManifestHelper helper = new ManifestHelper();
@@ -285,6 +294,19 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 			
 			if(!helper.sectionContainsContent("Bundle-ClassPath", ".")) {
 				helper.addContentToSection("Bundle-ClassPath", ".");
+			}
+			
+			if(!helper.sectionContainsContent("Require-Bundle", "org.emoflon.ibex.tgg.runtime.hipe")) {
+				helper.addContentToSection("Require-Bundle", "org.emoflon.ibex.tgg.runtime.hipe");
+			}
+			// TODO: This works in most cases except for Modisco, since there is no generated code present.
+			// Fixit: MocaTreeToProcess complains about API access and only allows explicit package imports.
+			if(srcPkg != null && !helper.sectionContainsContent("Require-Bundle", srcPkg)) {
+				helper.addContentToSection("Require-Bundle", srcPkg);
+			}
+			
+			if(trgPkg != null && !helper.sectionContainsContent("Require-Bundle", trgPkg)) {
+				helper.addContentToSection("Require-Bundle", trgPkg);
 			}
 			
 			File rawManifest = new File(packagePath+"/"+manifest.getFullPath().removeFirstSegments(1).toPortableString());
@@ -408,5 +430,75 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 		} catch (IOException e) {
 			LogUtils.error(logger, "Couldn't save debug resource: \n "+e.getMessage());
 		}
+	}
+	
+	private static IProject getProjectInWorkspace(String modelName, IWorkspace workspace) {
+		IProject[] projects = workspace.getRoot().getProjects();
+		for(IProject project : projects) {
+			if(project.getName().toLowerCase().equals(modelName.toLowerCase())) {
+				return project;
+			}
+		}
+		LogUtils.info(logger, "The project belonging to model "+modelName+" could not be found in the workspace.");
+		return null;
+	}
+	
+	private static String getRootPackageName(IProject project) {
+		String upperPkgName = project.getName();
+		String firstLower = project.getName().substring(0, 1).toLowerCase()+project.getName().substring(1);
+		String lowerPkgName = project.getName().toLowerCase();
+		
+		IPath projectPath = project.getLocation().makeAbsolute();
+		Path srcPath = Paths.get(projectPath.toPortableString()+"/src");
+		File srcFolder = srcPath.toFile();
+		if(srcFolder.exists() && srcFolder.isDirectory()) {
+			for(String fName : srcFolder.list()) {
+				if(fName.equals(upperPkgName)) {
+					return upperPkgName;
+				}
+				if(fName.equals(firstLower)) {
+					return firstLower;
+				}
+				if(fName.equals(lowerPkgName)) {
+					return lowerPkgName;
+				}
+			}	
+		}
+		
+		
+		srcPath = Paths.get(projectPath.toPortableString()+"/src-gen");
+		srcFolder = srcPath.toFile();
+		if(srcFolder.exists() && srcFolder.isDirectory()) {
+			for(String fName : srcFolder.list()) {
+				if(fName.equals(upperPkgName)) {
+					return upperPkgName;
+				}
+				if(fName.equals(firstLower)) {
+					return firstLower;
+				}
+				if(fName.equals(lowerPkgName)) {
+					return lowerPkgName;
+				}
+			}
+		}
+		
+		srcPath = Paths.get(projectPath.toPortableString()+"/gen");
+		srcFolder = srcPath.toFile();
+		if(srcFolder.exists() && srcFolder.isDirectory()) {
+			for(String fName : srcFolder.list()) {
+				if(fName.equals(upperPkgName)) {
+					return upperPkgName;
+				}
+				if(fName.equals(firstLower)) {
+					return firstLower;
+				}
+				if(fName.equals(lowerPkgName)) {
+					return lowerPkgName;
+				}
+			}
+		}
+		
+		LogUtils.info(logger, "The project belonging to model "+project.getName()+" does not seem to have generated code.");
+		return null;
 	}
 }

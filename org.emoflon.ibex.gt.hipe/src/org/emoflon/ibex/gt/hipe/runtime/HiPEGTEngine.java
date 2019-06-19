@@ -27,7 +27,6 @@ import org.emoflon.ibex.common.emf.EMFSaveUtils;
 import org.emoflon.ibex.common.operational.IContextPatternInterpreter;
 import org.emoflon.ibex.common.operational.IMatch;
 import org.emoflon.ibex.common.operational.IMatchObserver;
-import org.gervarro.democles.specification.emf.EMFDemoclesPatternMetamodelPlugin;
 
 import IBeXLanguage.IBeXContext;
 import IBeXLanguage.IBeXContextAlternatives;
@@ -108,13 +107,14 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 		// do not delegate directly to the global registry!
 		resourceSet.getResourceFactoryRegistry().getExtensionToFactoryMap()
 				.put(Resource.Factory.Registry.DEFAULT_EXTENSION, new XMIResourceFactoryImpl());
-
+		/*
 		try {
 			EMFDemoclesPatternMetamodelPlugin.setWorkspaceRootDirectory(resourceSet,
 					new File(workspacePath).getCanonicalPath());
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+		*/
 		return resourceSet;
 	}
 	
