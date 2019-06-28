@@ -27,10 +27,93 @@
          id="hipe.feature"
          version="0.0.0"/>
 
+   <includes
+         id="org.moflon.core.feature"
+         version="0.0.0"/>
+
+   <includes
+         id="net.sourceforge.plantuml.feature"
+         version="0.0.0"/>
+
    <requires>
-      <import feature="net.sourceforge.plantuml.feature" version="1.1" match="greaterOrEqual"/>
       <import feature="org.eclipse.xtext.runtime" version="2.12" match="greaterOrEqual"/>
-      <import feature="org.moflon.core.feature" version="1.0" match="greaterOrEqual"/>
+      <import plugin="net.sourceforge.plantuml.eclipse"/>
+      <import plugin="org.eclipse.jface"/>
+      <import plugin="org.eclipse.emf.ecore"/>
+      <import plugin="org.eclipse.emf.ecore.editor"/>
+      <import plugin="org.eclipse.emf.ecore.xmi"/>
+      <import plugin="org.moflon.core.preferences"/>
+      <import plugin="org.moflon.core.ui"/>
+      <import plugin="org.moflon.emf.codegen"/>
+      <import plugin="org.eclipse.xtext.xbase.lib"/>
+      <import plugin="org.eclipse.xtend.lib"/>
+      <import plugin="org.eclipse.xtend.lib.macro"/>
+      <import plugin="org.moflon.core.utilities"/>
+      <import plugin="org.moflon.core.ui.autosetup"/>
+      <import plugin="org.apache.log4j"/>
+      <import plugin="org.eclipse.core.resources"/>
+      <import plugin="org.eclipse.core.runtime"/>
+      <import plugin="org.eclipse.xtext"/>
+      <import plugin="org.emoflon.ibex.common"/>
+      <import plugin="org.emoflon.ibex.gt.editor"/>
+      <import plugin="org.emoflon.ibex.gt.editor.ui"/>
+      <import plugin="org.moflon.core.plugins"/>
+      <import plugin="org.moflon.core.propertycontainer"/>
+      <import plugin="org.antlr.runtime" version="3.2.0" match="perfect"/>
+      <import plugin="org.eclipse.equinox.common"/>
+      <import plugin="org.eclipse.emf.common"/>
+      <import plugin="org.eclipse.xtext.common.types"/>
+      <import plugin="org.eclipse.xtend.lib" version="2.15.0" match="greaterOrEqual"/>
+      <import plugin="org.eclipse.xtext.util"/>
+      <import plugin="org.eclipse.xtext.xbase"/>
+      <import plugin="org.eclipse.xtext.xbase.lib" version="2.15.0" match="greaterOrEqual"/>
+      <import plugin="org.eclipse.xtext.ide"/>
+      <import plugin="org.eclipse.xtext.xbase.ide"/>
+      <import plugin="org.eclipse.compare"/>
+      <import plugin="org.eclipse.jdt.core"/>
+      <import plugin="org.eclipse.jdt.debug.ui"/>
+      <import plugin="org.eclipse.ui"/>
+      <import plugin="org.eclipse.ui.editors"/>
+      <import plugin="org.eclipse.ui.ide"/>
+      <import plugin="org.eclipse.ui.workbench"/>
+      <import plugin="org.eclipse.xtext.builder"/>
+      <import plugin="org.eclipse.xtext.common.types.ui"/>
+      <import plugin="org.eclipse.xtext.ui"/>
+      <import plugin="org.eclipse.xtext.ui.codetemplates.ui"/>
+      <import plugin="org.eclipse.xtext.ui.shared"/>
+      <import plugin="org.eclipse.xtext.xbase.lib" version="2.12.0" match="greaterOrEqual"/>
+      <import plugin="org.eclipse.xtext.xbase.ui"/>
+      <import plugin="org.emoflon.ibex.gt.editor.ide"/>
+      <import plugin="com.google.guava"/>
+      <import plugin="org.emoflon.ibex.tgg.editor"/>
+      <import plugin="org.emoflon.ibex.tgg.ide"/>
+      <import plugin="org.emoflon.ibex.tgg.core.language"/>
+      <import plugin="org.sat4j.core"/>
+      <import plugin="org.sat4j.pb"/>
+      <import plugin="org.emoflon.ibex.gt"/>
+      <import plugin="org.eclipse.core.commands"/>
+      <import plugin="org.eclipse.emf.mwe2.launch"/>
+      <import plugin="org.eclipse.jdt.ui"/>
+      <import plugin="org.eclipse.pde.core"/>
+      <import plugin="org.eclipse.e4.core.di"/>
+      <import plugin="org.emoflon.ibex.common.editor.utils"/>
+      <import plugin="net.sourceforge.plantuml.lib"/>
+      <import plugin="org.eclipse.swt"/>
+      <import plugin="hipe.engine" version="1.0.0" match="greaterOrEqual"/>
+      <import plugin="hipe.generator" version="1.0.0" match="greaterOrEqual"/>
+      <import plugin="hipe.network" version="0.1.0" match="greaterOrEqual"/>
+      <import plugin="hipe.pattern" version="0.1.0" match="greaterOrEqual"/>
+      <import plugin="hipe.searchplan" version="1.0.0" match="greaterOrEqual"/>
+      <import plugin="org.eclipse.xtend.lib" version="2.17.1" match="greaterOrEqual"/>
+      <import plugin="org.eclipse.xtend.lib.macro" version="2.17.1" match="greaterOrEqual"/>
+      <import plugin="org.eclipse.equinox.registry"/>
+      <import plugin="org.emoflon.ibex.tgg.core.runtime"/>
+      <import plugin="org.emoflon.ibex.gt.hipe"/>
+      <import plugin="org.eclipse.emf.codegen.ecore"/>
+      <import plugin="org.eclipse.ui" version="3.107.0" match="greaterOrEqual"/>
+      <import plugin="org.eclipse.core.runtime" version="3.11.0" match="compatible"/>
+      <import plugin="org.eclipse.core.expressions"/>
+      <import plugin="org.eclipse.equinox.security.ui" version="1.0.0" match="compatible"/>
    </requires>
 
    <plugin
@@ -133,6 +216,13 @@
 
    <plugin
          id="org.emoflon.ibex.tgg.runtime.hipe"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+   <plugin
+         id="org.eclipse.equinox.p2.ui"
          download-size="0"
          install-size="0"
          version="0.0.0"
