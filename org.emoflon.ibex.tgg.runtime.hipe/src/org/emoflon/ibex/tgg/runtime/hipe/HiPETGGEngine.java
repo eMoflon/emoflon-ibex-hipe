@@ -60,27 +60,25 @@ public class HiPETGGEngine extends HiPEGTEngine implements IBlackInterpreter {
 				patternToRuleMap);
 		this.ibexPatternSet = ibexPatternSet;
 		setPatterns(ibexPatternSet);
-		generateHiPEClassName(options.projectName());
 	}	
 	
 	@Override
-	protected void generateHiPEClassName(String projectName) {
+	protected void generateHiPEClassName(String projectName, boolean generic) {
+		String genericSuffix = generic ? "generic." : "";
 		if(strategy instanceof CC) {
-			engineClassName = projectName.replace("/", ".")+".cc.hipe.engine.HiPEEngine";	
+			engineClassName = projectName.replace("/", ".")+genericSuffix+".cc.hipe.engine.HiPEEngine";	
 		}
 		else if(strategy instanceof CO) {
-			engineClassName = projectName.replace("/", ".")+".co.hipe.engine.HiPEEngine";	
+			engineClassName = projectName.replace("/", ".")+genericSuffix+".co.hipe.engine.HiPEEngine";	
 		}
 		else {
-			engineClassName = projectName.replace("/", ".")+".sync.hipe.engine.HiPEEngine";	
+			engineClassName = projectName.replace("/", ".")+genericSuffix+".sync.hipe.engine.HiPEEngine";	
 		}
 	}
 	
 	@Override
 	public void monitor(final ResourceSet resourceSet) {
-		if (options.debug()) {
-			savePatterns(resourceSet, options.projectPath() + "/debug/ibex-patterns.xmi", Arrays.asList(ibexPatterns));
-		}
+		savePatterns(resourceSet, options.projectPath() + "/debug/ibex-patterns.xmi", Arrays.asList(ibexPatterns));
 
 		super.monitor(resourceSet);
 	}

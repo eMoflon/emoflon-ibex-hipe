@@ -159,12 +159,14 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 			
 			LogUtils.info(logger,  strategy.getClass().getName() + ": Generating Code..");
 			double tic = System.currentTimeMillis();
+			boolean generic = true;
+			String genericPrefix = generic ? ".generic" : "";
 			if(strategy instanceof HiPESYNC) 
-				HiPEGenerator.generateCode(projectName+".sync.", projectPath, network);
+				HiPEGenerator.generateCode(projectName+".sync.", projectPath, network, generic);
 			else if(strategy instanceof HiPECC) 
-				HiPEGenerator.generateCode(projectName+".cc.", projectPath, network);
+				HiPEGenerator.generateCode(projectName+".cc.", projectPath, network, generic);
 			else if(strategy instanceof HiPECO) 
-				HiPEGenerator.generateCode(projectName+".co.", projectPath, network);
+				HiPEGenerator.generateCode(projectName+".co.", projectPath, network, generic);
 			else
 				throw new RuntimeException("Unsupported Operational Strategy detected");
 			

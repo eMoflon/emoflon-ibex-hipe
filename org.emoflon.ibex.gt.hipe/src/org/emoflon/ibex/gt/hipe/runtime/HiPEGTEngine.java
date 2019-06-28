@@ -27,16 +27,19 @@ import org.emoflon.ibex.common.emf.EMFSaveUtils;
 import org.emoflon.ibex.common.operational.IContextPatternInterpreter;
 import org.emoflon.ibex.common.operational.IMatch;
 import org.emoflon.ibex.common.operational.IMatchObserver;
+import org.moflon.core.utilities.LogUtils;
 
 import IBeXLanguage.IBeXContext;
 import IBeXLanguage.IBeXContextAlternatives;
 import IBeXLanguage.IBeXContextPattern;
+import IBeXLanguage.IBeXLanguagePackage;
 import IBeXLanguage.IBeXPatternSet;
 import hipe.engine.HiPEContentAdapter;
 import hipe.engine.IHiPEEngine;
 import hipe.engine.match.ProductionMatch;
 import hipe.engine.message.production.ProductionResult;
 import hipe.network.HiPENetwork;
+import hipe.searchplan.ui.HiPENetworkGraphUi;
 
 /**
  * Engine for (unidirectional) graph transformations with HiPE.
@@ -84,6 +87,8 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 	 */
 	protected Optional<String> debugPath = Optional.empty();
 
+	private String workspacePath;
+
 	/**
 	 * Creates a new HiPEGTEngine.
 	 */
@@ -91,17 +96,10 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 		this.patterns = cfactory.createObjectToObjectHashMap();
 	}
 	
-//	@Override
-//	public ResourceSet createAndPrepareResourceSet(final String workspacePath) {
-//		ResourceSet resourceSet = new ResourceSetImpl();
-//		resourceSet.getResourceFactoryRegistry().getExtensionToFactoryMap()
-//				.put(Resource.Factory.Registry.DEFAULT_EXTENSION, new XMIResourceFactoryImpl());
-//		return resourceSet;
-//	}
-	
 	// TODO FIXIT!
 	@Override
 	public ResourceSet createAndPrepareResourceSet(final String workspacePath) {
+		this.workspacePath = workspacePath;
 		ResourceSet resourceSet = new ResourceSetImpl();
 		// In contrast to EMFDemoclesPatternMetamodelPlugin.createDefaultResourceSet, we
 		// do not delegate directly to the global registry!
@@ -136,7 +134,6 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 	public void initPatterns(final IBeXPatternSet ibexPatternSet) {
 		this.ibexPatternSet = ibexPatternSet;
 		setPatterns(this.ibexPatternSet);
-		generateHiPEClassName();
 	}
 	
 	protected void setPatterns(IBeXPatternSet ibexPatternSet) {
@@ -161,7 +158,7 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 		}
 	}
 	
-	protected void generateHiPEClassName() {
+	protected void generateHiPEClassName(boolean generic) {
 		URI patternURI = ibexPatternSet.eResource().getURI();
 		Pattern pattern = Pattern.compile("^(.*src-gen/)(.*)(api/ibex-patterns.xmi)$");
 		Matcher matcher = pattern.matcher(patternURI.toString());
@@ -171,11 +168,21 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 		packageName = packageName.substring(0, packageName.length()-1);
 		packageName = packageName.replace("/", ".");
 		
-		engineClassName = packageName+".hipe.engine.HiPEEngine";
+		if(generic) {
+			engineClassName = packageName+".hipe.generic.engine.GenericHiPEEngine";
+		}
+		else {
+			engineClassName = packageName+".hipe.engine.HiPEEngine";
+		}
 	}
 	
-	protected void generateHiPEClassName(String projectName) {
-		engineClassName = projectName.replace("/", ".")+".hipe.engine.HiPEEngine";
+	protected void generateHiPEClassName(String projectName, boolean generic) {
+		if(generic) {
+			engineClassName = projectName.replace("/", ".")+".hipe.engine.generic.HiPEEngine";
+		}
+		else {
+			engineClassName = projectName.replace("/", ".")+".hipe.engine.HiPEEngine";
+		}
 	}
 	
 	/**
@@ -230,11 +237,22 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 		
 		
 		Class<? extends IHiPEEngine> engineClass = null;
+		boolean generic = false;
+		generateHiPEClassName(generic);
 		try {
 			engineClass = (Class<? extends IHiPEEngine>) Class.forName(engineClassName);
 		} catch (ClassNotFoundException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
+//			e1.printStackTrace();
+		}
+
+		if(engineClass == null) {
+			generic = true;
+			generateHiPEClassName(generic);
+			try {
+				engineClass = (Class<? extends IHiPEEngine>) Class.forName(engineClassName);
+			} catch (ClassNotFoundException e1) {
+				e1.printStackTrace();
+			}
 		}
 		
 		try {
@@ -242,9 +260,23 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 				throw new RuntimeException("Engine class: "+engineClassName+ " -> not found!");
 			}
 			double tic = System.currentTimeMillis();
-			Constructor<? extends IHiPEEngine> constructor = engineClass.getDeclaredConstructor();
+			Constructor<? extends IHiPEEngine> constructor = generic ? engineClass.getDeclaredConstructor(HiPENetwork.class) : engineClass.getDeclaredConstructor();
 			constructor.setAccessible(true);
-			engine = constructor.newInstance();
+			if(generic) {
+				String hipeFolder = workspacePath;
+				URI patternURI = ibexPatternSet.eResource().getURI();
+				Pattern pattern = Pattern.compile("^(.*src-gen/)(.*)(api/ibex-patterns.xmi)$");
+				Matcher matcher = pattern.matcher(patternURI.toString());
+				matcher.matches();
+				String packageName = matcher.group(2);
+				HiPENetwork network = loadNetwork(hipeFolder+"/" + packageName +"/hipe/hipe-network.xmi");
+				if(network == null)
+					throw new RuntimeException("No hipe-network.xmi could be fonud");
+				engine = constructor.newInstance(network);
+			}
+			else {
+				engine = constructor.newInstance();
+			}
 			//engine = engineClass.newInstance();
 			double toc = System.currentTimeMillis();
 			System.out.println("dynamic instantiation after " + (toc-tic)/1000.0 + "s");
@@ -327,18 +359,38 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 		this.debugPath = Optional.of(debugPath);
 	}
 	
-	protected void saveNetworkForDebugging() {
-		debugPath.ifPresent(path -> {
-			List<HiPENetwork> network = new LinkedList<>();
-			network.add(this.network);
-			EMFSaveUtils.saveModel(network, path + "/hipe-network");
-		});
+	protected HiPENetwork loadNetwork(String path) {
+		Resource res = null;
+		try {
+			res = loadResource(path);
+		} catch (Exception e) {
+			LogUtils.error(logger, "Couldn't load ibex pattern set: \n" + e.getMessage());
+			e.printStackTrace();
+		}
+		
+		if(res == null) {
+			return null;
+		}
+		return (HiPENetwork)res.getContents().get(0);
 	}
-
 	
 
 	protected IMatch createMatch(final ProductionMatch match, final String patternName) {
 		return new HiPEGTMatch(match, patternName);
 	}
 
+	private static Resource loadResource(String path) throws Exception {
+		Resource.Factory.Registry.INSTANCE.getExtensionToFactoryMap().put("ibex-patterns-for-hipe", new XMIResourceFactoryImpl());
+		ResourceSet rs = new ResourceSetImpl();
+		rs.getResourceFactoryRegistry().getExtensionToFactoryMap().put("xmi", new XMIResourceFactoryImpl());
+		rs.getPackageRegistry().put(IBeXLanguagePackage.eNS_URI, IBeXLanguagePackage.eINSTANCE);
+		
+		URI uri = URI.createFileURI(path);
+		Resource modelResource = rs.getResource(uri, true);
+		EcoreUtil.resolveAll(rs);
+		
+		if(modelResource == null)
+			throw new IOException("File did not contain a vaild model.");
+		return modelResource;
+	}
 }

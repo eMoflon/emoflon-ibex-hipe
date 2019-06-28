@@ -1,5 +1,35 @@
 package org.emoflon.ibex.gt.hipe.ide.codegen;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.log4j.Logger;
+import org.eclipse.core.resources.IFile;
+import org.eclipse.core.resources.IFolder;
+import org.eclipse.core.resources.IProject;
+import org.eclipse.core.resources.IResource;
+import org.eclipse.core.resources.IncrementalProjectBuilder;
+import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.IPath;
+import org.eclipse.core.runtime.NullProgressMonitor;
+import org.eclipse.emf.common.util.URI;
+import org.eclipse.emf.ecore.EObject;
+import org.eclipse.emf.ecore.resource.Resource;
+import org.eclipse.emf.ecore.resource.ResourceSet;
+import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
+import org.eclipse.emf.ecore.util.EcoreUtil;
+import org.eclipse.emf.ecore.xmi.XMIResource;
+import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
 import org.emoflon.ibex.gt.editor.ui.builder.GTBuilderExtension;
 import org.emoflon.ibex.gt.hipe.runtime.IBeXToHiPEPatternTransformation;
 import org.moflon.core.plugins.manifest.ManifestFileUpdater;
@@ -12,35 +42,6 @@ import hipe.generator.HiPEGenerator;
 import hipe.network.HiPENetwork;
 import hipe.pattern.HiPEPatternContainer;
 import hipe.searchplan.simple.SimpleSearchPlan;
-
-import org.eclipse.core.runtime.CoreException;
-import org.eclipse.core.runtime.IPath;
-import org.eclipse.core.runtime.NullProgressMonitor;
-import org.eclipse.emf.common.util.URI;
-import org.eclipse.emf.ecore.EObject;
-import org.eclipse.emf.ecore.resource.Resource;
-import org.eclipse.emf.ecore.resource.ResourceSet;
-import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
-import org.eclipse.emf.ecore.util.EcoreUtil;
-import org.eclipse.emf.ecore.xmi.XMIResource;
-import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.nio.file.Path;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import org.apache.log4j.Logger;
-import org.eclipse.core.resources.IFile;
-import org.eclipse.core.resources.IFolder;
-import org.eclipse.core.resources.IProject;
-import org.eclipse.core.resources.IResource;
-import org.eclipse.core.resources.IncrementalProjectBuilder;
 
 public class GTHiPEBuilderExtension implements GTBuilderExtension{
 
@@ -113,16 +114,20 @@ public class GTHiPEBuilderExtension implements GTBuilderExtension{
 		HiPENetwork network = searchPlan.getNetwork();
 		
 		LogUtils.info(logger, "Generating Code..");
-		HiPEGenerator.generateCode(packageName+".", this.packagePath, network);
-		
+		boolean generic = true;
+		HiPEGenerator.generateCode(packageName+".", this.packagePath, network, generic);
+
 		double toc = System.currentTimeMillis();
 		LogUtils.info(logger, "Code generation completed in "+ (toc-tic)/1000.0 + " seconds.");	
 		
 		LogUtils.info(logger, "Saving HiPE patterns and HiPE network..");
-		String debugFolder = this.packagePath + "/debug";
-		createNewDirectory(debugFolder);
-		saveResource(container, debugFolder+"/hipe-patterns.xmi");
-		saveResource(network, debugFolder+"/hipe-network.xmi");
+		String hipeFolder = this.packagePath + "/hipe";
+		createNewDirectory(hipeFolder);
+		saveResource(container, hipeFolder+"/hipe-patterns.xmi");
+		List<EObject> networkContainments = new ArrayList<>();
+		networkContainments.add(network);
+		networkContainments.add(container);
+		saveResource(networkContainments, hipeFolder+"/hipe-network.xmi");
 		
 		LogUtils.info(logger, "Refreshing workspace and cleaning build ..");
 		try {
@@ -339,5 +344,26 @@ public class GTHiPEBuilderExtension implements GTBuilderExtension{
 			LogUtils.error(logger, "Couldn't save debug resource: \n "+e.getMessage());
 		}
 	}
-
+	
+	public static void saveResource(Collection<EObject> model, String path) {
+		Resource.Factory.Registry.INSTANCE.getExtensionToFactoryMap().put("xmi-resource", new XMIResourceFactoryImpl());
+		ResourceSet rs = new ResourceSetImpl();
+		rs.getResourceFactoryRegistry().getExtensionToFactoryMap().put("xmi", new XMIResourceFactoryImpl());
+		
+		URI uri = URI.createFileURI(path);
+		Resource modelResource = rs.createResource(uri);
+		modelResource.getContents().addAll(model);
+		
+		Map<Object, Object> saveOptions = ((XMIResource)modelResource).getDefaultSaveOptions();
+		saveOptions.put(XMIResource.OPTION_ENCODING,"UTF-8");
+		saveOptions.put(XMIResource.OPTION_USE_XMI_TYPE, Boolean.TRUE);
+		saveOptions.put(XMIResource.OPTION_SAVE_TYPE_INFORMATION,Boolean.TRUE);
+		saveOptions.put(XMIResource.OPTION_SCHEMA_LOCATION_IMPLEMENTATION, Boolean.TRUE);
+		
+		try {
+			((XMIResource)modelResource).save(saveOptions);
+		} catch (IOException e) {
+			LogUtils.error(logger, "Couldn't save debug resource: \n "+e.getMessage());
+		}
+	}
 }
