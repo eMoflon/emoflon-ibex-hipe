@@ -22,7 +22,7 @@ class HiPEFilesGenerator extends DefaultFilesGenerator {
 			package org.emoflon.ibex.tgg.run.«MoflonUtil.lastCapitalizedSegmentOf(projectName).toLowerCase»;
 			
 			import java.io.IOException;
-			
+				
 			import org.eclipse.emf.ecore.resource.ResourceSet;
 			import org.emoflon.ibex.tgg.operational.csp.constraints.factories.«MoflonUtil.lastCapitalizedSegmentOf(projectName).toLowerCase».UserDefinedRuntimeTGGAttrConstraintFactory;
 			import org.emoflon.ibex.tgg.operational.defaults.IbexOptions;
@@ -49,8 +49,10 @@ class HiPEFilesGenerator extends DefaultFilesGenerator {
 		'''
 			package org.emoflon.ibex.tgg.run.«MoflonUtil.lastCapitalizedSegmentOf(projectName).toLowerCase»;
 			
+			import java.io.File;
 			import java.io.IOException;
 			
+			import org.eclipse.emf.common.util.URI;
 			import org.eclipse.emf.ecore.EPackage;
 			import org.eclipse.emf.ecore.resource.Resource;
 			import org.eclipse.emf.ecore.resource.ResourceSet;
@@ -67,9 +69,21 @@ class HiPEFilesGenerator extends DefaultFilesGenerator {
 			import «trgPkg».impl.«trgPkg.toFirstUpper»PackageImpl;
 			
 			public class «DEFAULT_REGISTRATION_HELPER» {
+				
+				/** Create default options **/
+				public static final void setWorkspaceRootDirectory(ResourceSet resourceSet) throws IOException {
+					final String root = "../";
+					URI key = URI.createPlatformResourceURI("/", true);
+					URI value = URI.createFileURI(new File(root).getCanonicalPath() + File.separatorChar);
+					resourceSet.getURIConverter().getURIMap().put(key, value);
+				}
 			
 				/** Load and register source and target metamodels */
 				public static void registerMetamodels(ResourceSet rs, OperationalStrategy strategy) throws IOException {
+					
+					// Set correct workspace root
+					setWorkspaceRootDirectory(rs);
+					
 					// Load and register source and target metamodels
 					EPackage «srcProject.toLowerCase»Pack = null;
 					EPackage «trgProject.toLowerCase»Pack = null;
