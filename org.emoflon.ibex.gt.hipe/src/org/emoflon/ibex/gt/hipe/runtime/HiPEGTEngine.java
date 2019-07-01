@@ -263,13 +263,12 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 			Constructor<? extends IHiPEEngine> constructor = generic ? engineClass.getDeclaredConstructor(HiPENetwork.class) : engineClass.getDeclaredConstructor();
 			constructor.setAccessible(true);
 			if(generic) {
-				String hipeFolder = workspacePath;
 				URI patternURI = ibexPatternSet.eResource().getURI();
-				Pattern pattern = Pattern.compile("^(.*src-gen/)(.*)(api/ibex-patterns.xmi)$");
+				Pattern pattern = Pattern.compile("(../)(.*)(/src-gen/)(.*)$");
 				Matcher matcher = pattern.matcher(patternURI.toString());
 				matcher.matches();
 				String packageName = matcher.group(2);
-				HiPENetwork network = loadNetwork(hipeFolder+"/" + packageName +"/hipe/hipe-network.xmi");
+				HiPENetwork network = loadNetwork("../" + packageName +"/hipe/hipe-network.xmi");
 				if(network == null)
 					throw new RuntimeException("No hipe-network.xmi could be fonud");
 				engine = constructor.newInstance(network);
