@@ -212,7 +212,7 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 		List<EObject> networkContainments = new ArrayList<>();
 		networkContainments.add(network);
 		networkContainments.add(container);
-		saveResource(networkContainments, hipeFolder+"/hipe-network.xmi");
+		saveResource(networkContainments,hipeFolder+"/" +  opPrefix + "_hipe-network.xmi");
 		}
 	
 	public IbexOptions createIbexOptions(String projectName, String projectPath) {
