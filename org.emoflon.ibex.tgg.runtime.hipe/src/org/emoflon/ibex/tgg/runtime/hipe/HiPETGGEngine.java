@@ -90,6 +90,16 @@ public class HiPETGGEngine extends HiPEGTEngine implements IBlackInterpreter {
 	}
 	
 	@Override
+	protected String getProjectName() {
+		URI patternURI = ibexPatternSet.eResource().getURI();
+		Pattern pattern = Pattern.compile("^(.*)/(.*)(/debug/ibex-patterns.xmi)$");
+		Matcher matcher = pattern.matcher(patternURI.toString());
+		matcher.matches();
+		String packageName = matcher.group(2);
+		return packageName;
+	}
+	
+	@Override
 	protected String getNetworkFileName() {
 		if(strategy instanceof SYNC) {
 			return "sync_hipe-network.xmi";

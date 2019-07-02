@@ -170,6 +170,15 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 		return packageName;
 	}
 	
+	protected String getProjectName() {
+		URI patternURI = ibexPatternSet.eResource().getURI();
+		Pattern pattern = Pattern.compile("../(.*)/src-gen/(.*)(/api/ibex-patterns.xmi)$");
+		Matcher matcher = pattern.matcher(patternURI.toString());
+		matcher.matches();
+		String packageName = matcher.group(1);
+		return packageName;
+	}
+	
 	protected void generateHiPEClassName(String projectName, boolean generic) {
 		if(generic) {
 			engineClassName = projectName+".hipe.generic.engine.GenericHiPEEngine";
@@ -239,10 +248,10 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 //			e1.printStackTrace();
 		}
 
-		String packageName = null;
+		String projectName = getProjectName();
 		if(engineClass == null) {
 			generic = true;
-			packageName = generateHiPEClassName(generic);
+			generateHiPEClassName(generic);
 			try {
 				engineClass = (Class<? extends IHiPEEngine>) Class.forName(engineClassName);
 			} catch (ClassNotFoundException e1) {
@@ -258,7 +267,7 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 			Constructor<? extends IHiPEEngine> constructor = generic ? engineClass.getDeclaredConstructor(HiPENetwork.class) : engineClass.getDeclaredConstructor();
 			constructor.setAccessible(true);
 			if(generic) {
-				HiPENetwork network = loadNetwork("../" + packageName +"/hipe/" + getNetworkFileName());
+				HiPENetwork network = loadNetwork("../" + projectName +"/hipe/" + getNetworkFileName());
 				if(network == null)
 					throw new RuntimeException("No hipe-network.xmi could be fonud");
 				engine = constructor.newInstance(network);
