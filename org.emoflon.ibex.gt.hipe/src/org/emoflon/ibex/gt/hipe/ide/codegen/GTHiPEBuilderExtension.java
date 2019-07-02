@@ -84,6 +84,7 @@ public class GTHiPEBuilderExtension implements GTBuilderExtension{
 		LogUtils.info(logger, "Cleaning old code..");
 		cleanOldCode();
 		
+		/*
 		LogUtils.info(logger, "Creating jar directory..");
 		createNewDirectory(this.packagePath+"/jars");
 		File jarsDir1 = findJarsDirectory();
@@ -91,7 +92,7 @@ public class GTHiPEBuilderExtension implements GTBuilderExtension{
 		
 		LogUtils.info(logger, "Copying jars..");
 		copyDirectoryContents(jarsDir1, jarsDir2);
-		
+		*/
 		LogUtils.info(logger, "Updating Manifest & build properties..");
 		updateManifest(this.packagePath, project);
 		updateBuildProperties(this.packagePath);
@@ -140,7 +141,7 @@ public class GTHiPEBuilderExtension implements GTBuilderExtension{
 			IFile manifest = ManifestFileUpdater.getManifestFile(project);
 			ManifestHelper helper = new ManifestHelper();
 			helper.loadManifest(manifest);
-			
+			/*
 			if(!helper.containsSection("Bundle-ClassPath")) {
 				helper.appendSection("Bundle-ClassPath");
 			}
@@ -152,7 +153,7 @@ public class GTHiPEBuilderExtension implements GTBuilderExtension{
 			if(!helper.sectionContainsContent("Bundle-ClassPath", ".")) {
 				helper.addContentToSection("Bundle-ClassPath", ".");
 			}
-			
+			*/
 			File rawManifest = new File(this.packagePath+"/"+manifest.getFullPath().removeFirstSegments(1).toPortableString());
 			
 			helper.updateManifest(rawManifest);
@@ -175,7 +176,7 @@ public class GTHiPEBuilderExtension implements GTBuilderExtension{
 			if(!helper.sectionContainsContent("source..", "src-gen/")) {
 				helper.addContentToSection("source..", "src-gen/");
 			}
-			
+			/*
 			if(!helper.containsSection("jars.extra.classpath")) {
 				helper.appendSection("jars.extra.classpath");
 			}
@@ -195,7 +196,7 @@ public class GTHiPEBuilderExtension implements GTBuilderExtension{
 			if(!helper.sectionContainsContent("jars.extra.classpath", "jars/scala-library-2.12.8.jar")) {
 				helper.addContentToSection("jars.extra.classpath", "jars/scala-library-2.12.8.jar");
 			}
-			
+			*/
 			helper.updateProperties(buildProps);
 			
 		} catch (CoreException | IOException e) {

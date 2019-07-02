@@ -120,6 +120,7 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 		LogUtils.info(logger, "Cleaning old code..");
 		cleanOldCode();
 		
+		/*
 		LogUtils.info(logger, "Creating jar directory..");
 		createNewDirectory(projectPath+"/jars");
 		File jarsDir1 = findJarsDirectory();
@@ -127,7 +128,7 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 		
 		LogUtils.info(logger, "Copying jars..");
 		copyDirectoryContents(jarsDir1, jarsDir2);
-		
+		*/
 		LogUtils.info(logger, "Updating Manifest & build properties..");
 		updateManifest(projectPath, builder.getProject(), srcProjectName, trgProjectName);
 		updateBuildProperties(projectPath);
@@ -283,7 +284,7 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 			IFile manifest = ManifestFileUpdater.getManifestFile(project);
 			ManifestHelper helper = new ManifestHelper();
 			helper.loadManifest(manifest);
-			
+			/*
 			if(!helper.containsSection("Bundle-ClassPath")) {
 				helper.appendSection("Bundle-ClassPath");
 			}
@@ -295,7 +296,7 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 			if(!helper.sectionContainsContent("Bundle-ClassPath", ".")) {
 				helper.addContentToSection("Bundle-ClassPath", ".");
 			}
-			
+			*/
 			if(!helper.sectionContainsContent("Require-Bundle", "org.emoflon.ibex.tgg.runtime.hipe")) {
 				helper.addContentToSection("Require-Bundle", "org.emoflon.ibex.tgg.runtime.hipe");
 			}
@@ -335,7 +336,7 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 			if(!helper.sectionContainsContent("source..", "gen/")) {
 				helper.addContentToSection("source..", "gen/");
 			}
-			
+			/*
 			if(!helper.containsSection("jars.extra.classpath")) {
 				helper.appendSection("jars.extra.classpath");
 			}
@@ -355,7 +356,7 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 			if(!helper.sectionContainsContent("jars.extra.classpath", "jars/scala-library-2.12.8.jar")) {
 				helper.addContentToSection("jars.extra.classpath", "jars/scala-library-2.12.8.jar");
 			}
-			
+			*/
 			helper.updateProperties(buildProps);
 			
 		} catch (CoreException | IOException e) {
