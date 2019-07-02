@@ -2,17 +2,15 @@ package org.emoflon.ibex.gt.hipe.runtime;
 
 import static org.emoflon.ibex.common.collections.CollectionFactory.cfactory;
 
-import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
 import org.apache.log4j.Logger;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.EObject;
@@ -23,7 +21,6 @@ import org.eclipse.emf.ecore.resource.ResourceSet;
 import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
 import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
-import org.emoflon.ibex.common.emf.EMFSaveUtils;
 import org.emoflon.ibex.common.operational.IContextPatternInterpreter;
 import org.emoflon.ibex.common.operational.IMatch;
 import org.emoflon.ibex.common.operational.IMatchObserver;
@@ -39,7 +36,6 @@ import hipe.engine.IHiPEEngine;
 import hipe.engine.match.ProductionMatch;
 import hipe.engine.message.production.ProductionResult;
 import hipe.network.HiPENetwork;
-import hipe.searchplan.ui.HiPENetworkGraphUi;
 
 /**
  * Engine for (unidirectional) graph transformations with HiPE.
@@ -105,14 +101,6 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 		// do not delegate directly to the global registry!
 		resourceSet.getResourceFactoryRegistry().getExtensionToFactoryMap()
 				.put(Resource.Factory.Registry.DEFAULT_EXTENSION, new XMIResourceFactoryImpl());
-		/*
-		try {
-			EMFDemoclesPatternMetamodelPlugin.setWorkspaceRootDirectory(resourceSet,
-					new File(workspacePath).getCanonicalPath());
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		*/
 		return resourceSet;
 	}
 	
@@ -158,30 +146,36 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 		}
 	}
 	
-	protected void generateHiPEClassName(boolean generic) {
+	/**
+	 * returns the package name and generate the hipe class name
+	 * @param generic
+	 * @return
+	 */
+	protected String generateHiPEClassName(boolean generic) {
 		URI patternURI = ibexPatternSet.eResource().getURI();
-		Pattern pattern = Pattern.compile("^(.*src-gen/)(.*)(api/ibex-patterns.xmi)$");
+		String packageName = getPackageName(patternURI);
+		
+		packageName = packageName.replace("/", ".");
+		
+		generateHiPEClassName(packageName, generic);
+		
+		return packageName;
+	}
+
+	protected String getPackageName(URI patternURI) {
+		Pattern pattern = Pattern.compile("^(.*src-gen/)(.*)(/api/ibex-patterns.xmi)$");
 		Matcher matcher = pattern.matcher(patternURI.toString());
 		matcher.matches();
 		String packageName = matcher.group(2);
-		
-		packageName = packageName.substring(0, packageName.length()-1);
-		packageName = packageName.replace("/", ".");
-		
-		if(generic) {
-			engineClassName = packageName+".hipe.generic.engine.GenericHiPEEngine";
-		}
-		else {
-			engineClassName = packageName+".hipe.engine.HiPEEngine";
-		}
+		return packageName;
 	}
 	
 	protected void generateHiPEClassName(String projectName, boolean generic) {
 		if(generic) {
-			engineClassName = projectName.replace("/", ".")+".hipe.engine.generic.HiPEEngine";
+			engineClassName = projectName+".hipe.generic.engine.GenericHiPEEngine";
 		}
 		else {
-			engineClassName = projectName.replace("/", ".")+".hipe.engine.HiPEEngine";
+			engineClassName = projectName+".hipe.engine.HiPEEngine";
 		}
 	}
 	
@@ -245,9 +239,10 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 //			e1.printStackTrace();
 		}
 
+		String packageName = null;
 		if(engineClass == null) {
 			generic = true;
-			generateHiPEClassName(generic);
+			packageName = generateHiPEClassName(generic);
 			try {
 				engineClass = (Class<? extends IHiPEEngine>) Class.forName(engineClassName);
 			} catch (ClassNotFoundException e1) {
@@ -263,12 +258,7 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 			Constructor<? extends IHiPEEngine> constructor = generic ? engineClass.getDeclaredConstructor(HiPENetwork.class) : engineClass.getDeclaredConstructor();
 			constructor.setAccessible(true);
 			if(generic) {
-				URI patternURI = ibexPatternSet.eResource().getURI();
-				Pattern pattern = Pattern.compile("(../)(.*)(/src-gen/)(.*)$");
-				Matcher matcher = pattern.matcher(patternURI.toString());
-				matcher.matches();
-				String packageName = matcher.group(2);
-				HiPENetwork network = loadNetwork("../" + packageName +"/hipe/hipe-network.xmi");
+				HiPENetwork network = loadNetwork("../" + packageName +"/hipe/" + getNetworkFileName());
 				if(network == null)
 					throw new RuntimeException("No hipe-network.xmi could be fonud");
 				engine = constructor.newInstance(network);
@@ -298,6 +288,10 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 		System.out.println("added adapter after " + (toc-tic)/1000.0 + "s");
 	}
 	
+	protected String getNetworkFileName() {
+		return "hipe-network.xmi";
+	}
+
 	@Override
 	public void updateMatches() {
 		// Trigger the Rete network
@@ -370,7 +364,11 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 		if(res == null) {
 			return null;
 		}
-		return (HiPENetwork)res.getContents().get(0);
+		for(EObject content : res.getContents()) {
+			if(content instanceof HiPENetwork)
+				return (HiPENetwork) content;
+		}
+		return null;
 	}
 	
 

@@ -8,6 +8,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
@@ -18,7 +19,6 @@ import java.util.stream.Collectors;
 import org.apache.log4j.Logger;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IFolder;
-import org.eclipse.core.resources.IPathVariableManager;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IWorkspace;
@@ -41,6 +41,9 @@ import org.emoflon.ibex.tgg.ide.admin.BuilderExtension;
 import org.emoflon.ibex.tgg.ide.admin.IbexTGGBuilder;
 import org.emoflon.ibex.tgg.operational.defaults.IbexOptions;
 import org.emoflon.ibex.tgg.operational.strategies.OperationalStrategy;
+import org.emoflon.ibex.tgg.operational.strategies.opt.CO;
+import org.emoflon.ibex.tgg.operational.strategies.opt.cc.CC;
+import org.emoflon.ibex.tgg.operational.strategies.sync.SYNC;
 import org.moflon.core.plugins.manifest.ManifestFileUpdater;
 import org.moflon.core.utilities.ClasspathUtil;
 import org.moflon.core.utilities.LogUtils;
@@ -160,7 +163,6 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 			LogUtils.info(logger,  strategy.getClass().getName() + ": Generating Code..");
 			double tic = System.currentTimeMillis();
 			boolean generic = true;
-			String genericPrefix = generic ? ".generic" : "";
 			if(strategy instanceof HiPESYNC) 
 				HiPEGenerator.generateCode(projectName+".sync.", projectPath, network, generic);
 			else if(strategy instanceof HiPECC) 
@@ -174,10 +176,9 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 			LogUtils.info(logger,  strategy.getClass().getName() + ": Code generation completed in "+ (toc-tic)/1000.0 + " seconds.");	
 			
 			LogUtils.info(logger,  strategy.getClass().getName() + ": Saving HiPE patterns and HiPE network..");
-			String debugFolder = projectPath + "/debug";
+			String debugFolder = projectPath + "/hipe";
 			createNewDirectory(debugFolder);
-			saveResource(container, debugFolder+"/" +  strategy.getClass().getName() + "hipe-patterns.xmi");
-			saveResource(network, debugFolder+"/" +  strategy.getClass().getName() + "hipe-network.xmi");
+			saveHiPEResources(strategy, container, network, debugFolder);
 		}
 
 		
@@ -191,6 +192,28 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 		
 		LogUtils.info(logger, "## HiPE ## --> HiPE build complete!");
 	}
+
+	private void saveHiPEResources(OperationalStrategy strategy, HiPEPatternContainer container, HiPENetwork network, String hipeFolder) {
+		String opPrefix = "";
+		if(strategy instanceof SYNC) {
+			opPrefix = "sync";
+		}
+		if(strategy instanceof CC) {
+			opPrefix = "cc";
+		} 
+		if(strategy instanceof CO) {
+			opPrefix = "co";
+		}  
+
+		if(opPrefix.isEmpty())
+			throw new RuntimeException("Unsupported operationalization detected! - " + strategy.getClass().getSimpleName());
+			
+		saveResource(container, hipeFolder+"/" +  opPrefix + "_hipe-patterns.xmi");
+		List<EObject> networkContainments = new ArrayList<>();
+		networkContainments.add(network);
+		networkContainments.add(container);
+		saveResource(networkContainments, hipeFolder+"/hipe-network.xmi");
+		}
 	
 	public IbexOptions createIbexOptions(String projectName, String projectPath) {
 		IbexOptions options = new IbexOptions();
@@ -241,13 +264,13 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 	}
 	
 	private void cleanOldCode() {
-		File dir = new File(projectPath+"/src-gen/" + projectName + "/hipe");
+		File dir = new File(projectPath+"/src-gen/");
 		if(dir.exists()) {
 			LogUtils.info(logger, "--> Cleaning old source files in root folder: "+projectPath+"/src-gen/" + projectName + "/hipe");
-			if(!deleteDirectory(dir)) {
-				LogUtils.error(logger, "Folder couldn't be deleted!");
-
-			}
+			for(File subDir : dir.listFiles())
+				if(!deleteDirectory(subDir)) {
+					LogUtils.error(logger, "Folder " + dir.getName() + " couldn't be deleted!");
+				}
 		} else {
 			LogUtils.info(logger, "--> No previously generated code found, nothing to do!");
 		}
@@ -420,6 +443,28 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 		URI uri = URI.createFileURI(path);
 		Resource modelResource = rs.createResource(uri);
 		modelResource.getContents().add(model);
+		
+		Map<Object, Object> saveOptions = ((XMIResource)modelResource).getDefaultSaveOptions();
+		saveOptions.put(XMIResource.OPTION_ENCODING,"UTF-8");
+		saveOptions.put(XMIResource.OPTION_USE_XMI_TYPE, Boolean.TRUE);
+		saveOptions.put(XMIResource.OPTION_SAVE_TYPE_INFORMATION,Boolean.TRUE);
+		saveOptions.put(XMIResource.OPTION_SCHEMA_LOCATION_IMPLEMENTATION, Boolean.TRUE);
+		
+		try {
+			((XMIResource)modelResource).save(saveOptions);
+		} catch (IOException e) {
+			LogUtils.error(logger, "Couldn't save debug resource: \n "+e.getMessage());
+		}
+	}
+	
+	public static void saveResource(Collection<EObject> model, String path) {
+		Resource.Factory.Registry.INSTANCE.getExtensionToFactoryMap().put("xmi-resource", new XMIResourceFactoryImpl());
+		ResourceSet rs = new ResourceSetImpl();
+		rs.getResourceFactoryRegistry().getExtensionToFactoryMap().put("xmi", new XMIResourceFactoryImpl());
+		
+		URI uri = URI.createFileURI(path);
+		Resource modelResource = rs.createResource(uri);
+		modelResource.getContents().addAll(model);
 		
 		Map<Object, Object> saveOptions = ((XMIResource)modelResource).getDefaultSaveOptions();
 		saveOptions.put(XMIResource.OPTION_ENCODING,"UTF-8");

@@ -3,6 +3,8 @@ package org.emoflon.ibex.tgg.runtime.hipe;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.EObject;
@@ -19,6 +21,7 @@ import org.emoflon.ibex.tgg.operational.defaults.IbexOptions;
 import org.emoflon.ibex.tgg.operational.strategies.OperationalStrategy;
 import org.emoflon.ibex.tgg.operational.strategies.opt.CO;
 import org.emoflon.ibex.tgg.operational.strategies.opt.cc.CC;
+import org.emoflon.ibex.tgg.operational.strategies.sync.SYNC;
 
 import IBeXLanguage.IBeXContextPattern;
 import IBeXLanguage.IBeXPatternSet;
@@ -65,15 +68,39 @@ public class HiPETGGEngine extends HiPEGTEngine implements IBlackInterpreter {
 	@Override
 	protected void generateHiPEClassName(String projectName, boolean generic) {
 		String genericSuffix = generic ? "generic." : "";
+		String genericEngineSuffix = generic ? "Generic" : "";
 		if(strategy instanceof CC) {
-			engineClassName = projectName.replace("/", ".")+genericSuffix+".cc.hipe.engine.HiPEEngine";	
+			engineClassName = projectName + ".cc.hipe." + genericSuffix + "engine." + genericEngineSuffix + "HiPEEngine";	
 		}
 		else if(strategy instanceof CO) {
-			engineClassName = projectName.replace("/", ".")+genericSuffix+".co.hipe.engine.HiPEEngine";	
+			engineClassName = projectName + ".co.hipe." + genericSuffix + "engine." + genericEngineSuffix + "HiPEEngine";	
 		}
 		else {
-			engineClassName = projectName.replace("/", ".")+genericSuffix+".sync.hipe.engine.HiPEEngine";	
+			engineClassName = projectName + ".sync.hipe." + genericSuffix + "engine." + genericEngineSuffix + "HiPEEngine";	
 		}
+	}
+	
+	@Override
+	protected String getPackageName(URI patternURI) {
+		Pattern pattern = Pattern.compile("^(.*/)(.*)(/debug/.*)$");
+		Matcher matcher = pattern.matcher(patternURI.toString());
+		matcher.matches();
+		String packageName = matcher.group(2);
+		return packageName;
+	}
+	
+	@Override
+	protected String getNetworkFileName() {
+		if(strategy instanceof SYNC) {
+			return "sync_hipe-network.xmi";
+		}
+		if(strategy instanceof CC) {
+			return "cc_hipe-network.xmi";
+		}
+		if(strategy instanceof CO) {
+			return "co_hipe-network.xmi";
+		}
+		throw new RuntimeException("Unsupported operationalization detected! - " + strategy.getClass().getSimpleName());
 	}
 	
 	@Override
