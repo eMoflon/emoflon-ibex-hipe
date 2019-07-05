@@ -247,7 +247,7 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 			engine = constructor.newInstance();
 			//engine = engineClass.newInstance();
 			double toc = System.currentTimeMillis();
-			System.out.println("dynamic instantiation after " + (toc-tic)/1000.0 + "s");
+			//System.out.println("dynamic instantiation after " + (toc-tic)/1000.0 + "s");
 		} catch (InstantiationException | IllegalAccessException | NoSuchMethodException | 
 				SecurityException | IllegalArgumentException | InvocationTargetException e) {
 			e.printStackTrace();
@@ -257,14 +257,14 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 			double tic = System.currentTimeMillis();
 			engine.initialize();
 			double toc = System.currentTimeMillis();
-			System.out.println("initialization after " + (toc-tic)/1000.0 + "s");
+			//System.out.println("initialization after " + (toc-tic)/1000.0 + "s");
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
 		double tic = System.currentTimeMillis();
 		adapter = new HiPEContentAdapter(resourceSet, engine);
 		double toc = System.currentTimeMillis();
-		System.out.println("added adapter after " + (toc-tic)/1000.0 + "s");
+		//System.out.println("added adapter after " + (toc-tic)/1000.0 + "s");
 	}
 	
 	@Override
@@ -275,15 +275,15 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 			Map<String, ProductionResult> extractData = engine.extractData();
 			addNewMatches(extractData);
 			double toc = System.currentTimeMillis();
-			System.out.println("--> adding matches took: " + (toc-tic)/1000.0 + "s");
+			//System.out.println("--> adding matches took: " + (toc-tic)/1000.0 + "s");
 			deleteInvalidMatches(extractData);
 			double toctoc = System.currentTimeMillis();
-			System.out.println("--> deleting matches took: " + (toctoc-toc)/1000.0 + "s");
+			//System.out.println("--> deleting matches took: " + (toctoc-toc)/1000.0 + "s");
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
 		double toc = System.currentTimeMillis();
-		System.out.println("#### updated matches after " + (toc-tic)/1000.0 + "s");
+		//System.out.println("#### updated matches after " + (toc-tic)/1000.0 + "s");
 	}
 	
 	private void addNewMatches(Map<String, ProductionResult> extractData) {

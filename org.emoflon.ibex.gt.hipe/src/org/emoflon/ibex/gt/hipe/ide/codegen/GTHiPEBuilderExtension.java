@@ -26,14 +26,7 @@ import org.eclipse.emf.ecore.xmi.XMIResource;
 import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.nio.file.Path;
-import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
 import org.apache.log4j.Logger;
 import org.eclipse.core.resources.IFile;
@@ -49,6 +42,7 @@ public class GTHiPEBuilderExtension implements GTBuilderExtension{
 	
 	private String packageName;
 	private String packagePath;
+	private String projectPath;
 	
 	@Override
 	public void run(IProject project) {
@@ -73,29 +67,19 @@ public class GTHiPEBuilderExtension implements GTBuilderExtension{
 		}
 		
 		LogUtils.info(logger, "Loading IBeX patterns..");
-		String patternPath = this.packagePath+"//src-gen//" + packageName + "//api//ibex-patterns.xmi";
+		String patternPath = this.packagePath+"//src-gen//" + packageName.replace(".", "//") + "//api//ibex-patterns.xmi";
 		IBeXPatternSet ibexPatterns = loadIBeXPatterns(patternPath);
 		if(ibexPatterns == null)
 			return;
 		
-		IFile file = project.getFile(patternPath);
-		this.packagePath = file.getLocation().uptoSegment(file.getLocation().segmentCount()-5).makeAbsolute().toPortableString();
+		projectPath = project.getLocation().toPortableString();
 		
 		LogUtils.info(logger, "Cleaning old code..");
 		cleanOldCode();
-		
-		/*
-		LogUtils.info(logger, "Creating jar directory..");
-		createNewDirectory(this.packagePath+"/jars");
-		File jarsDir1 = findJarsDirectory();
-		File jarsDir2 = new File(this.packagePath+"/jars");
-		
-		LogUtils.info(logger, "Copying jars..");
-		copyDirectoryContents(jarsDir1, jarsDir2);
-		*/
+
 		LogUtils.info(logger, "Updating Manifest & build properties..");
-		updateManifest(this.packagePath, project);
-		updateBuildProperties(this.packagePath);
+		updateManifest(project);
+		updateBuildProperties();
 		IFolder srcGenFolder = project.getFolder("src-gen");
 		try {
 			ClasspathUtil.makeSourceFolderIfNecessary(srcGenFolder);
@@ -114,13 +98,13 @@ public class GTHiPEBuilderExtension implements GTBuilderExtension{
 		HiPENetwork network = searchPlan.getNetwork();
 		
 		LogUtils.info(logger, "Generating Code..");
-		HiPEGenerator.generateCode(packageName+".", this.packagePath, network);
+		HiPEGenerator.generateCode(packageName+".", projectPath, network);
 		
 		double toc = System.currentTimeMillis();
 		LogUtils.info(logger, "Code generation completed in "+ (toc-tic)/1000.0 + " seconds.");	
 		
 		LogUtils.info(logger, "Saving HiPE patterns and HiPE network..");
-		String debugFolder = this.packagePath + "/debug";
+		String debugFolder = projectPath + "/debug";
 		createNewDirectory(debugFolder);
 		saveResource(container, debugFolder+"/hipe-patterns.xmi");
 		saveResource(network, debugFolder+"/hipe-network.xmi");
@@ -136,25 +120,13 @@ public class GTHiPEBuilderExtension implements GTBuilderExtension{
 		LogUtils.info(logger, "## HiPE ## --> HiPE build complete!");
 	}
 	
-	private void updateManifest(String packagePath, IProject project) {
+	private void updateManifest(IProject project) {
 		try {
 			IFile manifest = ManifestFileUpdater.getManifestFile(project);
 			ManifestHelper helper = new ManifestHelper();
 			helper.loadManifest(manifest);
-			/*
-			if(!helper.containsSection("Bundle-ClassPath")) {
-				helper.appendSection("Bundle-ClassPath");
-			}
-			
-			if(!helper.sectionContainsContent("Bundle-ClassPath", "jars/")) {
-				helper.addContentToSection("Bundle-ClassPath", "jars/");
-			}
-			
-			if(!helper.sectionContainsContent("Bundle-ClassPath", ".")) {
-				helper.addContentToSection("Bundle-ClassPath", ".");
-			}
-			*/
-			File rawManifest = new File(this.packagePath+"/"+manifest.getFullPath().removeFirstSegments(1).toPortableString());
+
+			File rawManifest = new File(projectPath+"/"+manifest.getFullPath().removeFirstSegments(1).toPortableString());
 			
 			helper.updateManifest(rawManifest);
 			
@@ -163,8 +135,8 @@ public class GTHiPEBuilderExtension implements GTBuilderExtension{
 		}
 	}
 	
-	private void updateBuildProperties(String packagePath) {
-		File buildProps = new File(this.packagePath+"/build.properties");
+	private void updateBuildProperties() {
+		File buildProps = new File(projectPath+"/build.properties");
 		BuildPropertiesHelper helper = new BuildPropertiesHelper();
 		try {
 			helper.loadProperties(buildProps);
@@ -176,27 +148,7 @@ public class GTHiPEBuilderExtension implements GTBuilderExtension{
 			if(!helper.sectionContainsContent("source..", "src-gen/")) {
 				helper.addContentToSection("source..", "src-gen/");
 			}
-			/*
-			if(!helper.containsSection("jars.extra.classpath")) {
-				helper.appendSection("jars.extra.classpath");
-			}
-			
-			if(!helper.sectionContainsContent("jars.extra.classpath", "jars/akka-actor_2.12-2.5.19.jar")) {
-				helper.addContentToSection("jars.extra.classpath", "jars/akka-actor_2.12-2.5.19.jar");
-			}
-			
-			if(!helper.sectionContainsContent("jars.extra.classpath", "jars/config-1.3.3.jar")) {
-				helper.addContentToSection("jars.extra.classpath", "jars/config-1.3.3.jar");
-			}
-			
-			if(!helper.sectionContainsContent("jars.extra.classpath", "jars/scala-java8-compat_2.12-0.8.0.jar")) {
-				helper.addContentToSection("jars.extra.classpath", "jars/scala-java8-compat_2.12-0.8.0.jar");
-			}
-			
-			if(!helper.sectionContainsContent("jars.extra.classpath", "jars/scala-library-2.12.8.jar")) {
-				helper.addContentToSection("jars.extra.classpath", "jars/scala-library-2.12.8.jar");
-			}
-			*/
+
 			helper.updateProperties(buildProps);
 			
 		} catch (CoreException | IOException e) {
@@ -228,65 +180,16 @@ public class GTHiPEBuilderExtension implements GTBuilderExtension{
 		}
 	}
 	
-	private static void copyDirectoryContents(File dir1, File dir2) {
-		List<File> contents = Arrays.asList(dir1.listFiles());
-		contents.parallelStream().forEach(content -> {
-			try {
-				InputStream is = new FileInputStream(content);
-		        File dest = new File(dir2.getAbsolutePath()+"/"+content.getName());
-		        
-		        if(!dest.exists()) {
-		        	OutputStream os = new FileOutputStream(dest);
-			        byte[] buffer = new byte[1024];
-			        int length;
-			        while ((length = is.read(buffer)) > 0) {
-			            os.write(buffer, 0, length);
-			        }
-			        os.close();
-		        }
-		        is.close();
-		    } catch (IOException e) {
-		    	LogUtils.error(logger, "Failed to copy required jars. \n"+e.getMessage());
-			} 
-		});
-	}
-	
 	private void cleanOldCode() {
-		File dir = new File(this.packagePath+"/src-gen/" + packageName + "/hipe");
+		File dir = new File(projectPath+"/src-gen/" + packageName.replace(".", "//") + "/hipe");
 		if(dir.exists()) {
-			LogUtils.info(logger, "--> Cleaning old source files in root folder: "+this.packagePath+"/src-gen/" + packageName + "/hipe");
+			LogUtils.info(logger, "--> Cleaning old source files in root folder: "+projectPath+"/src-gen/" + packageName.replace(".", "//") + "/hipe");
 			if(!deleteDirectory(dir)) {
 				LogUtils.error(logger, "Folder couldn't be deleted!");
 			}
 		} else {
 			LogUtils.info(logger, "--> No previously generated code found, nothing to do!");
 		}
-	}
-	
-	@SuppressWarnings("null")
-	private File findJarsDirectory() {
-		File currentClass = new File(this.getClass().getProtectionDomain().getCodeSource().getLocation().getPath());
-		
-		Path jarPath = currentClass.toPath();
-		while(jarPath != null || !jarPath.toFile().getName().equals("jars")) {
-			File current = jarPath.toFile();
-			if(current.isDirectory()) {
-				File[] contents = current.listFiles();
-				for(File content : contents) {
-					if(!content.isDirectory())
-						continue;
-					
-					if(content.getName().equals("jars")) {
-						jarPath = content.toPath();
-						return jarPath.toFile();
-					}
-				}
-				jarPath = jarPath.getParent();
-			}else {
-				jarPath = jarPath.getParent();
-			}
-		}
-		return null;
 	}
 	
 	private static IBeXPatternSet loadIBeXPatterns(String path) {

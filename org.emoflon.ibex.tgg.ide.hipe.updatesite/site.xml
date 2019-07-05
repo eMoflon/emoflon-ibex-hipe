@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <site>
-   <feature url="features/org.emoflon.ibex.tgg.ide.hipe.feature_1.0.0.201907011543.jar" id="org.emoflon.ibex.tgg.ide.hipe.feature" version="1.0.0.201907011543">
+   <feature url="features/org.emoflon.ibex.tgg.ide.hipe.feature_1.0.0.201907051011.jar" id="org.emoflon.ibex.tgg.ide.hipe.feature" version="1.0.0.201907051011">
       <category name="eMoflon-Ibex-HiPE"/>
    </feature>
    <category-def name="eMoflon-Ibex-HiPE" label="eMoflon::Ibex (HiPE)"/>

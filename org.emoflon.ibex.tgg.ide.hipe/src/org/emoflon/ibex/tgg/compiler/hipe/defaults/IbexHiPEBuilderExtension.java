@@ -1,14 +1,9 @@
 package org.emoflon.ibex.tgg.compiler.hipe.defaults;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -18,7 +13,6 @@ import java.util.stream.Collectors;
 import org.apache.log4j.Logger;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IFolder;
-import org.eclipse.core.resources.IPathVariableManager;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IWorkspace;
@@ -119,19 +113,10 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 		
 		LogUtils.info(logger, "Cleaning old code..");
 		cleanOldCode();
-		
-		/*
-		LogUtils.info(logger, "Creating jar directory..");
-		createNewDirectory(projectPath+"/jars");
-		File jarsDir1 = findJarsDirectory();
-		File jarsDir2 = new File(projectPath+"/jars");
-		
-		LogUtils.info(logger, "Copying jars..");
-		copyDirectoryContents(jarsDir1, jarsDir2);
-		*/
+
 		LogUtils.info(logger, "Updating Manifest & build properties..");
-		updateManifest(projectPath, builder.getProject(), srcProjectName, trgProjectName);
-		updateBuildProperties(projectPath);
+		updateManifest(builder.getProject(), srcProjectName, trgProjectName);
+		updateBuildProperties();
 		IFolder srcGenFolder = builder.getProject().getFolder("src-gen");
 		IFolder genFolder = builder.getProject().getFolder("gen");
 		try {
@@ -252,34 +237,7 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 		}
 	}
 	
-	@SuppressWarnings("null")
-	private File findJarsDirectory() {
-		File currentClass = new File(this.getClass().getProtectionDomain().getCodeSource().getLocation().getPath());
-		
-		Path jarPath = currentClass.toPath();
-		while(jarPath != null || !jarPath.toFile().getName().equals("jars")) {
-			File current = jarPath.toFile();
-			if(current.isDirectory()) {
-				File[] contents = current.listFiles();
-				for(File content : contents) {
-					if(!content.isDirectory())
-						continue;
-					
-					if(content.getName().equals("jars")) {
-						jarPath = content.toPath();
-						return jarPath.toFile();
-					}
-				}
-				jarPath = jarPath.getParent();
-			}else {
-				jarPath = jarPath.getParent();
-			}
-		}
-		LogUtils.info(logger, "Jars directory in org.emoflon.ibex.tgg.ide.hipe project not found!");
-		return null;
-	}
-	
-	private void updateManifest(String packagePath, IProject project, String srcPkg, String trgPkg) {
+	private void updateManifest(IProject project, String srcPkg, String trgPkg) {
 		try {
 			IFile manifest = ManifestFileUpdater.getManifestFile(project);
 			ManifestHelper helper = new ManifestHelper();
@@ -310,7 +268,7 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 				helper.addContentToSection("Require-Bundle", trgPkg);
 			}
 			
-			File rawManifest = new File(packagePath+"/"+manifest.getFullPath().removeFirstSegments(1).toPortableString());
+			File rawManifest = new File(projectPath+"/"+manifest.getFullPath().removeFirstSegments(1).toPortableString());
 			
 			helper.updateManifest(rawManifest);
 			
@@ -319,8 +277,8 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 		}
 	}
 	
-	private void updateBuildProperties(String packagePath) {
-		File buildProps = new File(packagePath+"/build.properties");
+	private void updateBuildProperties() {
+		File buildProps = new File(projectPath+"/build.properties");
 		BuildPropertiesHelper helper = new BuildPropertiesHelper();
 		try {
 			helper.loadProperties(buildProps);
@@ -364,30 +322,7 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 		}
 		
 	}
-	
-	private static void copyDirectoryContents(File dir1, File dir2) {
-		List<File> contents = Arrays.asList(dir1.listFiles());
-		contents.parallelStream().forEach(content -> {
-			try {
-				InputStream is = new FileInputStream(content);
-		        File dest = new File(dir2.getAbsolutePath()+"/"+content.getName());
-		        
-		        if(!dest.exists()) {
-		        	OutputStream os = new FileOutputStream(dest);
-			        byte[] buffer = new byte[1024];
-			        int length;
-			        while ((length = is.read(buffer)) > 0) {
-			            os.write(buffer, 0, length);
-			        }
-			        os.close();
-		        }
-		        is.close();
-		    } catch (IOException e) {
-		    	LogUtils.error(logger, "Failed to copy required jars. \n"+e.getMessage());
-			} 
-		});
-	}
-	
+
 	private static boolean deleteDirectory(File dir) {
 		File[] contents  = dir.listFiles();
 		if(contents != null) {
