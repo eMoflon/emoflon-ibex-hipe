@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.0"?>
+
+<!--
+-->
+
+<plugin>
+
+   <extension point="org.eclipse.ui.newWizards">
+      <!-- @generated HiPEConfig -->
+      <category
+            id="org.eclipse.emf.ecore.Wizard.category.ID"
+            name="%_UI_Wizard_category"/>
+      <wizard
+            id="org.emoflon.ibex.HiPEConfig.presentation.HiPEConfigModelWizardID"
+            name="%_UI_HiPEConfigModelWizard_label"
+            class="org.emoflon.ibex.HiPEConfig.presentation.HiPEConfigModelWizard"
+            category="org.eclipse.emf.ecore.Wizard.category.ID"
+            icon="icons/full/obj16/HiPEConfigModelFile.gif">
+         <description>%_UI_HiPEConfigModelWizard_description</description>
+         <selection class="org.eclipse.core.resources.IResource"/>
+      </wizard>
+   </extension>
+
+   <extension point="org.eclipse.ui.editors">
+      <!-- @generated HiPEConfig -->
+      <editor
+            id="org.emoflon.ibex.HiPEConfig.presentation.HiPEConfigEditorID"
+            name="%_UI_HiPEConfigEditor_label"
+            icon="icons/full/obj16/HiPEConfigModelFile.gif"
+            extensions="hipeconfig"
+            class="org.emoflon.ibex.HiPEConfig.presentation.HiPEConfigEditor"
+            contributorClass="org.emoflon.ibex.HiPEConfig.presentation.HiPEConfigActionBarContributor">
+      </editor>
+   </extension>
+
+</plugin>
