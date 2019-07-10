@@ -162,7 +162,7 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 			
 			LogUtils.info(logger,  strategy.getClass().getName() + ": Generating Code..");
 			double tic = System.currentTimeMillis();
-			boolean generic = true;
+			boolean generic = false;
 			if(strategy instanceof HiPESYNC) 
 				HiPEGenerator.generateCode(projectName+".sync.", projectPath, network, generic);
 			else if(strategy instanceof HiPECC) 
@@ -213,7 +213,7 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 		networkContainments.add(network);
 		networkContainments.add(container);
 		saveResource(networkContainments,hipeFolder+"/" +  opPrefix + "_hipe-network.xmi");
-		}
+	}
 	
 	public IbexOptions createIbexOptions(String projectName, String projectPath) {
 		IbexOptions options = new IbexOptions();

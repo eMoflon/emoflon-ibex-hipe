@@ -114,7 +114,7 @@ public class GTHiPEBuilderExtension implements GTBuilderExtension{
 		HiPENetwork network = searchPlan.getNetwork();
 		
 		LogUtils.info(logger, "Generating Code..");
-		boolean generic = true;
+		boolean generic = false;
 		HiPEGenerator.generateCode(packageName+".", this.packagePath, network, generic);
 
 		double toc = System.currentTimeMillis();
