@@ -317,6 +317,7 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 	@Override
 	public void terminate() {
 		double tic = System.currentTimeMillis();
+		adapter.removeAdapter();
 		engine.terminate();
 		double toc = System.currentTimeMillis();
 		System.out.println("shutdown after " + (toc-tic)/1000.0 + "s");
