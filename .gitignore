@@ -20,6 +20,7 @@
 *.java._trace
 *.xtendbin
 */models/*.xmi
+*/bin/*
 
 # Log file
 *.log
