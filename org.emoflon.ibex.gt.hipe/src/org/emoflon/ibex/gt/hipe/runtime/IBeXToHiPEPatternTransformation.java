@@ -1,10 +1,14 @@
 package org.emoflon.ibex.gt.hipe.runtime;
 
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.eclipse.emf.common.util.EMap;
 import org.eclipse.emf.ecore.EAttribute;
+import org.graphstream.ui.j2dviewer.renderer.shape.swing.ShapeDecor.AtRightShapeDecor;
 
 import IBeXLanguage.IBeXAttributeConstraint;
 import IBeXLanguage.IBeXAttributeExpression;
@@ -160,11 +164,19 @@ public class IBeXToHiPEPatternTransformation {
 	
 	private HiPEAttributeConstraint transform(IBeXContextPattern context, HiPEPattern pattern, IBeXAttributeConstraint constr) {
 		RelationalConstraint rConstraint = factory.createRelationalConstraint();
-		rConstraint.setLeftAttribute(transform(context, constr.getNode(), constr.getType()));
-		rConstraint.setRightAttribute(transform(context, constr.getValue()));
+		HiPEAttribute attrLeft = transform(context, constr.getNode(), constr.getType());
+		HiPEAttribute attrRight = transform(context, constr.getValue());
+		if(attrLeft != null) {
+			pattern.getAttributes().add(attrLeft);
+			rConstraint.setLeftAttribute(attrLeft);
+		}
+		if(attrRight != null) {
+			pattern.getAttributes().add(attrRight);
+			rConstraint.setRightAttribute(attrRight);
+		}
 		rConstraint.setType(transform(context, constr.getRelation()));
-
-		if(rConstraint.getLeftAttribute() == null || rConstraint.getRightAttribute() == null)
+		
+		if(attrLeft == null || attrRight == null)
 			return null;
 
 		pattern.getAttributes().add(rConstraint.getLeftAttribute());
@@ -208,7 +220,7 @@ public class IBeXToHiPEPatternTransformation {
 	private HiPEAttribute transform(IBeXContextPattern context, IBeXAttributeExpression attributeExpr) {
 		HiPEAttribute attr = factory.createHiPEAttribute();
 		attr.setNode(transform(context, attributeExpr.getNode()));
-		attr.setValue(attributeExpr.getAttribute());
+		//attr.setValue("EAttribute_eClass");
 		attr.setEAttribute(attributeExpr.getAttribute());
 		return attr;
 	}
@@ -266,10 +278,9 @@ public class IBeXToHiPEPatternTransformation {
 	private HiPEAttribute transform(IBeXContextPattern context, IBeXNode iBeXNode, EAttribute attr) {
 		HiPEAttribute hAttr = factory.createHiPEAttribute();
 		hAttr.setName(attr.getName());
-		hAttr.setValue(attr);
+		//hAttr.setValue("EAttribute_eClass");
 		hAttr.setNode(transform(context, iBeXNode));
 		hAttr.setEAttribute(attr);
-
 		return hAttr;
 	}
 

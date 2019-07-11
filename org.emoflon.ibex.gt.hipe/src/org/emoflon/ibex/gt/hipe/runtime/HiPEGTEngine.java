@@ -2,8 +2,6 @@ package org.emoflon.ibex.gt.hipe.runtime;
 
 import static org.emoflon.ibex.common.collections.CollectionFactory.cfactory;
 
-import java.io.File;
-import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
@@ -90,31 +88,12 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 	public HiPEGTEngine() {
 		this.patterns = cfactory.createObjectToObjectHashMap();
 	}
-	
-//	@Override
-//	public ResourceSet createAndPrepareResourceSet(final String workspacePath) {
-//		ResourceSet resourceSet = new ResourceSetImpl();
-//		resourceSet.getResourceFactoryRegistry().getExtensionToFactoryMap()
-//				.put(Resource.Factory.Registry.DEFAULT_EXTENSION, new XMIResourceFactoryImpl());
-//		return resourceSet;
-//	}
-	
-	// TODO FIXIT!
+
 	@Override
 	public ResourceSet createAndPrepareResourceSet(final String workspacePath) {
 		ResourceSet resourceSet = new ResourceSetImpl();
-		// In contrast to EMFDemoclesPatternMetamodelPlugin.createDefaultResourceSet, we
-		// do not delegate directly to the global registry!
 		resourceSet.getResourceFactoryRegistry().getExtensionToFactoryMap()
 				.put(Resource.Factory.Registry.DEFAULT_EXTENSION, new XMIResourceFactoryImpl());
-		/*
-		try {
-			EMFDemoclesPatternMetamodelPlugin.setWorkspaceRootDirectory(resourceSet,
-					new File(workspacePath).getCanonicalPath());
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		*/
 		return resourceSet;
 	}
 	
@@ -185,7 +164,6 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 	@SuppressWarnings("unchecked")
 	@Override
 	public void monitor(final ResourceSet resourceSet) {
-		double tic = System.currentTimeMillis();
 		for (Resource r : resourceSet.getResources()) {
 			if ("ecore".equals(r.getURI().fileExtension())) {
 				logger.warn("Are you sure your resourceSet should contain a resource for a metamodel?: " + r.getURI());
@@ -221,8 +199,6 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 				});
 		
 		initEngine(resourceSet);
-		double toc = System.currentTimeMillis();
-		System.out.println("engine initialized after " + (toc-tic)/1000.0 + "s");
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -241,49 +217,32 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 			if(engineClass == null) {
 				throw new RuntimeException("Engine class: "+engineClassName+ " -> not found!");
 			}
-			double tic = System.currentTimeMillis();
 			Constructor<? extends IHiPEEngine> constructor = engineClass.getDeclaredConstructor();
 			constructor.setAccessible(true);
 			engine = constructor.newInstance();
-			//engine = engineClass.newInstance();
-			double toc = System.currentTimeMillis();
-			//System.out.println("dynamic instantiation after " + (toc-tic)/1000.0 + "s");
 		} catch (InstantiationException | IllegalAccessException | NoSuchMethodException | 
 				SecurityException | IllegalArgumentException | InvocationTargetException e) {
 			e.printStackTrace();
 		}
 		
 		try {
-			double tic = System.currentTimeMillis();
 			engine.initialize();
-			double toc = System.currentTimeMillis();
-			//System.out.println("initialization after " + (toc-tic)/1000.0 + "s");
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
-		double tic = System.currentTimeMillis();
 		adapter = new HiPEContentAdapter(resourceSet, engine);
-		double toc = System.currentTimeMillis();
-		//System.out.println("added adapter after " + (toc-tic)/1000.0 + "s");
 	}
 	
 	@Override
 	public void updateMatches() {
 		// Trigger the Rete network
-		double tic = System.currentTimeMillis();
 		try {
 			Map<String, ProductionResult> extractData = engine.extractData();
 			addNewMatches(extractData);
-			double toc = System.currentTimeMillis();
-			//System.out.println("--> adding matches took: " + (toc-tic)/1000.0 + "s");
 			deleteInvalidMatches(extractData);
-			double toctoc = System.currentTimeMillis();
-			//System.out.println("--> deleting matches took: " + (toctoc-toc)/1000.0 + "s");
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
-		double toc = System.currentTimeMillis();
-		//System.out.println("#### updated matches after " + (toc-tic)/1000.0 + "s");
 	}
 	
 	private void addNewMatches(Map<String, ProductionResult> extractData) {
@@ -295,7 +254,6 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 					continue;
 				
 				app.addMatch(iMatch);
-				//System.out.println("added match: "+iMatch);
 			}
 		}
 	}
@@ -309,18 +267,14 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 					continue;
 				
 				app.removeMatch(iMatch);
-				//System.out.println("deleted match: "+iMatch);
 			}
 		}
 	}
 
 	@Override
 	public void terminate() {
-		double tic = System.currentTimeMillis();
 		adapter.removeAdapter();
 		engine.terminate();
-		double toc = System.currentTimeMillis();
-		System.out.println("shutdown after " + (toc-tic)/1000.0 + "s");
 	}
 
 	@Override

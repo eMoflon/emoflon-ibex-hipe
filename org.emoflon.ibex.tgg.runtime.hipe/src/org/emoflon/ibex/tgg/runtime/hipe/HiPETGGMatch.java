@@ -5,7 +5,6 @@ import org.emoflon.ibex.tgg.operational.matches.IMatch;
 import org.emoflon.ibex.tgg.operational.matches.SimpleMatch;
 
 import hipe.engine.match.ProductionMatch;
-import hipe.pattern.HiPEAbstractPattern;
 
 /**
  * A TGG match from HiPE.

@@ -6,7 +6,6 @@ import org.moflon.core.plugins.manifest.ManifestFileUpdater;
 import org.moflon.core.utilities.ClasspathUtil;
 import org.moflon.core.utilities.LogUtils;
 
-import IBeXLanguage.IBeXLanguagePackage;
 import IBeXLanguage.IBeXPatternSet;
 import hipe.generator.HiPEGenerator;
 import hipe.network.HiPENetwork;
@@ -18,7 +17,6 @@ import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.EObject;
-import org.eclipse.emf.ecore.EPackage;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.resource.ResourceSet;
 import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
@@ -85,7 +83,6 @@ public class GTHiPEBuilderExtension implements GTBuilderExtension{
 		try {
 			ClasspathUtil.makeSourceFolderIfNecessary(srcGenFolder);
 		} catch (CoreException e1) {
-			// TODO Auto-generated catch block
 			LogUtils.error(logger, e1.getMessage());
 		}
 		

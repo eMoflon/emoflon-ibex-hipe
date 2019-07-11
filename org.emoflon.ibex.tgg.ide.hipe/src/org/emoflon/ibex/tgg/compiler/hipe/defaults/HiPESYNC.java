@@ -2,14 +2,11 @@ package org.emoflon.ibex.tgg.compiler.hipe.defaults;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
 import org.eclipse.core.runtime.Path;
-import org.eclipse.emf.codegen.ecore.generator.Generator;
-import org.eclipse.emf.codegen.ecore.genmodel.GenBase;
 import org.eclipse.emf.codegen.ecore.genmodel.GenJDKLevel;
 import org.eclipse.emf.codegen.ecore.genmodel.GenModel;
 import org.eclipse.emf.codegen.ecore.genmodel.GenModelFactory;
@@ -147,7 +144,6 @@ public class HiPESYNC extends SYNC {
 	
 	public void loadDefaultGenModelContent(final GenModel genModel) {
 		genModel.setComplianceLevel(GenJDKLevel.JDK80_LITERAL);
-		//genModel.setModelName(genModel.eResource().getURI().trimFileExtension().lastSegment());
 		genModel.setImporterID("org.eclipse.emf.importer.ecore");
 		genModel.setCodeFormatting(true);
 		genModel.setOperationReflection(true);
