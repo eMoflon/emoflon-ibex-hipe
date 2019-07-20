@@ -30,11 +30,12 @@ import IBeXLanguage.IBeXContext;
 import IBeXLanguage.IBeXContextAlternatives;
 import IBeXLanguage.IBeXContextPattern;
 import IBeXLanguage.IBeXPatternSet;
-import hipe.engine.HiPEContentAdapter;
+import hipe.engine.notification.IHiPEContentAdapter;
 import hipe.engine.IHiPEEngine;
 import hipe.engine.match.ProductionMatch;
 import hipe.engine.message.production.ProductionResult;
 import hipe.network.HiPENetwork;
+import hipe.utils.emf.adapter.EMFContentAdapter;
 
 /**
  * Engine for (unidirectional) graph transformations with HiPE.
@@ -70,7 +71,7 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 	/**
 	 * The EMF notification adapter -> delegates model notifications to the HiPE engine
 	 */
-	protected HiPEContentAdapter adapter;
+	protected IHiPEContentAdapter<ResourceSet, ?> adapter;
 	
 	/**
 	 * The Rete-Network used in the engine
@@ -230,7 +231,8 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
-		adapter = new HiPEContentAdapter(resourceSet, engine);
+		adapter = new EMFContentAdapter();
+		adapter.initAdapter(resourceSet, engine);
 	}
 	
 	@Override
