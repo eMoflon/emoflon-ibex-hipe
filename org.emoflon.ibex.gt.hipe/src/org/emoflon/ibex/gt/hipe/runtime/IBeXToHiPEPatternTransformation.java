@@ -244,7 +244,8 @@ public class IBeXToHiPEPatternTransformation {
 			initCode += "csp_" + csp_id + ".getVariables().add(new org.emoflon.ibex.tgg.operational.csp.RuntimeTGGAttributeConstraintVariable(true, ";
 			if(value instanceof IBeXAttributeExpression ) {
 				IBeXAttributeExpression iExpr = (IBeXAttributeExpression) value;
-				initCode += iExpr.getNode().getName() + ".get" + iExpr.getAttribute().getName().substring(0, 1).toUpperCase() + iExpr.getAttribute().getName().substring(1) + "()";
+				String getOrIs = iExpr.getAttribute().getEType().getInstanceClassName().equals("boolean") ? ".is" : ".get";
+				initCode += iExpr.getNode().getName() + getOrIs + iExpr.getAttribute().getName().substring(0, 1).toUpperCase() + iExpr.getAttribute().getName().substring(1) + "()";
 				HiPEAttribute hAttr = transform(context, iExpr);
 				cConstraint.getAttributes().add(hAttr);
 				pattern.getAttributes().add(hAttr);
@@ -252,7 +253,7 @@ public class IBeXToHiPEPatternTransformation {
 			}
 			if(value instanceof IBeXConstant) {
 				IBeXConstant iConst= (IBeXConstant) value;
-				initCode += iConst.getValue();
+				initCode += iConst.getStringValue().replaceAll("\"\"", "\"");
 				HiPEAttribute hAttr = transform(context, iConst);
 				cConstraint.getAttributes().add(hAttr);
 				pattern.getAttributes().add(hAttr);
