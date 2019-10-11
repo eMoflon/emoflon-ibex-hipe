@@ -160,8 +160,8 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 			LogUtils.info(logger,  strategy.getClass().getName() + ": Saving HiPE patterns and HiPE network..");
 			String debugFolder = projectPath + "/debug";
 			createNewDirectory(debugFolder);
-			saveResource(container, debugFolder+"/" +  strategy.getClass().getName() + "hipe-patterns.xmi");
-			saveResource(network, debugFolder+"/" +  strategy.getClass().getName() + "hipe-network.xmi");
+			saveResource(container, debugFolder+"/" +  strategy.getClass().getSimpleName().toLowerCase() + "_hipe-patterns.xmi");
+			saveResource(network, debugFolder+"/" +  strategy.getClass().getSimpleName().toLowerCase() + "_hipe-network.xmi");
 		}
 
 		

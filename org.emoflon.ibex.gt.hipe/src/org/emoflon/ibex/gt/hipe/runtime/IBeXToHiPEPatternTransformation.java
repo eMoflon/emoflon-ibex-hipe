@@ -220,7 +220,7 @@ public class IBeXToHiPEPatternTransformation {
 	private HiPEAttribute transform(IBeXContextPattern context, IBeXAttributeExpression attributeExpr) {
 		HiPEAttribute attr = factory.createHiPEAttribute();
 		attr.setNode(transform(context, attributeExpr.getNode()));
-		//attr.setValue("EAttribute_eClass");
+		attr.setValue(attributeExpr.getAttribute());
 		attr.setEAttribute(attributeExpr.getAttribute());
 		return attr;
 	}
@@ -244,7 +244,8 @@ public class IBeXToHiPEPatternTransformation {
 			initCode += "csp_" + csp_id + ".getVariables().add(new org.emoflon.ibex.tgg.operational.csp.RuntimeTGGAttributeConstraintVariable(true, ";
 			if(value instanceof IBeXAttributeExpression ) {
 				IBeXAttributeExpression iExpr = (IBeXAttributeExpression) value;
-				initCode += iExpr.getNode().getName() + ".get" + iExpr.getAttribute().getName().substring(0, 1).toUpperCase() + iExpr.getAttribute().getName().substring(1) + "()";
+				String getOrIs = iExpr.getAttribute().getEType().getInstanceClassName().equals("boolean") ? ".is" : ".get";
+				initCode += iExpr.getNode().getName() + getOrIs + iExpr.getAttribute().getName().substring(0, 1).toUpperCase() + iExpr.getAttribute().getName().substring(1) + "()";
 				HiPEAttribute hAttr = transform(context, iExpr);
 				cConstraint.getAttributes().add(hAttr);
 				pattern.getAttributes().add(hAttr);
@@ -252,7 +253,7 @@ public class IBeXToHiPEPatternTransformation {
 			}
 			if(value instanceof IBeXConstant) {
 				IBeXConstant iConst= (IBeXConstant) value;
-				initCode += iConst.getValue();
+				initCode += iConst.getStringValue().replaceAll("\"\"", "\"");
 				HiPEAttribute hAttr = transform(context, iConst);
 				cConstraint.getAttributes().add(hAttr);
 				pattern.getAttributes().add(hAttr);
@@ -278,7 +279,7 @@ public class IBeXToHiPEPatternTransformation {
 	private HiPEAttribute transform(IBeXContextPattern context, IBeXNode iBeXNode, EAttribute attr) {
 		HiPEAttribute hAttr = factory.createHiPEAttribute();
 		hAttr.setName(attr.getName());
-		//hAttr.setValue("EAttribute_eClass");
+		hAttr.setValue(attr);
 		hAttr.setNode(transform(context, iBeXNode));
 		hAttr.setEAttribute(attr);
 		return hAttr;

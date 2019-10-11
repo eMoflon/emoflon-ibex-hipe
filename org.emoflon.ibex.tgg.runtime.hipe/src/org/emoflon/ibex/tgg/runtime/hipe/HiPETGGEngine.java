@@ -3,6 +3,8 @@ package org.emoflon.ibex.tgg.runtime.hipe;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.EObject;
@@ -19,6 +21,7 @@ import org.emoflon.ibex.tgg.operational.defaults.IbexOptions;
 import org.emoflon.ibex.tgg.operational.strategies.OperationalStrategy;
 import org.emoflon.ibex.tgg.operational.strategies.opt.CO;
 import org.emoflon.ibex.tgg.operational.strategies.opt.cc.CC;
+import org.emoflon.ibex.tgg.operational.strategies.sync.SYNC;
 
 import IBeXLanguage.IBeXContextPattern;
 import IBeXLanguage.IBeXPatternSet;
@@ -62,6 +65,34 @@ public class HiPETGGEngine extends HiPEGTEngine implements IBlackInterpreter {
 		setPatterns(ibexPatternSet);
 		generateHiPEClassName(options.projectName());
 	}	
+	
+//	@Override
+	protected String getPackageName(URI patternURI) {
+		Pattern pattern = Pattern.compile("^(.*/)(.*)(/debug/.*)$");
+		Matcher matcher = pattern.matcher(patternURI.toString());
+		matcher.matches();
+		String packageName = matcher.group(2);
+		return packageName;
+	}
+	
+	@Override
+	protected String getProjectName() {
+		return options.projectName();
+	}
+	
+	@Override
+	protected String getNetworkFileName() {
+		if(strategy instanceof SYNC) {
+			return "hipesync_hipe-network.xmi";
+		}
+		if(strategy instanceof CC) {
+			return "hipecc_hipe-network.xmi";
+		}
+		if(strategy instanceof CO) {
+			return "hipeco_hipe-network.xmi";
+		}
+		throw new RuntimeException("Unsupported operationalization detected! - " + strategy.getClass().getSimpleName());
+	}
 	
 	@Override
 	protected void generateHiPEClassName(String projectName) {
