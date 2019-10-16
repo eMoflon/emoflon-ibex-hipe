@@ -66,8 +66,8 @@ public class GTHiPEBuilderExtension implements GTBuilderExtension{
 		}
 		
 		LogUtils.info(logger, "Loading IBeX patterns..");
-		String patternPath = this.packagePath+"//src-gen//" + packageName.replace(".", "//") + "//api//ibex-patterns.xmi";
-		IBeXPatternSet ibexPatterns = loadIBeXPatterns(patternPath);
+		String patternPath = "/src-gen//" + packageName.replace(".", "//") + "//api//ibex-patterns.xmi";
+		IBeXPatternSet ibexPatterns = loadIBeXPatterns(project, patternPath);
 		if(ibexPatterns == null)
 			return;
 		
@@ -190,10 +190,10 @@ public class GTHiPEBuilderExtension implements GTBuilderExtension{
 		}
 	}
 	
-	private static IBeXPatternSet loadIBeXPatterns(String path) {
+	private static IBeXPatternSet loadIBeXPatterns(IProject project, String path) {
 		Resource res = null;
 		try {
-			res = loadResource(path);
+			res = loadResource(project, path);
 		} catch (Exception e) {
 			LogUtils.error(logger, "Couldn't load ibex pattern set: \n" + e.getMessage());
 			e.printStackTrace();
@@ -205,12 +205,13 @@ public class GTHiPEBuilderExtension implements GTBuilderExtension{
 		return (IBeXPatternSet)res.getContents().get(0);
 	}
 	
-	private static Resource loadResource(String path) throws Exception {
+	private static Resource loadResource(IProject project, String path) throws Exception {
 		Resource.Factory.Registry.INSTANCE.getExtensionToFactoryMap().put("ibex-patterns-for-hipe", new XMIResourceFactoryImpl());
 		ResourceSet rs = new ResourceSetImpl();
 		rs.getResourceFactoryRegistry().getExtensionToFactoryMap().put("xmi", new XMIResourceFactoryImpl());
 		
-		URI uri = URI.createFileURI(path);
+		IPath ipath = project.getFile(path).getLocation();
+		URI uri = URI.createFileURI(ipath.toOSString());
 		Resource modelResource = rs.getResource(uri, true);
 		EcoreUtil.resolveAll(rs);
 		
