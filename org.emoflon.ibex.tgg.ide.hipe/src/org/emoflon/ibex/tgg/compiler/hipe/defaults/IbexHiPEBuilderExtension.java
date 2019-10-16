@@ -76,6 +76,7 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 			strategies.add(new HiPESYNC(opt, metaModelImports));
 			strategies.add(new HiPECC(opt, metaModelImports));
 			strategies.add(new HiPECO(opt, metaModelImports));
+			strategies.add(new HiPEMODELGEN(opt, metaModelImports));
 		} catch (IOException e) {
 			LogUtils.error(logger, e);
 			return;
@@ -151,6 +152,8 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 				HiPEGenerator.generateCode(projectName+".cc.", projectPath, network);
 			else if(strategy instanceof HiPECO) 
 				HiPEGenerator.generateCode(projectName+".co.", projectPath, network);
+			else if(strategy instanceof HiPEMODELGEN) 
+				HiPEGenerator.generateCode(projectName+".modelgen.", projectPath, network);
 			else
 				throw new RuntimeException("Unsupported Operational Strategy detected");
 			

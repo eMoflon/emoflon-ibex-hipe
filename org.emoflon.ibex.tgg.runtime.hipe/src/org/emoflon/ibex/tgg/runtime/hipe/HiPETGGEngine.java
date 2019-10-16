@@ -19,6 +19,7 @@ import org.emoflon.ibex.tgg.compiler.transformations.patterns.ContextPatternTran
 import org.emoflon.ibex.tgg.operational.IBlackInterpreter;
 import org.emoflon.ibex.tgg.operational.defaults.IbexOptions;
 import org.emoflon.ibex.tgg.operational.strategies.OperationalStrategy;
+import org.emoflon.ibex.tgg.operational.strategies.gen.MODELGEN;
 import org.emoflon.ibex.tgg.operational.strategies.opt.CO;
 import org.emoflon.ibex.tgg.operational.strategies.opt.cc.CC;
 import org.emoflon.ibex.tgg.operational.strategies.sync.SYNC;
@@ -91,6 +92,9 @@ public class HiPETGGEngine extends HiPEGTEngine implements IBlackInterpreter {
 		if(strategy instanceof CO) {
 			return "hipeco_hipe-network.xmi";
 		}
+		if(strategy instanceof MODELGEN) {
+			return "hipemodelgen_hipe-network.xmi";
+		}
 		throw new RuntimeException("Unsupported operationalization detected! - " + strategy.getClass().getSimpleName());
 	}
 	
@@ -102,8 +106,10 @@ public class HiPETGGEngine extends HiPEGTEngine implements IBlackInterpreter {
 		else if(strategy instanceof CO) {
 			engineClassName = projectName.replace("/", ".")+".co.hipe.engine.HiPEEngine";	
 		}
-		else {
+		else if(strategy instanceof SYNC) {
 			engineClassName = projectName.replace("/", ".")+".sync.hipe.engine.HiPEEngine";	
+		} else {
+			engineClassName = projectName.replace("/", ".")+".modelgen.hipe.engine.HiPEEngine";	
 		}
 	}
 	
