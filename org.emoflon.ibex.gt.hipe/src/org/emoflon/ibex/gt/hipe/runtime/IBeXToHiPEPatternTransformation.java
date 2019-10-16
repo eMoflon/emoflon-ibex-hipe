@@ -220,7 +220,7 @@ public class IBeXToHiPEPatternTransformation {
 	private HiPEAttribute transform(IBeXContextPattern context, IBeXAttributeExpression attributeExpr) {
 		HiPEAttribute attr = factory.createHiPEAttribute();
 		attr.setNode(transform(context, attributeExpr.getNode()));
-		//attr.setValue("EAttribute_eClass");
+		attr.setValue(attributeExpr.getAttribute());
 		attr.setEAttribute(attributeExpr.getAttribute());
 		return attr;
 	}
@@ -279,7 +279,7 @@ public class IBeXToHiPEPatternTransformation {
 	private HiPEAttribute transform(IBeXContextPattern context, IBeXNode iBeXNode, EAttribute attr) {
 		HiPEAttribute hAttr = factory.createHiPEAttribute();
 		hAttr.setName(attr.getName());
-		//hAttr.setValue("EAttribute_eClass");
+		hAttr.setValue(attr);
 		hAttr.setNode(transform(context, iBeXNode));
 		hAttr.setEAttribute(attr);
 		return hAttr;

@@ -2,6 +2,7 @@ package org.emoflon.ibex.gt.hipe.runtime;
 
 import static org.emoflon.ibex.common.collections.CollectionFactory.cfactory;
 
+import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
@@ -25,10 +26,12 @@ import org.emoflon.ibex.common.emf.EMFSaveUtils;
 import org.emoflon.ibex.common.operational.IContextPatternInterpreter;
 import org.emoflon.ibex.common.operational.IMatch;
 import org.emoflon.ibex.common.operational.IMatchObserver;
+import org.moflon.core.utilities.LogUtils;
 
 import IBeXLanguage.IBeXContext;
 import IBeXLanguage.IBeXContextAlternatives;
 import IBeXLanguage.IBeXContextPattern;
+import IBeXLanguage.IBeXLanguagePackage;
 import IBeXLanguage.IBeXPatternSet;
 import hipe.engine.HiPEContentAdapter;
 import hipe.engine.IHiPEEngine;
@@ -157,6 +160,40 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 		engineClassName = projectName.replace("/", ".")+".hipe.engine.HiPEEngine";
 	}
 	
+	protected HiPENetwork loadNetwork(String path) {
+		Resource res = null;
+		try {
+			res = loadResource(path);
+		} catch (Exception e) {
+			LogUtils.error(logger, "Couldn't load ibex pattern set: \n" + e.getMessage());
+			e.printStackTrace();
+		}
+		
+		if(res == null) {
+			return null;
+		}
+		for(EObject content : res.getContents()) {
+			if(content instanceof HiPENetwork)
+				return (HiPENetwork) content;
+		}
+		return null;
+	}
+	
+	private static Resource loadResource(String path) throws Exception {
+		Resource.Factory.Registry.INSTANCE.getExtensionToFactoryMap().put("ibex-patterns-for-hipe", new XMIResourceFactoryImpl());
+		ResourceSet rs = new ResourceSetImpl();
+		rs.getResourceFactoryRegistry().getExtensionToFactoryMap().put("xmi", new XMIResourceFactoryImpl());
+		rs.getPackageRegistry().put(IBeXLanguagePackage.eNS_URI, IBeXLanguagePackage.eINSTANCE);
+		
+		URI uri = URI.createFileURI(path);
+		Resource modelResource = rs.getResource(uri, true);
+		EcoreUtil.resolveAll(rs);
+		
+		if(modelResource == null)
+			throw new IOException("File did not contain a vaild model.");
+		return modelResource;
+	}
+	
 	/**
 	 * Starts the monitoring for the given patterns (i.e. starts engine)
 	 * (3) should be called third.
@@ -217,9 +254,13 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 			if(engineClass == null) {
 				throw new RuntimeException("Engine class: "+engineClassName+ " -> not found!");
 			}
-			Constructor<? extends IHiPEEngine> constructor = engineClass.getDeclaredConstructor();
+			Constructor<? extends IHiPEEngine> constructor = engineClass.getConstructor(HiPENetwork.class);
 			constructor.setAccessible(true);
-			engine = constructor.newInstance();
+			
+			HiPENetwork network = loadNetwork("../" + getProjectName() +"/debug/" + getNetworkFileName());
+			if(network == null)
+				throw new RuntimeException("No hipe-network.xmi could be found");
+			engine = constructor.newInstance(network);
 		} catch (InstantiationException | IllegalAccessException | NoSuchMethodException | 
 				SecurityException | IllegalArgumentException | InvocationTargetException e) {
 			e.printStackTrace();
@@ -231,6 +272,19 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 			e.printStackTrace();
 		}
 		adapter = new HiPEContentAdapter(resourceSet, engine);
+	}
+	
+	protected String getProjectName() {
+		URI patternURI = ibexPatternSet.eResource().getURI();
+		Pattern pattern = Pattern.compile("../(.*)/src-gen/(.*)(/api/ibex-patterns.xmi)$");
+		Matcher matcher = pattern.matcher(patternURI.toString());
+		matcher.matches();
+		String packageName = matcher.group(1);
+		return packageName;
+	}
+	
+	protected String getNetworkFileName() {
+		return "hipe-network.xmi";
 	}
 	
 	@Override
