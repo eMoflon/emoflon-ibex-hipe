@@ -91,8 +91,7 @@ Require-Bundle: org.eclipse.emf.ecore.xmi,
  org.eclipse.core.resources,
  org.moflon.core.plugins,
  org.eclipse.emf.ecore,
- org.emoflon.ibex.tgg.ide,
- hipe.generic;bundle-version="1.0.0";visibility:=reexport
+ org.emoflon.ibex.tgg.ide
 Automatic-Module-Name: org.emoflon.ibex.gt.democles
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-ClassPath: .,
