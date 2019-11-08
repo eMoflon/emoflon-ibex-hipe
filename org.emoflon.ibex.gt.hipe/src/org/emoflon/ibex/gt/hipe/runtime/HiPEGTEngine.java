@@ -294,6 +294,7 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 			Map<String, ProductionResult> extractData = engine.extractData();
 			addNewMatches(extractData);
 			deleteInvalidMatches(extractData);
+			app.notifySubscriptions();
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
