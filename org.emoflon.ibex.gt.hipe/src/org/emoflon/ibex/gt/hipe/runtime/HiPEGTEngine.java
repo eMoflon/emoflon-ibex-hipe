@@ -2,6 +2,7 @@ package org.emoflon.ibex.gt.hipe.runtime;
 
 import static org.emoflon.ibex.common.collections.CollectionFactory.cfactory;
 
+import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -97,6 +98,13 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 		ResourceSet resourceSet = new ResourceSetImpl();
 		resourceSet.getResourceFactoryRegistry().getExtensionToFactoryMap()
 				.put(Resource.Factory.Registry.DEFAULT_EXTENSION, new XMIResourceFactoryImpl());
+		try {
+			resourceSet.getURIConverter().getURIMap().put(URI.createPlatformResourceURI("/", true), URI.createFileURI(new File(workspacePath).getCanonicalPath() + File.separator));
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
 		return resourceSet;
 	}
 	
