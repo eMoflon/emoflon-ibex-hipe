@@ -43,7 +43,7 @@ import org.moflon.tgg.mosl.tgg.TripleGraphGrammarFile;
 import IBeXLanguage.IBeXPatternSet;
 import hipe.generator.HiPEGenerator;
 import hipe.network.HiPENetwork;
-import hipe.pattern.HiPEPatternContainer;
+import hipe.pattern.HiPEContainer;
 import hipe.searchplan.simple.SimpleSearchPlan;
 
 public class IbexHiPEBuilderExtension implements BuilderExtension {
@@ -137,7 +137,7 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 			
 			LogUtils.info(logger,  strategy.getClass().getName() + ": Converting IBeX to HiPE Patterns..");
 			IBeXToHiPEPatternTransformation transformation = new IBeXToHiPEPatternTransformation();
-			HiPEPatternContainer container = transformation.transform(ibexPatterns);
+			HiPEContainer container = transformation.transform(ibexPatterns);
 			
 			LogUtils.info(logger,  strategy.getClass().getName() + ": Creating search plan & generating Rete network..");
 			SimpleSearchPlan searchPlan = new SimpleSearchPlan(container);

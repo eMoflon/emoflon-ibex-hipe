@@ -33,7 +33,7 @@ import hipe.pattern.HiPEAttributeConstraint;
 import hipe.pattern.HiPEEdge;
 import hipe.pattern.HiPENode;
 import hipe.pattern.HiPEPattern;
-import hipe.pattern.HiPEPatternContainer;
+import hipe.pattern.HiPEContainer;
 import hipe.pattern.HiPEPatternFactory;
 import hipe.pattern.HiPEPatternInvocation;
 import hipe.pattern.RelationalConstraint;
@@ -45,16 +45,17 @@ public class IBeXToHiPEPatternTransformation {
 	
 	protected Map<String, HiPEPattern> name2pattern = new HashMap<>();
 	protected Map<IBeXNode, HiPENode> node2node = new HashMap<>();
+	protected HiPEContainer container;
 	
 	private int csp_id = 0;
 	
-	public HiPEPatternContainer transform(IBeXPatternSet patternSet) {
+	public HiPEContainer transform(IBeXPatternSet patternSet) {
 		factory = HiPEPatternFactory.eINSTANCE;
 		
 		name2pattern = new HashMap<>();
 		node2node = new HashMap<>();
 		
-		HiPEPatternContainer container = factory.createHiPEPatternContainer();
+		container = factory.createHiPEContainer();
 		for(IBeXContext context : patternSet.getContextPatterns()) {
 			if(context instanceof IBeXContextPattern) {
 				IBeXContextPattern pattern = (IBeXContextPattern) context;
@@ -99,7 +100,7 @@ public class IBeXToHiPEPatternTransformation {
 			for(IBeXNode node : mapping.keySet()) {
 				HiPENode srcNode = transform(context, node);
 				HiPENode trgNode = transform(context, mapping.get(node));
-				trgNode.getInvokedBy().add(srcNode);
+				trgNode.getInvokedBy().add(invocation);
 			}
 		}
 		
@@ -135,8 +136,8 @@ public class IBeXToHiPEPatternTransformation {
 	public HiPENode transform(IBeXContextPattern context, IBeXNode node) {
 		if(node2node.containsKey(node))
 			return node2node.get(node);
-		
 		HiPENode hNode = factory.createHiPENode();
+		container.getNodes().add(hNode);
 		hNode.setName(node.getName());
 		hNode.setType(node.getType());
 		hNode.setLocal(context.getLocalNodes().contains(node));
@@ -148,6 +149,7 @@ public class IBeXToHiPEPatternTransformation {
 	
 	private HiPEEdge transform(IBeXContextPattern context, IBeXEdge edge) {
 		HiPEEdge hEdge = factory.createHiPEEdge();
+		container.getEdges().add(hEdge);
 		hEdge.setName(edge.getSourceNode().getType().getName() + "_" + edge.getType().getName());
 		hEdge.setType(edge.getType());
 		hEdge.setSource(transform(context, edge.getSourceNode()));
@@ -157,6 +159,7 @@ public class IBeXToHiPEPatternTransformation {
 	
 	private UnequalConstraint transform(IBeXContextPattern context, IBeXNodePair pair) {
 		UnequalConstraint constr = factory.createUnequalConstraint();
+		container.getNodeConstraints().add(constr);
 		constr.setLeftNode(transform(context, pair.getValues().get(0)));
 		constr.setRightNode(transform(context, pair.getValues().get(1)));
 		return constr;
@@ -164,6 +167,7 @@ public class IBeXToHiPEPatternTransformation {
 	
 	private HiPEAttributeConstraint transform(IBeXContextPattern context, HiPEPattern pattern, IBeXAttributeConstraint constr) {
 		RelationalConstraint rConstraint = factory.createRelationalConstraint();
+		container.getAttributeConstraints().add(rConstraint);
 		HiPEAttribute attrLeft = transform(context, constr.getNode(), constr.getType());
 		HiPEAttribute attrRight = transform(context, constr.getValue());
 		if(attrLeft != null) {
@@ -201,24 +205,28 @@ public class IBeXToHiPEPatternTransformation {
 	
 	private HiPEAttribute transform(IBeXContextPattern context, IBeXConstant constant) {
 		HiPEAttribute attr = factory.createHiPEAttribute();
+		container.getAttributes().add(attr);
 		attr.setValue(constant.getValue());
 		return attr;
 	}
 	
 	private HiPEAttribute transform(IBeXContextPattern context, IBeXEnumLiteral literal) {
 		HiPEAttribute attr = factory.createHiPEAttribute();
+		container.getAttributes().add(attr);
 		attr.setValue(literal.getLiteral());
 		return attr;
 	}
 	
 	private HiPEAttribute transform(IBeXContextPattern context, IBeXAttributeParameter attributeParam) {
 		HiPEAttribute attr = factory.createHiPEAttribute();
+		container.getAttributes().add(attr);
 		attr.setName(attributeParam.getName());
 		return attr;
 	}
 	
 	private HiPEAttribute transform(IBeXContextPattern context, IBeXAttributeExpression attributeExpr) {
 		HiPEAttribute attr = factory.createHiPEAttribute();
+		container.getAttributes().add(attr);
 		attr.setNode(transform(context, attributeExpr.getNode()));
 		attr.setValue(attributeExpr.getAttribute());
 		attr.setEAttribute(attributeExpr.getAttribute());
@@ -239,6 +247,7 @@ public class IBeXToHiPEPatternTransformation {
 	
 	private HiPEAttributeConstraint transform(IBeXContextPattern context, HiPEPattern pattern, IBeXCSP csp) {
 		ComplexConstraint cConstraint = factory.createComplexConstraint();
+		container.getAttributeConstraints().add(cConstraint);
 		String initCode = csp.getPackage() + "." + getCSPName(csp.getName()) + " csp_" + csp_id + " = new " + csp.getPackage() + "." + getCSPName(csp.getName()) + "();\n";
 		for(IBeXAttributeValue value : csp.getValues()) {
 			initCode += "csp_" + csp_id + ".getVariables().add(new org.emoflon.ibex.tgg.operational.csp.RuntimeTGGAttributeConstraintVariable(true, ";
@@ -278,6 +287,7 @@ public class IBeXToHiPEPatternTransformation {
 
 	private HiPEAttribute transform(IBeXContextPattern context, IBeXNode iBeXNode, EAttribute attr) {
 		HiPEAttribute hAttr = factory.createHiPEAttribute();
+		container.getAttributes().add(hAttr);
 		hAttr.setName(attr.getName());
 		hAttr.setValue(attr);
 		hAttr.setNode(transform(context, iBeXNode));
