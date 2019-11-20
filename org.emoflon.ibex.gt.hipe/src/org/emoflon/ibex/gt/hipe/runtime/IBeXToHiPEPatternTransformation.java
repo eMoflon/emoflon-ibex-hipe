@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 
 import org.eclipse.emf.common.util.EMap;
 import org.eclipse.emf.ecore.EAttribute;
+import org.eclipse.emf.ecore.util.EcoreEMap;
 import org.graphstream.ui.j2dviewer.renderer.shape.swing.ShapeDecor.AtRightShapeDecor;
 
 import IBeXLanguage.IBeXAttributeConstraint;
@@ -91,6 +92,7 @@ public class IBeXToHiPEPatternTransformation {
 		for(IBeXPatternInvocation inv : context.getInvocations()) {
 			HiPEPatternInvocation invocation = factory.createHiPEPatternInvocation();
 			
+			
 			HiPEPattern invoked = transform(inv.getInvokedPattern());
 			invocation.setInvokedPattern(invoked);
 			invocation.setPositive(inv.isPositive());
@@ -100,7 +102,7 @@ public class IBeXToHiPEPatternTransformation {
 			for(IBeXNode node : mapping.keySet()) {
 				HiPENode srcNode = transform(context, node);
 				HiPENode trgNode = transform(context, mapping.get(node));
-				trgNode.getInvokedBy().add(invocation);
+				invocation.getInvocationNodeMap().put(srcNode, trgNode);
 			}
 		}
 		
