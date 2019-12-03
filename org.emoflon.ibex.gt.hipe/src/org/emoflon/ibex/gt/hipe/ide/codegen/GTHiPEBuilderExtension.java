@@ -6,6 +6,7 @@ import org.moflon.core.plugins.manifest.ManifestFileUpdater;
 import org.moflon.core.utilities.ClasspathUtil;
 import org.moflon.core.utilities.LogUtils;
 
+import IBeXLanguage.IBeXLanguagePackage;
 import IBeXLanguage.IBeXPatternSet;
 import hipe.generator.HiPEGenerator;
 import hipe.network.HiPENetwork;
@@ -15,12 +16,14 @@ import hipe.searchplan.simple.SimpleSearchPlan;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.NullProgressMonitor;
+import org.eclipse.emf.common.util.DiagnosticException;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.resource.ResourceSet;
 import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
 import org.eclipse.emf.ecore.util.EcoreUtil;
+import org.eclipse.emf.ecore.xmi.PackageNotFoundException;
 import org.eclipse.emf.ecore.xmi.XMIResource;
 import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
 
@@ -206,24 +209,35 @@ public class GTHiPEBuilderExtension implements GTBuilderExtension{
 	}
 	
 	private static Resource loadResource(IProject project, String path) throws Exception {
-		Resource.Factory.Registry.INSTANCE.getExtensionToFactoryMap().put("ibex-patterns-for-hipe", new XMIResourceFactoryImpl());
+		Resource.Factory.Registry.INSTANCE.getExtensionToFactoryMap().put("*", new XMIResourceFactoryImpl());
 		ResourceSet rs = new ResourceSetImpl();
-		rs.getResourceFactoryRegistry().getExtensionToFactoryMap().put("xmi", new XMIResourceFactoryImpl());
+		rs.getResourceFactoryRegistry().getExtensionToFactoryMap().put("*", new XMIResourceFactoryImpl());
 		
 		IPath ipath = project.getFile(path).getLocation();
 		URI uri = URI.createFileURI(ipath.toOSString());
-		Resource modelResource = rs.getResource(uri, true);
-		EcoreUtil.resolveAll(rs);
+		Resource modelResource = null;
+		try {
+			modelResource = rs.getResource(uri, true);
+		}catch(Exception e) {
+			LogUtils.error(logger, "Couldn't load ibex pattern model, trying workaround.. Message was: \n" + e.getMessage());
+			rs.getPackageRegistry().put("platform:/resource/org.emoflon.ibex.common/model/Common.ecore", IBeXLanguagePackage.eINSTANCE);
+		}
 		
 		if(modelResource == null)
-			throw new IOException("File did not contain a vaild model.");
+			modelResource = rs.getResource(uri, true);
+		
+		EcoreUtil.resolveAll(rs);
+		
+		if(modelResource.getContents().isEmpty()) 
+			LogUtils.error(logger, "Couldn't load ibex pattern model, workaround failed. Pattern set is empty.");
+		
 		return modelResource;
 	}
 	
 	public static void saveResource(EObject model, String path) {
-		Resource.Factory.Registry.INSTANCE.getExtensionToFactoryMap().put("xmi-resource", new XMIResourceFactoryImpl());
+		Resource.Factory.Registry.INSTANCE.getExtensionToFactoryMap().put("*", new XMIResourceFactoryImpl());
 		ResourceSet rs = new ResourceSetImpl();
-		rs.getResourceFactoryRegistry().getExtensionToFactoryMap().put("xmi", new XMIResourceFactoryImpl());
+		rs.getResourceFactoryRegistry().getExtensionToFactoryMap().put("*", new XMIResourceFactoryImpl());
 		
 		URI uri = URI.createFileURI(path);
 		Resource modelResource = rs.createResource(uri);
