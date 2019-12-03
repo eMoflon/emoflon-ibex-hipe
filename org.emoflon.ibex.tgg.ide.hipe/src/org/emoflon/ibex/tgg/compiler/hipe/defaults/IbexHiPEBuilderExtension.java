@@ -105,7 +105,7 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 		
 		LogUtils.info(logger, "Building missing app stubs...");
 		try {
-			generateDefaultRegHelper(builder, srcProject, trgProject, srcPkgName, trgPkgName);
+			generateRegHelper(builder, srcProject, trgProject, srcPkgName, trgPkgName);
 			generateDefaultStubs(builder, editorModel, flattenedEditorModel);
 		}catch(Exception e) {
 			LogUtils.error(logger, e);
@@ -205,13 +205,11 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 				-> HiPEFilesGenerator.generateFWDOptAppFile(projectName, fileName));
 		builder.createDefaultRunFile(HiPEFilesGenerator.BWD_OPT_APP, (projectName, fileName) 
 				-> HiPEFilesGenerator.generateBWDOptAppFile(projectName, fileName));
-		builder.createDefaultRunFile(HiPEFilesGenerator.REGISTRATION_HELPER, (projectName, fileName)
-				-> HiPEFilesGenerator.generateRegHelperFile(projectName));
-		builder.enforceDefaultRunFile(HiPEFilesGenerator.SCHEMA_BASED_AUTO_REG, (projectName, fileName)
-				-> HiPEFilesGenerator.generateSchemaAutoRegFile(projectName, editorModel));
+		builder.enforceDefaultConfigFile(HiPEFilesGenerator.DEFAULT_REGISTRATION_HELPER, (projectName, fileName)
+				-> HiPEFilesGenerator.generateDefaultRegHelperFile(projectName));
 	}
 	
-	public void generateDefaultRegHelper(IbexTGGBuilder builder, IProject srcProject, IProject trgProject, String srcPkg, String trgPkg) throws Exception {
+	public void generateRegHelper(IbexTGGBuilder builder, IProject srcProject, IProject trgProject, String srcPkg, String trgPkg) throws Exception {
 		if(srcProject == null || trgProject == null) {
 			LogUtils.info(logger, "Project belonging to src or trg model could not be found in the workspace. "
 					+ "Therefore, the default registration helper file could not be created.");
@@ -222,8 +220,8 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 					+ "Therefore, the default registration helper file could not be created.");
 			return;
 		}
-		builder.enforceDefaultRunFile(HiPEFilesGenerator.DEFAULT_REGISTRATION_HELPER, (projectName, fileName)
-				-> HiPEFilesGenerator.generateDefaultRegHelperFile(projectName, srcProject.getName(), trgProject.getName(), srcPkg, trgPkg));
+		builder.enforceDefaultConfigFile(HiPEFilesGenerator.REGISTRATION_HELPER, (projectName, fileName)
+				-> HiPEFilesGenerator.generateRegHelperFile(projectName, srcProject.getName(), trgProject.getName(), srcPkg, trgPkg));
 	}
 	
 	private void cleanOldCode() {
