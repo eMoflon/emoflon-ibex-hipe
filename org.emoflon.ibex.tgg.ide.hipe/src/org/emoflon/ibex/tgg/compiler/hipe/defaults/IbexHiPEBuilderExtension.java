@@ -49,7 +49,6 @@ import hipe.searchplan.simple.SimpleSearchPlan;
 public class IbexHiPEBuilderExtension implements BuilderExtension {
 
 	private static final Logger logger = Logger.getLogger(IbexHiPEBuilderExtension.class);
-	private static final String IMPORT = "import org.emoflon.ibex.tgg.runtime.hipe.HiPETGGEngine;";
 	
 	private String projectName;
 	private String projectPath;
@@ -106,7 +105,7 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 		
 		LogUtils.info(logger, "Building missing app stubs...");
 		try {
-			generateDefaultRegHelper(builder, srcProject, trgProject, srcPkgName, trgPkgName);
+			generateRegHelper(builder, srcProject, trgProject, srcPkgName, trgPkgName);
 			generateDefaultStubs(builder, editorModel, flattenedEditorModel);
 		}catch(Exception e) {
 			LogUtils.error(logger, e);
@@ -189,30 +188,28 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 	
 	public void generateDefaultStubs(IbexTGGBuilder builder, TripleGraphGrammarFile editorModel, TripleGraphGrammarFile flattenedEditorModel) throws CoreException {
 		builder.createDefaultDebugRunFile(HiPEFilesGenerator.MODELGEN_APP, (projectName, fileName) 
-				-> HiPEFilesGenerator.generateModelGenDebugFile(projectName, fileName, IMPORT));
+				-> HiPEFilesGenerator.generateModelGenDebugFile(projectName, fileName));
 		builder.createDefaultRunFile(HiPEFilesGenerator.MODELGEN_APP, (projectName, fileName) 
-				-> HiPEFilesGenerator.generateModelGenFile(projectName, fileName, IMPORT));
+				-> HiPEFilesGenerator.generateModelGenFile(projectName, fileName));
 		builder.createDefaultRunFile(HiPEFilesGenerator.SYNC_APP, (projectName, fileName) 
-				-> HiPEFilesGenerator.generateSyncAppFile(projectName, fileName, IMPORT));
+				-> HiPEFilesGenerator.generateSyncAppFile(projectName, fileName));
 		builder.createDefaultRunFile(HiPEFilesGenerator.INITIAL_FWD_APP, (projectName, fileName) 
-				-> HiPEFilesGenerator.generateInitialFwdAppFile(projectName, fileName, IMPORT));
+				-> HiPEFilesGenerator.generateInitialFwdAppFile(projectName, fileName));
 		builder.createDefaultRunFile(HiPEFilesGenerator.INITIAL_BWD_APP, (projectName, fileName) 
-				-> HiPEFilesGenerator.generateInitialBwdAppFile(projectName, fileName, IMPORT));
+				-> HiPEFilesGenerator.generateInitialBwdAppFile(projectName, fileName));
 		builder.createDefaultRunFile(HiPEFilesGenerator.CC_APP, (projectName, fileName) 
-				-> HiPEFilesGenerator.generateCCAppFile(projectName, fileName, IMPORT));
+				-> HiPEFilesGenerator.generateCCAppFile(projectName, fileName));
 		builder.createDefaultRunFile(HiPEFilesGenerator.CO_APP, (projectName, fileName) 
-				-> HiPEFilesGenerator.generateCOAppFile(projectName, fileName, IMPORT));
+				-> HiPEFilesGenerator.generateCOAppFile(projectName, fileName));
 		builder.createDefaultRunFile(HiPEFilesGenerator.FWD_OPT_APP, (projectName, fileName) 
-				-> HiPEFilesGenerator.generateFWDOptAppFile(projectName, fileName, IMPORT));
+				-> HiPEFilesGenerator.generateFWDOptAppFile(projectName, fileName));
 		builder.createDefaultRunFile(HiPEFilesGenerator.BWD_OPT_APP, (projectName, fileName) 
-				-> HiPEFilesGenerator.generateBWDOptAppFile(projectName, fileName, IMPORT));
-		builder.createDefaultRunFile(HiPEFilesGenerator.REGISTRATION_HELPER, (projectName, fileName)
-				-> HiPEFilesGenerator.generateRegHelperFile(projectName));
-		builder.enforceDefaultRunFile(HiPEFilesGenerator.SCHEMA_BASED_AUTO_REG, (projectName, fileName)
-				-> HiPEFilesGenerator.generateSchemaAutoRegFile(projectName, editorModel));
+				-> HiPEFilesGenerator.generateBWDOptAppFile(projectName, fileName));
+		builder.enforceDefaultConfigFile(HiPEFilesGenerator.DEFAULT_REGISTRATION_HELPER, (projectName, fileName)
+				-> HiPEFilesGenerator.generateDefaultRegHelperFile(projectName));
 	}
 	
-	public void generateDefaultRegHelper(IbexTGGBuilder builder, IProject srcProject, IProject trgProject, String srcPkg, String trgPkg) throws Exception {
+	public void generateRegHelper(IbexTGGBuilder builder, IProject srcProject, IProject trgProject, String srcPkg, String trgPkg) throws Exception {
 		if(srcProject == null || trgProject == null) {
 			LogUtils.info(logger, "Project belonging to src or trg model could not be found in the workspace. "
 					+ "Therefore, the default registration helper file could not be created.");
@@ -223,8 +220,8 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 					+ "Therefore, the default registration helper file could not be created.");
 			return;
 		}
-		builder.enforceDefaultRunFile(HiPEFilesGenerator.DEFAULT_REGISTRATION_HELPER, (projectName, fileName)
-				-> HiPEFilesGenerator.generateDefaultRegHelperFile(projectName, srcProject.getName(), trgProject.getName(), srcPkg, trgPkg));
+		builder.enforceDefaultConfigFile(HiPEFilesGenerator.REGISTRATION_HELPER, (projectName, fileName)
+				-> HiPEFilesGenerator.generateRegHelperFile(projectName, srcProject.getName(), trgProject.getName(), srcPkg, trgPkg));
 	}
 	
 	private void cleanOldCode() {

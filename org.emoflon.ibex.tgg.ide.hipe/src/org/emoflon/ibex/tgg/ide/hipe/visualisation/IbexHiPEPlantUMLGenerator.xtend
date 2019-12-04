@@ -4,7 +4,7 @@ import org.emoflon.ibex.tgg.ide.visualisation.IbexPlantUMLGenerator
 import org.eclipse.emf.ecore.EClassifier
 import hipe.pattern.HiPEPattern
 import hipe.pattern.HiPENode
- 
+  
 class IbexHiPEPlantUMLGenerator extends IbexPlantUMLGenerator {
 
 	static def String separator() {
