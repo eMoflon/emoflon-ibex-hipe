@@ -23,10 +23,6 @@
    </url>
 
    <includes
-         id="hipe.feature"
-         version="0.0.0"/>
-
-   <includes
          id="org.moflon.core.feature"
          version="0.0.0"/>
 
@@ -36,6 +32,7 @@
 
    <requires>
       <import feature="org.eclipse.xtext.runtime" version="2.12" match="greaterOrEqual"/>
+      <import feature="hipe.feature" version="1.0.0.qualifier"/>
    </requires>
 
    <plugin
@@ -187,27 +184,6 @@
 
    <plugin
          id="org.emoflon.ibex.tgg.editor.diagram.ui"
-         download-size="0"
-         install-size="0"
-         version="0.0.0"
-         unpack="false"/>
-
-   <plugin
-         id="org.emoflon.ibex.HiPEConfig"
-         download-size="0"
-         install-size="0"
-         version="0.0.0"
-         unpack="false"/>
-
-   <plugin
-         id="org.emoflon.ibex.HiPEConfig.edit"
-         download-size="0"
-         install-size="0"
-         version="0.0.0"
-         unpack="false"/>
-
-   <plugin
-         id="org.emoflon.ibex.HiPEConfig.editor"
          download-size="0"
          install-size="0"
          version="0.0.0"
