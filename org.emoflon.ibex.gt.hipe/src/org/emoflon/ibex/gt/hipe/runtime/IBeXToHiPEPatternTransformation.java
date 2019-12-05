@@ -1,15 +1,10 @@
 package org.emoflon.ibex.gt.hipe.runtime;
 
 import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import org.eclipse.emf.common.util.EMap;
 import org.eclipse.emf.ecore.EAttribute;
-import org.eclipse.emf.ecore.util.EcoreEMap;
-import org.graphstream.ui.j2dviewer.renderer.shape.swing.ShapeDecor.AtRightShapeDecor;
 
 import IBeXLanguage.IBeXAttributeConstraint;
 import IBeXLanguage.IBeXAttributeExpression;
@@ -91,7 +86,6 @@ public class IBeXToHiPEPatternTransformation {
 		
 		for(IBeXPatternInvocation inv : context.getInvocations()) {
 			HiPEPatternInvocation invocation = factory.createHiPEPatternInvocation();
-			
 			
 			HiPEPattern invoked = transform(inv.getInvokedPattern());
 			invocation.setInvokedPattern(invoked);

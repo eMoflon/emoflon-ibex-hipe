@@ -1,7 +1,6 @@
 package org.emoflon.ibex.tgg.compiler.hipe.defaults;
 
 import org.eclipse.emf.codegen.ecore.CodeGenEcorePlugin;
-import org.eclipse.emf.codegen.ecore.generator.GeneratorAdapterFactory.Descriptor;
 import org.eclipse.emf.codegen.ecore.genmodel.GenClass;
 import org.eclipse.emf.codegen.ecore.genmodel.GenPackage;
 import org.eclipse.emf.codegen.util.CodeGenUtil;
