@@ -34,16 +34,17 @@ class HiPEFilesGenerator extends DefaultFilesGenerator {
 			import org.emoflon.ibex.tgg.operational.strategies.opt.FWD_OPT;
 			import org.emoflon.ibex.tgg.runtime.democles.DemoclesTGGEngine;
 			import org.emoflon.ibex.tgg.runtime.hipe.HiPETGGEngine;
+			import org.emoflon.ibex.tgg.compiler.defaults.IRegistrationHelper;
 			
 			import «projectName».«projectName»Package;
 			import «projectName».impl.«projectName»PackageImpl;
 			import «srcPkg».impl.«srcPkg.toFirstUpper»PackageImpl;
 			import «trgPkg».impl.«trgPkg.toFirstUpper»PackageImpl;
 			
-			public class «REGISTRATION_HELPER» {
+			public class «REGISTRATION_HELPER» implements IRegistrationHelper {
 				
 				/** Create default options **/
-				public static final void setWorkspaceRootDirectory(ResourceSet resourceSet) throws IOException {
+				public final void setWorkspaceRootDirectory(ResourceSet resourceSet) throws IOException {
 					final String root = "../";
 					URI key = URI.createPlatformResourceURI("/", true);
 					URI value = URI.createFileURI(new File(root).getCanonicalPath() + File.separatorChar);
@@ -51,7 +52,7 @@ class HiPEFilesGenerator extends DefaultFilesGenerator {
 				}
 			
 				/** Load and register source and target metamodels */
-				public static void registerMetamodels(ResourceSet rs, OperationalStrategy strategy) throws IOException {
+				public void registerMetamodels(ResourceSet rs, OperationalStrategy strategy) throws IOException {
 					
 					// Set correct workspace root
 					setWorkspaceRootDirectory(rs);
@@ -101,7 +102,7 @@ class HiPEFilesGenerator extends DefaultFilesGenerator {
 				}
 			
 				/** Create default options **/
-				public static IbexOptions createIbexOptions() {
+				public IbexOptions createIbexOptions() {
 					IbexOptions options = new IbexOptions();
 					options.setBlackInterpreter(new HiPETGGEngine());
 					options.projectName("«MoflonUtil.lastCapitalizedSegmentOf(projectName)»");

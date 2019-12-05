@@ -13,14 +13,6 @@ import org.moflon.emf.codegen.CodeGenerator;
 
 public class HiPEGenGenerator extends CodeGenerator {
 	
-	public HiPEGenGenerator() {
-		super(null);
-	}
-
-	public HiPEGenGenerator(Descriptor descriptor) {
-		super(descriptor);
-	}
-	
 	public Diagnostic generate(Object object, Object projectType, String projectTypeName, Monitor monitor, String projectName) {
 		if (SYSOUT_BEGIN_END)
 			System.out.println("******* Begin: " + new java.util.Date());
