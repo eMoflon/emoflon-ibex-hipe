@@ -6,13 +6,11 @@ Bundle-Version: 1.0.0.qualifier
 Automatic-Module-Name: org.emoflon.ibex.tgg.ide.hipe
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Require-Bundle: hipe.dependencies;bundle-version="1.0.0",
- hipe.pattern;bundle-version="1.0.0",
- hipe.network;bundle-version="1.0.0",
+ org.emoflon.ibex.gt.hipe;visibility:=reexport,
  hipe.generator;bundle-version="1.0.0",
  hipe.searchplan,
  org.emoflon.ibex.tgg.core.runtime,
  org.moflon.emf.codegen,
- org.emoflon.ibex.gt.hipe,
  org.emoflon.ibex.tgg.ide,
  org.emoflon.ibex.tgg.editor,
  org.moflon.core.plugins,
