@@ -220,7 +220,7 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 					+ "Therefore, the default registration helper file could not be created.");
 			return;
 		}
-		builder.enforceDefaultConfigFile(HiPEFilesGenerator.REGISTRATION_HELPER, (projectName, fileName)
+		builder.createDefaultRunFile(HiPEFilesGenerator.REGISTRATION_HELPER, (projectName, fileName)
 				-> HiPEFilesGenerator.generateRegHelperFile(projectName, srcProject.getName(), trgProject.getName(), srcPkg, trgPkg));
 	}
 	
