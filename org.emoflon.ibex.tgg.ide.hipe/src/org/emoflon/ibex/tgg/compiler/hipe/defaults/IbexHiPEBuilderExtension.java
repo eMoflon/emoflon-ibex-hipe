@@ -6,6 +6,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -127,9 +128,8 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 			LogUtils.error(logger, e1.getMessage());
 		}
 		
-		
-		
-		for(OperationalStrategy strategy : strategies) {
+		double tic = System.currentTimeMillis();
+		strategies.parallelStream().forEach(strategy -> {
 			LogUtils.info(logger, strategy.getClass().getName() + ": Compiling ibex patterns from TGG patterns...");
 			ContextPatternTransformation compiler = new ContextPatternTransformation(opt, strategy);
 			IBeXPatternSet ibexPatterns = compiler.transform();
@@ -144,7 +144,7 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 			HiPENetwork network = searchPlan.getNetwork();
 			
 			LogUtils.info(logger,  strategy.getClass().getName() + ": Generating Code..");
-			double tic = System.currentTimeMillis();
+			
 			if(strategy instanceof HiPESYNC) 
 				HiPEGenerator.generateCode(projectName+".sync.", projectPath, network);
 			else if(strategy instanceof HiPECC) 
@@ -155,17 +155,16 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 				HiPEGenerator.generateCode(projectName+".modelgen.", projectPath, network);
 			else
 				throw new RuntimeException("Unsupported Operational Strategy detected");
-			
-			double toc = System.currentTimeMillis();
-			LogUtils.info(logger,  strategy.getClass().getName() + ": Code generation completed in "+ (toc-tic)/1000.0 + " seconds.");	
-			
+			LogUtils.info(logger,  strategy.getClass().getName() + ": Code generation completed");
+
 			LogUtils.info(logger,  strategy.getClass().getName() + ": Saving HiPE patterns and HiPE network..");
 			String debugFolder = projectPath + "/debug";
 			createNewDirectory(debugFolder);
 			saveResource(container, debugFolder+"/" +  strategy.getClass().getSimpleName().toLowerCase() + "_hipe-patterns.xmi");
 			saveResource(network, debugFolder+"/" +  strategy.getClass().getSimpleName().toLowerCase() + "_hipe-network.xmi");
-		}
-
+		});
+		double toc = System.currentTimeMillis();
+		LogUtils.info(logger,  "Pattern compilation and code generation completed in "+ (toc-tic)/1000.0 + " seconds.");
 		
 		LogUtils.info(logger, "Refreshing workspace and cleaning build ..");
 		try {
@@ -225,16 +224,23 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 	}
 	
 	private void cleanOldCode() {
-		File dir = new File(projectPath+"/src-gen/" + projectName + "/hipe");
-		if(dir.exists()) {
-			LogUtils.info(logger, "--> Cleaning old source files in root folder: "+projectPath+"/src-gen/" + projectName + "/hipe");
-			if(!deleteDirectory(dir)) {
-				LogUtils.error(logger, "Folder couldn't be deleted!");
+		List<File> hipeRootDirectories = new LinkedList<>();
+		hipeRootDirectories.add(new File(projectPath+"/src-gen/" + projectName + "/hipe"));
+		hipeRootDirectories.add(new File(projectPath+"/src-gen/" + projectName + "/sync/hipe"));
+		hipeRootDirectories.add(new File(projectPath+"/src-gen/" + projectName + "/cc/hipe"));
+		hipeRootDirectories.add(new File(projectPath+"/src-gen/" + projectName + "/co/hipe"));
+		hipeRootDirectories.add(new File(projectPath+"/src-gen/" + projectName + "/modelgen/hipe"));
+		hipeRootDirectories.parallelStream().forEach(dir -> {
+			if(dir.exists()) {
+				LogUtils.info(logger, "--> Cleaning old source files in root folder: "+dir.getPath());
+				if(!deleteDirectory(dir)) {
+					LogUtils.error(logger, "Folder couldn't be deleted!");
 
+				}
+			} else {
+				LogUtils.info(logger, "--> "+ dir.getPath() + ":\n No previously generated code found, nothing to do!");
 			}
-		} else {
-			LogUtils.info(logger, "--> No previously generated code found, nothing to do!");
-		}
+		});
 	}
 	
 	private void updateManifest(IProject project, String srcPkg, String trgPkg) {
@@ -242,19 +248,6 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 			IFile manifest = ManifestFileUpdater.getManifestFile(project);
 			ManifestHelper helper = new ManifestHelper();
 			helper.loadManifest(manifest);
-			/*
-			if(!helper.containsSection("Bundle-ClassPath")) {
-				helper.appendSection("Bundle-ClassPath");
-			}
-			
-			if(!helper.sectionContainsContent("Bundle-ClassPath", "jars/")) {
-				helper.addContentToSection("Bundle-ClassPath", "jars/");
-			}
-			
-			if(!helper.sectionContainsContent("Bundle-ClassPath", ".")) {
-				helper.addContentToSection("Bundle-ClassPath", ".");
-			}
-			*/
 			if(!helper.sectionContainsContent("Require-Bundle", "org.emoflon.ibex.tgg.runtime.hipe")) {
 				helper.addContentToSection("Require-Bundle", "org.emoflon.ibex.tgg.runtime.hipe");
 			}
@@ -294,27 +287,6 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 			if(!helper.sectionContainsContent("source..", "gen/")) {
 				helper.addContentToSection("source..", "gen/");
 			}
-			/*
-			if(!helper.containsSection("jars.extra.classpath")) {
-				helper.appendSection("jars.extra.classpath");
-			}
-			
-			if(!helper.sectionContainsContent("jars.extra.classpath", "jars/akka-actor_2.12-2.5.19.jar")) {
-				helper.addContentToSection("jars.extra.classpath", "jars/akka-actor_2.12-2.5.19.jar");
-			}
-			
-			if(!helper.sectionContainsContent("jars.extra.classpath", "jars/config-1.3.3.jar")) {
-				helper.addContentToSection("jars.extra.classpath", "jars/config-1.3.3.jar");
-			}
-			
-			if(!helper.sectionContainsContent("jars.extra.classpath", "jars/scala-java8-compat_2.12-0.8.0.jar")) {
-				helper.addContentToSection("jars.extra.classpath", "jars/scala-java8-compat_2.12-0.8.0.jar");
-			}
-			
-			if(!helper.sectionContainsContent("jars.extra.classpath", "jars/scala-library-2.12.8.jar")) {
-				helper.addContentToSection("jars.extra.classpath", "jars/scala-library-2.12.8.jar");
-			}
-			*/
 			helper.updateProperties(buildProps);
 			
 		} catch (CoreException | IOException e) {
