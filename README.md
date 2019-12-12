@@ -23,7 +23,7 @@ Now you are ready to use eMoflon::IBeX HiPE.
 Note that Gurobi is only free for academical use (but not for commercial).
 
 ## How to develop
-1. Perform Steps (1) through (4) of the "How to install"-Section. Note: An eMoflon::IBeX installation is not required to develop for eMoflon::IBeX
+1. Perform Steps (1) through (4) of the "How to install"-Section. An eMoflon::IBeX installation is not required to develop for eMoflon::IBeX
 2. Check the encoding for Xtend files.
     - In Eclipse: Go to ```Window->Preferences->General->Workspace```.
     - Change the text file encoding to 'Other: UTF-8'.
