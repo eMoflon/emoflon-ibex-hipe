@@ -44,8 +44,12 @@ class HiPEFilesGenerator extends DefaultFilesGenerator {
 			public class «REGISTRATION_HELPER» implements IRegistrationHelper {
 				
 				/** Create default options **/
-				public final void setWorkspaceRootDirectory(ResourceSet resourceSet) throws IOException {
-					final String root = "../";
+				public final void setWorkspaceRootDirectory(OperationalStrategy strategy, ResourceSet resourceSet) throws IOException {
+					String root = "../";
+					String workspace = strategy.getOptions().workspacePath();
+					if(workspace != null && !workspace.isEmpty()) {
+						root = workspace;
+					}
 					URI key = URI.createPlatformResourceURI("/", true);
 					URI value = URI.createFileURI(new File(root).getCanonicalPath() + File.separatorChar);
 					resourceSet.getURIConverter().getURIMap().put(key, value);
@@ -55,7 +59,7 @@ class HiPEFilesGenerator extends DefaultFilesGenerator {
 				public void registerMetamodels(ResourceSet rs, OperationalStrategy strategy) throws IOException {
 					
 					// Set correct workspace root
-					setWorkspaceRootDirectory(rs);
+					setWorkspaceRootDirectory(strategy, rs);
 					
 					// Load and register source and target metamodels
 					EPackage «srcProject.toLowerCase»Pack = null;
