@@ -1,7 +1,8 @@
 package org.emoflon.ibex.tgg.runtime.hipe;
 
+import org.emoflon.ibex.common.operational.IMatch;
 import org.emoflon.ibex.gt.hipe.runtime.HiPEGTMatch;
-import org.emoflon.ibex.tgg.operational.matches.IMatch;
+import org.emoflon.ibex.tgg.operational.matches.ITGGMatch;
 import org.emoflon.ibex.tgg.operational.matches.SimpleMatch;
 
 import hipe.engine.match.ProductionMatch;
@@ -23,7 +24,7 @@ public class HiPETGGMatch extends HiPEGTMatch implements IMatch {
 	}
 
 	@Override
-	public IMatch copy() {
+	public ITGGMatch copy() {
 		SimpleMatch copy = new SimpleMatch(getPatternName());
 		getParameterNames().forEach(n -> copy.put(n, get(n)));
 		return copy;

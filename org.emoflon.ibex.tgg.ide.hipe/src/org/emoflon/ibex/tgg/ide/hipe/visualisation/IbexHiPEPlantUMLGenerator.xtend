@@ -9,7 +9,7 @@ class IbexHiPEPlantUMLGenerator extends IbexPlantUMLGenerator {
 
 	static def String separator() {
 		return "_"
-	}
+	} 
 
 	static def String visualisePatternBody(HiPEPattern b, String prefix) {
 		'''

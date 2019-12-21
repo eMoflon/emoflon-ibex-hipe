@@ -18,10 +18,11 @@ import org.emoflon.ibex.gt.hipe.runtime.IBeXToHiPEPatternTransformation;
 import org.emoflon.ibex.tgg.compiler.transformations.patterns.ContextPatternTransformation;
 import org.emoflon.ibex.tgg.operational.IBlackInterpreter;
 import org.emoflon.ibex.tgg.operational.defaults.IbexOptions;
-import org.emoflon.ibex.tgg.operational.strategies.OperationalStrategy;
 import org.emoflon.ibex.tgg.operational.strategies.gen.MODELGEN;
+import org.emoflon.ibex.tgg.operational.strategies.modules.IbexExecutable;
+import org.emoflon.ibex.tgg.operational.strategies.modules.MatchDistributor;
+import org.emoflon.ibex.tgg.operational.strategies.opt.CC;
 import org.emoflon.ibex.tgg.operational.strategies.opt.CO;
-import org.emoflon.ibex.tgg.operational.strategies.opt.cc.CC;
 import org.emoflon.ibex.tgg.operational.strategies.sync.SYNC;
 
 import IBeXLanguage.IBeXContextPattern;
@@ -36,7 +37,7 @@ public class HiPETGGEngine extends HiPEGTEngine implements IBlackInterpreter {
 	private IbexOptions options;
 	private IBeXPatternSet ibexPatterns;
 	private Map<IBeXContextPattern, TGGNamedElement> patternToRuleMap;
-	private OperationalStrategy strategy;
+	private IbexExecutable executable;
 
 	/**
 	 * Creates a new DemoclesTGGEngine.
@@ -46,13 +47,13 @@ public class HiPETGGEngine extends HiPEGTEngine implements IBlackInterpreter {
 	}
 
 	@Override
-	public void initialise(final IbexOptions options, Registry registry, IMatchObserver matchObserver) {
+	public void initialise(IbexExecutable executable, final IbexOptions options, Registry registry,  IMatchObserver matchObserver) {
 		super.initialise(registry, matchObserver);
 		
 		this.options = options;
-		this.strategy = (OperationalStrategy) matchObserver;
+		this.executable = executable; 
 		
-		ContextPatternTransformation compiler = new ContextPatternTransformation(options, strategy);
+		ContextPatternTransformation compiler = new ContextPatternTransformation(options, (MatchDistributor) matchObserver);
 		ibexPatterns = compiler.transform();
 		patternToRuleMap = compiler.getPatternToRuleMap();
 		initPatterns(ibexPatterns);
@@ -83,30 +84,30 @@ public class HiPETGGEngine extends HiPEGTEngine implements IBlackInterpreter {
 	
 	@Override
 	protected String getNetworkFileName() {
-		if(strategy instanceof SYNC) {
+		if(executable instanceof SYNC) {
 			return "hipesync_hipe-network.xmi";
 		}
-		if(strategy instanceof CC) {
+		if(executable instanceof CC) {
 			return "hipecc_hipe-network.xmi";
 		}
-		if(strategy instanceof CO) {
+		if(executable instanceof CO) {
 			return "hipeco_hipe-network.xmi";
 		}
-		if(strategy instanceof MODELGEN) {
+		if(executable instanceof MODELGEN) {
 			return "hipemodelgen_hipe-network.xmi";
 		}
-		throw new RuntimeException("Unsupported operationalization detected! - " + strategy.getClass().getSimpleName());
+		throw new RuntimeException("Unsupported operationalization detected! - " + executable.getClass().getSimpleName());
 	}
 	
 	@Override
 	protected void generateHiPEClassName(String projectName) {
-		if(strategy instanceof CC) {
+		if(executable instanceof CC) {
 			engineClassName = projectName.replace("/", ".")+".cc.hipe.engine.HiPEEngine";	
 		}
-		else if(strategy instanceof CO) {
+		else if(executable instanceof CO) {
 			engineClassName = projectName.replace("/", ".")+".co.hipe.engine.HiPEEngine";	
 		}
-		else if(strategy instanceof SYNC) {
+		else if(executable instanceof SYNC) {
 			engineClassName = projectName.replace("/", ".")+".sync.hipe.engine.HiPEEngine";	
 		} else {
 			engineClassName = projectName.replace("/", ".")+".modelgen.hipe.engine.HiPEEngine";	

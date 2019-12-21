@@ -281,7 +281,7 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 			
 			HiPENetwork network = loadNetwork(getProjectName() +"/debug/" + getNetworkFileName());
 			if(network == null)
-				throw new RuntimeException("No hipe-network.xmi could be found");
+				throw new RuntimeException("No " + getNetworkFileName() + " could be found");
 			engine = constructor.newInstance(network);
 		} catch (InstantiationException | IllegalAccessException | NoSuchMethodException | 
 				SecurityException | IllegalArgumentException | InvocationTargetException e) {

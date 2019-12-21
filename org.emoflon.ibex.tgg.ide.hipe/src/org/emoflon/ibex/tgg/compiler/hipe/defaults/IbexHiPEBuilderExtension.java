@@ -35,7 +35,12 @@ import org.emoflon.ibex.tgg.compiler.transformations.patterns.ContextPatternTran
 import org.emoflon.ibex.tgg.ide.admin.BuilderExtension;
 import org.emoflon.ibex.tgg.ide.admin.IbexTGGBuilder;
 import org.emoflon.ibex.tgg.operational.defaults.IbexOptions;
-import org.emoflon.ibex.tgg.operational.strategies.OperationalStrategy;
+import org.emoflon.ibex.tgg.operational.strategies.gen.MODELGEN;
+import org.emoflon.ibex.tgg.operational.strategies.modules.IbexExecutable;
+import org.emoflon.ibex.tgg.operational.strategies.opt.CC;
+import org.emoflon.ibex.tgg.operational.strategies.opt.CO;
+import org.emoflon.ibex.tgg.operational.strategies.sync.SYNC;
+import org.emoflon.ibex.tgg.runtime.hipe.HiPETGGEngine;
 import org.moflon.core.plugins.manifest.ManifestFileUpdater;
 import org.moflon.core.utilities.ClasspathUtil;
 import org.moflon.core.utilities.LogUtils;
@@ -71,12 +76,12 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 		IbexOptions opt = createIbexOptions(projectName, projectPath);
 		
 		LogUtils.info(logger, "Building TGG operational strategy...");
-		Collection<OperationalStrategy> strategies = new HashSet<>();
+		Collection<IbexExecutable> executables = new HashSet<>();
 		try {
-			strategies.add(new HiPESYNC(opt, metaModelImports));
-			strategies.add(new HiPECC(opt, metaModelImports));
-			strategies.add(new HiPECO(opt, metaModelImports));
-			strategies.add(new HiPEMODELGEN(opt, metaModelImports));
+			executables.add(new SYNC(HiPEBuilderUtil.registerResourceHandler(opt, metaModelImports)));
+			executables.add(new CC(HiPEBuilderUtil.registerResourceHandler(opt, metaModelImports)));
+			executables.add(new CO(HiPEBuilderUtil.registerResourceHandler(opt, metaModelImports)));
+			executables.add(new MODELGEN(HiPEBuilderUtil.registerResourceHandler(opt, metaModelImports)));
 		} catch (IOException e) {
 			LogUtils.error(logger, e);
 			return;
@@ -129,39 +134,39 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 		}
 		
 		double tic = System.currentTimeMillis();
-		strategies.parallelStream().forEach(strategy -> {
-			LogUtils.info(logger, strategy.getClass().getName() + ": Compiling ibex patterns from TGG patterns...");
-			ContextPatternTransformation compiler = new ContextPatternTransformation(opt, strategy);
+		executables.parallelStream().forEach(executable -> {
+			LogUtils.info(logger, executable.getClass().getName() + ": Compiling ibex patterns from TGG patterns...");
+			ContextPatternTransformation compiler = new ContextPatternTransformation(opt, executable.getOptions().getMatchDistributor());
 			IBeXPatternSet ibexPatterns = compiler.transform();
 			
-			LogUtils.info(logger,  strategy.getClass().getName() + ": Converting IBeX to HiPE Patterns..");
+			LogUtils.info(logger,  executable.getClass().getName() + ": Converting IBeX to HiPE Patterns..");
 			IBeXToHiPEPatternTransformation transformation = new IBeXToHiPEPatternTransformation();
 			HiPEPatternContainer container = transformation.transform(ibexPatterns);
 			
-			LogUtils.info(logger,  strategy.getClass().getName() + ": Creating search plan & generating Rete network..");
+			LogUtils.info(logger,  executable.getClass().getName() + ": Creating search plan & generating Rete network..");
 			SimpleSearchPlan searchPlan = new SimpleSearchPlan(container);
 			searchPlan.generateSearchPlan();
 			HiPENetwork network = searchPlan.getNetwork();
 			
-			LogUtils.info(logger,  strategy.getClass().getName() + ": Generating Code..");
+			LogUtils.info(logger,  executable.getClass().getName() + ": Generating Code..");
 			
-			if(strategy instanceof HiPESYNC) 
+			if(executable instanceof SYNC) 
 				HiPEGenerator.generateCode(projectName+".sync.", projectPath, network);
-			else if(strategy instanceof HiPECC) 
+			else if(executable instanceof CC) 
 				HiPEGenerator.generateCode(projectName+".cc.", projectPath, network);
-			else if(strategy instanceof HiPECO) 
+			else if(executable instanceof CO) 
 				HiPEGenerator.generateCode(projectName+".co.", projectPath, network);
-			else if(strategy instanceof HiPEMODELGEN) 
+			else if(executable instanceof MODELGEN) 
 				HiPEGenerator.generateCode(projectName+".modelgen.", projectPath, network);
 			else
 				throw new RuntimeException("Unsupported Operational Strategy detected");
-			LogUtils.info(logger,  strategy.getClass().getName() + ": Code generation completed");
+			LogUtils.info(logger,  executable.getClass().getName() + ": Code generation completed");
 
-			LogUtils.info(logger,  strategy.getClass().getName() + ": Saving HiPE patterns and HiPE network..");
+			LogUtils.info(logger,  executable.getClass().getName() + ": Saving HiPE patterns and HiPE network..");
 			String debugFolder = projectPath + "/debug";
 			createNewDirectory(debugFolder);
-			saveResource(container, debugFolder+"/" +  strategy.getClass().getSimpleName().toLowerCase() + "_hipe-patterns.xmi");
-			saveResource(network, debugFolder+"/" +  strategy.getClass().getSimpleName().toLowerCase() + "_hipe-network.xmi");
+			saveResource(container, debugFolder+"/" +  executable.getClass().getSimpleName().toLowerCase() + "_hipe-patterns.xmi");
+			saveResource(network, debugFolder+"/" +  executable.getClass().getSimpleName().toLowerCase() + "_hipe-network.xmi");
 		});
 		double toc = System.currentTimeMillis();
 		LogUtils.info(logger,  "Pattern compilation and code generation completed in "+ (toc-tic)/1000.0 + " seconds.");

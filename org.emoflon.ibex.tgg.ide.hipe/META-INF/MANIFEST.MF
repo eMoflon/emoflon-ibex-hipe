@@ -26,3 +26,4 @@ Require-Bundle: com.google.guava,
 Export-Package: org.emoflon.ibex.tgg.compiler.hipe.defaults,
  org.emoflon.ibex.tgg.ide.hipe.visualisation
 Bundle-ActivationPolicy: lazy
+Import-Package: org.emoflon.ibex.tgg.runtime.hipe
