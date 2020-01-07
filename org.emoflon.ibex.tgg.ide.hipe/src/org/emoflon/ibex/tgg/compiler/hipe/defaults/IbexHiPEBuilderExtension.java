@@ -73,15 +73,14 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 				.collect(Collectors.toList());
 
 		LogUtils.info(logger, "Building TGG options...");
-		IbexOptions opt = createIbexOptions(projectName, projectPath);
 		
 		LogUtils.info(logger, "Building TGG operational strategy...");
 		Collection<IbexExecutable> executables = new HashSet<>();
 		try {
-			executables.add(new SYNC(HiPEBuilderUtil.registerResourceHandler(opt, metaModelImports)));
-			executables.add(new CC(HiPEBuilderUtil.registerResourceHandler(opt, metaModelImports)));
-			executables.add(new CO(HiPEBuilderUtil.registerResourceHandler(opt, metaModelImports)));
-			executables.add(new MODELGEN(HiPEBuilderUtil.registerResourceHandler(opt, metaModelImports)));
+			executables.add(new SYNC(HiPEBuilderUtil.registerResourceHandler(createIbexOptions(projectName, projectPath), metaModelImports)));
+			executables.add(new CC(HiPEBuilderUtil.registerResourceHandler(createIbexOptions(projectName, projectPath), metaModelImports)));
+			executables.add(new CO(HiPEBuilderUtil.registerResourceHandler(createIbexOptions(projectName, projectPath), metaModelImports)));
+			executables.add(new MODELGEN(HiPEBuilderUtil.registerResourceHandler(createIbexOptions(projectName, projectPath), metaModelImports)));
 		} catch (IOException e) {
 			LogUtils.error(logger, e);
 			return;
@@ -136,7 +135,7 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 		double tic = System.currentTimeMillis();
 		executables.parallelStream().forEach(executable -> {
 			LogUtils.info(logger, executable.getClass().getName() + ": Compiling ibex patterns from TGG patterns...");
-			ContextPatternTransformation compiler = new ContextPatternTransformation(opt, executable.getOptions().getMatchDistributor());
+			ContextPatternTransformation compiler = new ContextPatternTransformation(executable.getOptions(), executable.getOptions().getMatchDistributor());
 			IBeXPatternSet ibexPatterns = compiler.transform();
 			
 			LogUtils.info(logger,  executable.getClass().getName() + ": Converting IBeX to HiPE Patterns..");
@@ -152,7 +151,7 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 			
 			if(executable instanceof SYNC) 
 				HiPEGenerator.generateCode(projectName+".sync.", projectPath, network);
-			else if(executable instanceof CC) 
+			else if(executable instanceof CC && !(executable instanceof CO)) 
 				HiPEGenerator.generateCode(projectName+".cc.", projectPath, network);
 			else if(executable instanceof CO) 
 				HiPEGenerator.generateCode(projectName+".co.", projectPath, network);

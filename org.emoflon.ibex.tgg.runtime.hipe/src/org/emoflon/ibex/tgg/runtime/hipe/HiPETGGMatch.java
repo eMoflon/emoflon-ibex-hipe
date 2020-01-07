@@ -2,6 +2,8 @@ package org.emoflon.ibex.tgg.runtime.hipe;
 
 import org.emoflon.ibex.common.operational.IMatch;
 import org.emoflon.ibex.gt.hipe.runtime.HiPEGTMatch;
+import org.emoflon.ibex.tgg.compiler.patterns.Pattern2Type;
+import org.emoflon.ibex.tgg.compiler.patterns.PatternType;
 import org.emoflon.ibex.tgg.operational.matches.ITGGMatch;
 import org.emoflon.ibex.tgg.operational.matches.SimpleMatch;
 
@@ -10,7 +12,7 @@ import hipe.engine.match.ProductionMatch;
 /**
  * A TGG match from HiPE.
  */
-public class HiPETGGMatch extends HiPEGTMatch implements IMatch {
+public class HiPETGGMatch extends HiPEGTMatch implements ITGGMatch {
 	/**
 	 * Creates a new HiPETGGMatch with the given match and pattern.
 	 * 
@@ -28,5 +30,10 @@ public class HiPETGGMatch extends HiPEGTMatch implements IMatch {
 		SimpleMatch copy = new SimpleMatch(getPatternName());
 		getParameterNames().forEach(n -> copy.put(n, get(n)));
 		return copy;
+	}
+
+	@Override
+	public PatternType getType() {
+		return Pattern2Type.resolve(getPatternName());
 	}
 }

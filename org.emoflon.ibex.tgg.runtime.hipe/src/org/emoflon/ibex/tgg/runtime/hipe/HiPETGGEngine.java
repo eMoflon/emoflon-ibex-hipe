@@ -85,16 +85,16 @@ public class HiPETGGEngine extends HiPEGTEngine implements IBlackInterpreter {
 	@Override
 	protected String getNetworkFileName() {
 		if(executable instanceof SYNC) {
-			return "hipesync_hipe-network.xmi";
+			return "sync_hipe-network.xmi";
 		}
 		if(executable instanceof CC) {
-			return "hipecc_hipe-network.xmi";
+			return "cc_hipe-network.xmi";
 		}
 		if(executable instanceof CO) {
-			return "hipeco_hipe-network.xmi";
+			return "co_hipe-network.xmi";
 		}
 		if(executable instanceof MODELGEN) {
-			return "hipemodelgen_hipe-network.xmi";
+			return "modelgen_hipe-network.xmi";
 		}
 		throw new RuntimeException("Unsupported operationalization detected! - " + executable.getClass().getSimpleName());
 	}
