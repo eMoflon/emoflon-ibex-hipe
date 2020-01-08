@@ -168,7 +168,7 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 			saveResource(network, debugFolder+"/" +  executable.getClass().getSimpleName().toLowerCase() + "_hipe-network.xmi");
 		});
 		double toc = System.currentTimeMillis();
-		LogUtils.info(logger,  "Pattern compilation and code generation completed in "+ (toc-tic)/1000.0 + " seconds.");
+		LogUtils.info(logger, "Pattern compilation and code generation completed in "+ (toc-tic)/1000.0 + " seconds.");
 		
 		LogUtils.info(logger, "Refreshing workspace and cleaning build ..");
 		try {
