@@ -31,7 +31,7 @@ import hipe.engine.match.ProductionMatch;
 import language.TGGNamedElement;
 
 /**
- * Engine for (bidirectional) graph transformations with Democles.
+ * Engine for (bidirectional) graph transformations with HiPE.
  */
 public class HiPETGGEngine extends HiPEGTEngine implements IBlackInterpreter {
 	private IbexOptions options;
