@@ -1,6 +1,5 @@
 package org.emoflon.ibex.tgg.runtime.hipe;
 
-import org.emoflon.ibex.common.operational.IMatch;
 import org.emoflon.ibex.gt.hipe.runtime.HiPEGTMatch;
 import org.emoflon.ibex.tgg.compiler.patterns.Pattern2Type;
 import org.emoflon.ibex.tgg.compiler.patterns.PatternType;
