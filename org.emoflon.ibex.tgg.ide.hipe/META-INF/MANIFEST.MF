@@ -20,9 +20,10 @@ Require-Bundle: com.google.guava,
  org.moflon.emf.codegen,
  org.moflon.core.plugins,
  org.moflon.core.ui,
- org.emoflon.ibex.tgg.core.runtime,
+ org.emoflon.ibex.tgg.runtime,
  org.emoflon.ibex.tgg.ide,
  org.emoflon.ibex.tgg.editor
 Export-Package: org.emoflon.ibex.tgg.compiler.hipe.defaults,
  org.emoflon.ibex.tgg.ide.hipe.visualisation
 Bundle-ActivationPolicy: lazy
+Import-Package: org.emoflon.ibex.tgg.runtime.hipe

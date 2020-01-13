@@ -2,11 +2,11 @@ package org.emoflon.ibex.tgg.compiler.hipe.defaults;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
-import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.emf.codegen.ecore.genmodel.GenJDKLevel;
 import org.eclipse.emf.codegen.ecore.genmodel.GenModel;
@@ -14,64 +14,42 @@ import org.eclipse.emf.codegen.ecore.genmodel.GenModelFactory;
 import org.eclipse.emf.codegen.ecore.genmodel.GenPackage;
 import org.eclipse.emf.codegen.ecore.genmodel.generator.GenBaseGeneratorAdapter;
 import org.eclipse.emf.common.util.BasicMonitor;
-import org.eclipse.emf.common.util.Monitor;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.EPackage;
 import org.eclipse.emf.ecore.impl.EPackageRegistryImpl;
+import org.eclipse.emf.ecore.resource.ResourceSet;
 import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
 import org.eclipse.emf.ecore.xmi.XMLResource;
 import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
+import org.emoflon.ibex.tgg.compiler.defaults.IRegistrationHelper;
 import org.emoflon.ibex.tgg.operational.defaults.IbexOptions;
-import org.emoflon.ibex.tgg.operational.strategies.sync.SYNC;
+import org.emoflon.ibex.tgg.operational.strategies.modules.IbexExecutable;
+import org.emoflon.ibex.tgg.operational.strategies.modules.TGGResourceHandler;
 import org.moflon.core.utilities.MoflonUtil;
 import org.moflon.emf.codegen.StandalonePackageDescriptor;
 import org.moflon.emf.codegen.resource.GenModelResource;
 import org.moflon.emf.codegen.resource.GenModelResourceFactory;
 
-public class HiPESYNC extends SYNC {
+public class HiPEBuilderUtil {
+	public Collection<String> metaModelImports;
+	public Collection<EPackage> importedPackages = new LinkedList<>();
+	private IbexOptions options;
 
-	private List<String> metaModelImports;
-	private List<EPackage> importedPackages = new LinkedList<>();
-	
-	public HiPESYNC(IbexOptions options, List<String> metaModelImports) throws IOException {
-		super(options);
-		this.metaModelImports = metaModelImports;
-		
-		createAndPrepareResourceSet();
-		registerInternalMetamodels();
-		registerUserMetamodels();
-		
-		loadTGG();
-		
-	}
-	
-	@Override
-	protected void createAndPrepareResourceSet() {
-		 rs = new ResourceSetImpl();
-		 loadDefaultSettings();
-	}
-
-	@Override
-	protected void registerUserMetamodels() throws IOException {
-		for(String imp : metaModelImports) {
-			importedPackages.add(loadAndRegisterMetamodel(imp));	
-		}
-		String metaModelLocation = options.projectPath() + "/model/" + options.projectName() + ".ecore";
-		String genModelLocation = options.projectPath() + "/model/" + options.projectName() + ".genmodel";
-		EPackage metaModel = loadAndRegisterCorrMetamodel(metaModelLocation);
-		generateMetaModelCode(metaModelLocation, genModelLocation, metaModel);
+	public HiPEBuilderUtil(IbexOptions options) {
+		this.options = options;
 	}
 	
 	public void loadDefaultSettings() {
-		rs.getPackageRegistry().put("http://www.eclipse.org/emf/2002/GenModel",
+		TGGResourceHandler resourceHandler = options.getResourceHandler();
+		resourceHandler.getResourceSet().getPackageRegistry().put("http://www.eclipse.org/emf/2002/GenModel",
 				new StandalonePackageDescriptor("org.eclipse.emf.codegen.ecore.genmodel.GenModelPackage"));
 
-		rs.getResourceFactoryRegistry().getExtensionToFactoryMap().put("genmodel",
+		resourceHandler.getResourceSet().getResourceFactoryRegistry().getExtensionToFactoryMap().put("genmodel",
 				new GenModelResourceFactory());
-		rs.getResourceFactoryRegistry().getExtensionToFactoryMap().put("xmi", new XMIResourceFactoryImpl());
+		resourceHandler.getResourceSet().getResourceFactoryRegistry().getExtensionToFactoryMap().put("xmi", new XMIResourceFactoryImpl());
 	}
 	
-	protected void generateMetaModelCode(String metaModelLocation, String genModelLocation, EPackage metaModel) {
+	protected void generateMetaModelCode(URI base, String metaModelLocation, String genModelLocation, EPackage metaModel) {
 		URI modelDirUri = URI.createURI(options.projectPath() + "/model/");
 		modelDirUri =  modelDirUri.resolve(base);
 		URI metaModelUri = URI.createURI(metaModelLocation);
@@ -79,7 +57,7 @@ public class HiPESYNC extends SYNC {
 		URI genModelUri = URI.createURI(genModelLocation);
 		genModelUri = genModelUri.resolve(base);
 		
-		final GenModelResource genModelResource = (GenModelResource) rs.createResource(genModelUri);
+		final GenModelResource genModelResource = (GenModelResource) options.getResourceHandler().getResourceSet().createResource(genModelUri);
 		GenModel genModel = GenModelFactory.eINSTANCE.createGenModel();
 		
 		genModelResource.getContents().add(genModel);
@@ -119,7 +97,7 @@ public class HiPESYNC extends SYNC {
         
         HiPEGenGenerator generator = new HiPEGenGenerator();
         generator.setInput(genModel);
-        generator.generate(genModel, GenBaseGeneratorAdapter.MODEL_PROJECT_TYPE, options.projectName(), new BasicMonitor(), ePack.get(0).getName());
+        generator.generate(genModel, GenBaseGeneratorAdapter.MODEL_PROJECT_TYPE, options.projectName(), new BasicMonitor.Printing(System.out), ePack.get(0).getName());
 
         try {
             genModelResource.getDefaultSaveOptions().put(XMLResource.OPTION_ENCODING, "UTF-8");
@@ -138,14 +116,16 @@ public class HiPESYNC extends SYNC {
 	
 	protected void adjustRegistry(final GenModel genModel) {
 		// Ugly hack added by gervarro: GenModel has to be screwed
-		final EPackage.Registry registry = rs.getPackageRegistry();
-		rs.setPackageRegistry(new EPackageRegistryImpl(registry));
+		ResourceSet resourceSet = options.getResourceHandler().getResourceSet();
+		final EPackage.Registry registry = resourceSet.getPackageRegistry();
+		resourceSet.setPackageRegistry(new EPackageRegistryImpl(registry));
 		genModel.getExtendedMetaData();
-		rs.setPackageRegistry(registry);
+		resourceSet.setPackageRegistry(registry);
 	}
 	
 	public void loadDefaultGenModelContent(final GenModel genModel) {
 		genModel.setComplianceLevel(GenJDKLevel.JDK80_LITERAL);
+		//genModel.setModelName(genModel.eResource().getURI().trimFileExtension().lastSegment());
 		genModel.setImporterID("org.eclipse.emf.importer.ecore");
 		genModel.setCodeFormatting(true);
 		genModel.setOperationReflection(true);
@@ -160,4 +140,29 @@ public class HiPESYNC extends SYNC {
 		}
 	}
 
-}
+	public Collection<EPackage> getImportedPackages() {
+		return importedPackages;
+	}
+	
+	public static IbexOptions registerResourceHandler(IbexOptions options, List<String> metaModelImports) throws IOException {
+		HiPEBuilderUtil util = new HiPEBuilderUtil(options);
+		options.setResourceHandler(new TGGResourceHandler() {
+			@Override
+			protected void registerUserMetamodels() throws IOException {
+				for(String imp : metaModelImports) {
+					util.getImportedPackages().add(loadAndRegisterMetamodel(imp));	
+				}
+				String metaModelLocation = options.projectPath() + "/model/" + options.projectName() + ".ecore";
+				String genModelLocation = options.projectPath() + "/model/" + options.projectName() + ".genmodel";
+				EPackage metaModel = loadAndRegisterCorrMetamodel(metaModelLocation);
+				util.generateMetaModelCode(base, metaModelLocation, genModelLocation, metaModel);
+			}
+			
+			@Override
+			protected void createAndPrepareResourceSet() {
+				rs = new ResourceSetImpl();
+				util.loadDefaultSettings();
+			}
+		});
+		return options;
+	}

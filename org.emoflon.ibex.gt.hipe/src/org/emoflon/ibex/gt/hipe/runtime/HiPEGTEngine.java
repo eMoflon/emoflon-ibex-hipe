@@ -47,6 +47,16 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 	private static final Logger logger = Logger.getLogger(HiPEGTEngine.class);
 
 	/**
+	 * The base uri
+	 */
+	protected URI base;
+	
+	/**
+	 * The resourceset
+	 */
+	protected ResourceSet resourceSet;
+	
+	/**
 	 * The registry.
 	 */
 	protected Registry registry;
@@ -91,21 +101,27 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 	 */
 	public HiPEGTEngine() {
 		this.patterns = cfactory.createObjectToObjectHashMap();
+		base = URI.createPlatformResourceURI("/", true);
 	}
 
 	@Override
 	public ResourceSet createAndPrepareResourceSet(final String workspacePath) {
-		ResourceSet resourceSet = new ResourceSetImpl();
-		resourceSet.getResourceFactoryRegistry().getExtensionToFactoryMap()
+		resourceSet = createAndPrepareResourceSet_internal(workspacePath);
+		return createAndPrepareResourceSet_internal(workspacePath);
+	}
+	
+	private ResourceSet createAndPrepareResourceSet_internal(final String workspacePath) {
+		ResourceSet rs = new ResourceSetImpl();
+		rs.getResourceFactoryRegistry().getExtensionToFactoryMap()
 				.put(Resource.Factory.Registry.DEFAULT_EXTENSION, new XMIResourceFactoryImpl());
 		try {
-			resourceSet.getURIConverter().getURIMap().put(URI.createPlatformResourceURI("/", true), URI.createFileURI(new File(workspacePath).getCanonicalPath() + File.separator));
+			rs.getURIConverter().getURIMap().put(URI.createPlatformResourceURI("/", true), URI.createFileURI(new File(workspacePath).getCanonicalPath() + File.separator));
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		
-		return resourceSet;
+		return rs;
 	}
 	
 	/**
@@ -187,15 +203,13 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 		return null;
 	}
 	
-	private static Resource loadResource(String path) throws Exception {
+	private Resource loadResource(String path) throws Exception {
 		Resource.Factory.Registry.INSTANCE.getExtensionToFactoryMap().put("ibex-patterns-for-hipe", new XMIResourceFactoryImpl());
-		ResourceSet rs = new ResourceSetImpl();
-		rs.getResourceFactoryRegistry().getExtensionToFactoryMap().put("xmi", new XMIResourceFactoryImpl());
-		rs.getPackageRegistry().put(IBeXLanguagePackage.eNS_URI, IBeXLanguagePackage.eINSTANCE);
+		resourceSet.getResourceFactoryRegistry().getExtensionToFactoryMap().put("xmi", new XMIResourceFactoryImpl());
+		resourceSet.getPackageRegistry().put(IBeXLanguagePackage.eNS_URI, IBeXLanguagePackage.eINSTANCE);
 		
-		URI uri = URI.createFileURI(path);
-		Resource modelResource = rs.getResource(uri, true);
-		EcoreUtil.resolveAll(rs);
+		Resource modelResource = resourceSet.getResource(URI.createURI(path).resolve(base), true);
+		EcoreUtil.resolveAll(resourceSet);
 		
 		if(modelResource == null)
 			throw new IOException("File did not contain a vaild model.");
@@ -265,9 +279,9 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 			Constructor<? extends IHiPEEngine> constructor = engineClass.getConstructor(HiPENetwork.class);
 			constructor.setAccessible(true);
 			
-			HiPENetwork network = loadNetwork("../" + getProjectName() +"/debug/" + getNetworkFileName());
+			HiPENetwork network = loadNetwork(getProjectName() +"/debug/" + getNetworkFileName());
 			if(network == null)
-				throw new RuntimeException("No hipe-network.xmi could be found");
+				throw new RuntimeException("No " + getNetworkFileName() + " could be found");
 			engine = constructor.newInstance(network);
 		} catch (InstantiationException | IllegalAccessException | NoSuchMethodException | 
 				SecurityException | IllegalArgumentException | InvocationTargetException e) {
