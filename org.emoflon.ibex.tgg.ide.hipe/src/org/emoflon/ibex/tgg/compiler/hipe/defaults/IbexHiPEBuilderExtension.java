@@ -40,7 +40,6 @@ import org.emoflon.ibex.tgg.operational.strategies.modules.IbexExecutable;
 import org.emoflon.ibex.tgg.operational.strategies.opt.CC;
 import org.emoflon.ibex.tgg.operational.strategies.opt.CO;
 import org.emoflon.ibex.tgg.operational.strategies.sync.SYNC;
-import org.emoflon.ibex.tgg.runtime.hipe.HiPETGGEngine;
 import org.moflon.core.plugins.manifest.ManifestFileUpdater;
 import org.moflon.core.utilities.ClasspathUtil;
 import org.moflon.core.utilities.LogUtils;
@@ -50,8 +49,8 @@ import IBeXLanguage.IBeXPatternSet;
 import hipe.generator.HiPEGenerator;
 import hipe.network.HiPENetwork;
 import hipe.pattern.HiPEContainer;
-import hipe.pattern.HiPEPatternContainer;
-import hipe.searchplan.simple.SimpleSearchPlan;
+import hipe.searchplan.SearchPlan;
+import hipe.searchplan.simple.NewTriangleSearchPlan;
 
 public class IbexHiPEBuilderExtension implements BuilderExtension {
 
@@ -144,7 +143,7 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 			HiPEContainer container = transformation.transform(ibexPatterns);
 			
 			LogUtils.info(logger,  executable.getClass().getName() + ": Creating search plan & generating Rete network..");
-			SimpleSearchPlan searchPlan = new SimpleSearchPlan(container);
+			SearchPlan searchPlan = new NewTriangleSearchPlan(container);
 			searchPlan.generateSearchPlan();
 			HiPENetwork network = searchPlan.getNetwork();
 			
