@@ -2,7 +2,6 @@ package org.emoflon.ibex.tgg.runtime.hipe;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -14,21 +13,20 @@ import org.eclipse.emf.ecore.resource.ResourceSet;
 import org.emoflon.ibex.common.operational.IMatch;
 import org.emoflon.ibex.common.operational.IMatchObserver;
 import org.emoflon.ibex.gt.hipe.runtime.HiPEGTEngine;
-import org.emoflon.ibex.gt.hipe.runtime.IBeXToHiPEPatternTransformation;
-import org.emoflon.ibex.tgg.compiler.transformations.patterns.ContextPatternTransformation;
+import org.emoflon.ibex.tgg.compiler.patterns.PatternSuffixes;
+import org.emoflon.ibex.tgg.compiler.patterns.PatternType;
+import org.emoflon.ibex.tgg.compiler.patterns.PatternUtil;
 import org.emoflon.ibex.tgg.operational.IBlackInterpreter;
 import org.emoflon.ibex.tgg.operational.defaults.IbexOptions;
 import org.emoflon.ibex.tgg.operational.strategies.gen.MODELGEN;
 import org.emoflon.ibex.tgg.operational.strategies.modules.IbexExecutable;
-import org.emoflon.ibex.tgg.operational.strategies.modules.MatchDistributor;
 import org.emoflon.ibex.tgg.operational.strategies.opt.CC;
 import org.emoflon.ibex.tgg.operational.strategies.opt.CO;
 import org.emoflon.ibex.tgg.operational.strategies.sync.SYNC;
 
-import IBeXLanguage.IBeXContextPattern;
+import IBeXLanguage.IBeXContext;
 import IBeXLanguage.IBeXPatternSet;
 import hipe.engine.match.ProductionMatch;
-import language.TGGNamedElement;
 
 /**
  * Engine for (bidirectional) graph transformations with HiPE.
@@ -36,7 +34,6 @@ import language.TGGNamedElement;
 public class HiPETGGEngine extends HiPEGTEngine implements IBlackInterpreter {
 	private IbexOptions options;
 	private IBeXPatternSet ibexPatterns;
-	private Map<IBeXContextPattern, TGGNamedElement> patternToRuleMap;
 	private IbexExecutable executable;
 
 	/**
@@ -53,16 +50,24 @@ public class HiPETGGEngine extends HiPEGTEngine implements IBlackInterpreter {
 		this.options = options;
 		this.executable = executable; 
 		
-		ContextPatternTransformation compiler = new ContextPatternTransformation(options, (MatchDistributor) matchObserver);
-		ibexPatterns = compiler.transform();
-		patternToRuleMap = compiler.getPatternToRuleMap();
+		Resource r = null;
+		try {
+			r = loadResource(options.projectPath() + "/debug/" +  getIbexPatternFileName());
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		
+		ibexPatterns = (IBeXPatternSet) r.getContents().get(0);
+		
+		for(IBeXContext context : ibexPatterns.getContextPatterns()) {
+			PatternUtil.registerPattern(context.getName(), PatternSuffixes.extractType(context.getName()));
+		}
+		
 		initPatterns(ibexPatterns);
 	}
 
 	@Override
 	public void initPatterns(final IBeXPatternSet ibexPatternSet) {
-		IBeXToHiPEPatternTransformation transformation = new TGGIBeXToHiPEPatternTransformation(options,
-				patternToRuleMap);
 		this.ibexPatternSet = ibexPatternSet;
 		setPatterns(ibexPatternSet);
 		generateHiPEClassName(options.projectName());
@@ -80,6 +85,22 @@ public class HiPETGGEngine extends HiPEGTEngine implements IBlackInterpreter {
 	@Override
 	protected String getProjectName() {
 		return options.projectName();
+	}
+	
+	private String getIbexPatternFileName() {
+		if(executable instanceof SYNC) {
+			return "sync_ibexPatterns.xmi";
+		}
+		if(executable instanceof CC) {
+			return "cc_ibexPatterns.xmi";
+		}
+		if(executable instanceof CO) {
+			return "co_ibexPatterns.xmi";
+		}
+		if(executable instanceof MODELGEN) {
+			return "modelgen_ibexPatterns.xmi";
+		}
+		throw new RuntimeException("Unsupported operationalization detected! - " + executable.getClass().getSimpleName());
 	}
 	
 	@Override

@@ -37,6 +37,7 @@ import org.emoflon.ibex.tgg.ide.admin.IbexTGGBuilder;
 import org.emoflon.ibex.tgg.operational.defaults.IbexOptions;
 import org.emoflon.ibex.tgg.operational.strategies.gen.MODELGEN;
 import org.emoflon.ibex.tgg.operational.strategies.modules.IbexExecutable;
+import org.emoflon.ibex.tgg.operational.strategies.modules.MatchDistributor;
 import org.emoflon.ibex.tgg.operational.strategies.opt.CC;
 import org.emoflon.ibex.tgg.operational.strategies.opt.CO;
 import org.emoflon.ibex.tgg.operational.strategies.sync.SYNC;
@@ -166,6 +167,7 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 			createNewDirectory(debugFolder);
 			saveResource(container, debugFolder+"/" +  executable.getClass().getSimpleName().toLowerCase() + "_hipe-patterns.xmi");
 			saveResource(network, debugFolder+"/" +  executable.getClass().getSimpleName().toLowerCase() + "_hipe-network.xmi");
+			saveResource(ibexPatterns, debugFolder+"/" +  executable.getClass().getSimpleName().toLowerCase() + "_ibexPatterns.xmi");
 		});
 		double toc = System.currentTimeMillis();
 		LogUtils.info(logger, "Pattern compilation and code generation completed in "+ (toc-tic)/1000.0 + " seconds.");

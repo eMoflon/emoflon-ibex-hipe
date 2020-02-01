@@ -1,7 +1,7 @@
 package org.emoflon.ibex.tgg.runtime.hipe;
 
 import org.emoflon.ibex.gt.hipe.runtime.HiPEGTMatch;
-import org.emoflon.ibex.tgg.compiler.patterns.Pattern2Type;
+import org.emoflon.ibex.tgg.compiler.patterns.PatternUtil;
 import org.emoflon.ibex.tgg.compiler.patterns.PatternType;
 import org.emoflon.ibex.tgg.operational.matches.ITGGMatch;
 import org.emoflon.ibex.tgg.operational.matches.SimpleMatch;
@@ -33,6 +33,6 @@ public class HiPETGGMatch extends HiPEGTMatch implements ITGGMatch {
 
 	@Override
 	public PatternType getType() {
-		return Pattern2Type.resolve(getPatternName());
+		return PatternUtil.resolve(getPatternName());
 	}
 }

@@ -203,7 +203,7 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 		return null;
 	}
 	
-	private Resource loadResource(String path) throws Exception {
+	protected Resource loadResource(String path) throws Exception {
 		Resource.Factory.Registry.INSTANCE.getExtensionToFactoryMap().put("ibex-patterns-for-hipe", new XMIResourceFactoryImpl());
 		resourceSet.getResourceFactoryRegistry().getExtensionToFactoryMap().put("xmi", new XMIResourceFactoryImpl());
 		resourceSet.getPackageRegistry().put(IBeXLanguagePackage.eNS_URI, IBeXLanguagePackage.eINSTANCE);
