@@ -52,7 +52,7 @@ public class HiPETGGEngine extends HiPEGTEngine implements IBlackInterpreter {
 		
 		Resource r = null;
 		try {
-			r = loadResource(options.projectPath() + "/debug/" +  getIbexPatternFileName());
+			r = loadResource(options.project.path() + "/debug/" +  getIbexPatternFileName());
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -70,7 +70,7 @@ public class HiPETGGEngine extends HiPEGTEngine implements IBlackInterpreter {
 	public void initPatterns(final IBeXPatternSet ibexPatternSet) {
 		this.ibexPatternSet = ibexPatternSet;
 		setPatterns(ibexPatternSet);
-		generateHiPEClassName(options.projectName());
+		generateHiPEClassName(options.project.name());
 	}	
 	
 //	@Override
@@ -84,7 +84,7 @@ public class HiPETGGEngine extends HiPEGTEngine implements IBlackInterpreter {
 	
 	@Override
 	protected String getProjectName() {
-		return options.projectName();
+		return options.project.name();
 	}
 	
 	private String getIbexPatternFileName() {
@@ -137,8 +137,8 @@ public class HiPETGGEngine extends HiPEGTEngine implements IBlackInterpreter {
 	
 	@Override
 	public void monitor(final ResourceSet resourceSet) {
-		if (options.debug()) {
-			savePatterns(resourceSet, options.projectPath() + "/debug/ibex-patterns.xmi", Arrays.asList(ibexPatterns));
+		if (options.debug.ibexDebug()) {
+			savePatterns(resourceSet, options.project.path() + "/debug/ibex-patterns.xmi", Arrays.asList(ibexPatterns));
 		}
 
 		super.monitor(resourceSet);

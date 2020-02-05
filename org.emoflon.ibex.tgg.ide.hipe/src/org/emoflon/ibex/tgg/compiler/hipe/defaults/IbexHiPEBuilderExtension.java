@@ -136,7 +136,7 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 		double tic = System.currentTimeMillis();
 		executables.parallelStream().forEach(executable -> {
 			LogUtils.info(logger, executable.getClass().getName() + ": Compiling ibex patterns from TGG patterns...");
-			ContextPatternTransformation compiler = new ContextPatternTransformation(executable.getOptions(), executable.getOptions().getMatchDistributor());
+			ContextPatternTransformation compiler = new ContextPatternTransformation(executable.getOptions(), executable.getOptions().matchDistributor());
 			IBeXPatternSet ibexPatterns = compiler.transform();
 			
 			LogUtils.info(logger,  executable.getClass().getName() + ": Converting IBeX to HiPE Patterns..");
@@ -185,9 +185,9 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 	
 	public IbexOptions createIbexOptions(String projectName, String projectPath) {
 		IbexOptions options = new IbexOptions();
-		options.projectName(projectName);
-		options.projectPath(projectPath);
-		options.debug(false);
+		options.project.name(projectName);
+		options.project.path(projectPath);
+		options.debug.ibexDebug(false);
 		return options;
 	}
 	

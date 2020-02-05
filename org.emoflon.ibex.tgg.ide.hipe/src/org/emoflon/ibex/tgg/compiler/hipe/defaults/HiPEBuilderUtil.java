@@ -40,7 +40,7 @@ public class HiPEBuilderUtil {
 	}
 	
 	public void loadDefaultSettings() {
-		TGGResourceHandler resourceHandler = options.getResourceHandler();
+		TGGResourceHandler resourceHandler = options.resourceHandler();
 		resourceHandler.getResourceSet().getPackageRegistry().put("http://www.eclipse.org/emf/2002/GenModel",
 				new StandalonePackageDescriptor("org.eclipse.emf.codegen.ecore.genmodel.GenModelPackage"));
 
@@ -50,14 +50,14 @@ public class HiPEBuilderUtil {
 	}
 	
 	protected void generateMetaModelCode(URI base, String metaModelLocation, String genModelLocation, EPackage metaModel) {
-		URI modelDirUri = URI.createURI(options.projectPath() + "/model/");
+		URI modelDirUri = URI.createURI(options.project.path() + "/model/");
 		modelDirUri =  modelDirUri.resolve(base);
 		URI metaModelUri = URI.createURI(metaModelLocation);
 		metaModelUri = metaModelUri.resolve(base);
 		URI genModelUri = URI.createURI(genModelLocation);
 		genModelUri = genModelUri.resolve(base);
 		
-		final GenModelResource genModelResource = (GenModelResource) options.getResourceHandler().getResourceSet().createResource(genModelUri);
+		final GenModelResource genModelResource = (GenModelResource) options.resourceHandler().getResourceSet().createResource(genModelUri);
 		GenModel genModel = GenModelFactory.eINSTANCE.createGenModel();
 		
 		genModelResource.getContents().add(genModel);
@@ -67,10 +67,10 @@ public class HiPEBuilderUtil {
 		loadDefaultGenModelContent(genModel);
 		 
         //genModel.setComplianceLevel(GenJDKLevel.JDK80_LITERAL);
-        genModel.setModelDirectory(options.projectPath()+"/gen/");
+        genModel.setModelDirectory(options.project.path()+"/gen/");
         genModel.getForeignModel().add(new Path(metaModelUri.path()).lastSegment());
-        genModel.setModelName(options.projectName());
-        genModel.setModelPluginID(options.projectName());
+        genModel.setModelName(options.project.name());
+        genModel.setModelPluginID(options.project.name());
         genModel.setSuppressEMFMetaData(false);
         genModel.setCanGenerate(true);
         genModel.setContainmentProxies(false);
@@ -79,7 +79,7 @@ public class HiPEBuilderUtil {
         genModel.setUpdateClasspath(false);
         
         List<EPackage> ePack = new LinkedList<>();
-        ePack.add(options.getCorrMetamodel());
+        ePack.add(options.tgg.corrMetamodel());
         for(EPackage pack : importedPackages) {
         	genModel.addImport(pack.getNsURI());
         }
@@ -93,11 +93,11 @@ public class HiPEBuilderUtil {
 		}
         
         GenPackage genPackage = (GenPackage) genModel.getGenPackages().get(0);
-        genPackage.setPrefix(options.projectName());
+        genPackage.setPrefix(options.project.name());
         
         HiPEGenGenerator generator = new HiPEGenGenerator();
         generator.setInput(genModel);
-        generator.generate(genModel, GenBaseGeneratorAdapter.MODEL_PROJECT_TYPE, options.projectName(), new BasicMonitor.Printing(System.out), ePack.get(0).getName());
+        generator.generate(genModel, GenBaseGeneratorAdapter.MODEL_PROJECT_TYPE, options.project.name(), new BasicMonitor.Printing(System.out), ePack.get(0).getName());
 
         try {
             genModelResource.getDefaultSaveOptions().put(XMLResource.OPTION_ENCODING, "UTF-8");
@@ -116,7 +116,7 @@ public class HiPEBuilderUtil {
 	
 	protected void adjustRegistry(final GenModel genModel) {
 		// Ugly hack added by gervarro: GenModel has to be screwed
-		ResourceSet resourceSet = options.getResourceHandler().getResourceSet();
+		ResourceSet resourceSet = options.resourceHandler().getResourceSet();
 		final EPackage.Registry registry = resourceSet.getPackageRegistry();
 		resourceSet.setPackageRegistry(new EPackageRegistryImpl(registry));
 		genModel.getExtendedMetaData();
@@ -146,14 +146,14 @@ public class HiPEBuilderUtil {
 	
 	public static IbexOptions registerResourceHandler(IbexOptions options, List<String> metaModelImports) throws IOException {
 		HiPEBuilderUtil util = new HiPEBuilderUtil(options);
-		options.setResourceHandler(new TGGResourceHandler() {
+		options.resourceHandler(new TGGResourceHandler() {
 			@Override
 			protected void registerUserMetamodels() throws IOException {
 				for(String imp : metaModelImports) {
 					util.getImportedPackages().add(loadAndRegisterMetamodel(imp));	
 				}
-				String metaModelLocation = options.projectPath() + "/model/" + options.projectName() + ".ecore";
-				String genModelLocation = options.projectPath() + "/model/" + options.projectName() + ".genmodel";
+				String metaModelLocation = options.project.path() + "/model/" + options.project.name() + ".ecore";
+				String genModelLocation = options.project.path() + "/model/" + options.project.name() + ".genmodel";
 				EPackage metaModel = loadAndRegisterCorrMetamodel(metaModelLocation);
 				util.generateMetaModelCode(base, metaModelLocation, genModelLocation, metaModel);
 			}
