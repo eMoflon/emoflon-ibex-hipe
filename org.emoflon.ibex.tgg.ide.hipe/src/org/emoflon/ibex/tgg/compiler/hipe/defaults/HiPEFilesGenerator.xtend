@@ -103,11 +103,11 @@ class HiPEFilesGenerator extends DefaultFilesGenerator {
 				/** Create default options **/
 				public IbexOptions createIbexOptions() {
 					IbexOptions options = new IbexOptions();
-					options.setBlackInterpreter(new HiPETGGEngine());
-					options.projectName("«MoflonUtil.lastCapitalizedSegmentOf(projectName)»");
-					options.projectPath("«projectName»");
-					options.debug(false);
-					options.userDefinedConstraints(new UserDefinedRuntimeTGGAttrConstraintFactory());
+					options.blackInterpreter(new HiPETGGEngine());
+					options.project.name("«MoflonUtil.lastCapitalizedSegmentOf(projectName)»");
+					options.project.path("«projectName»");
+					options.debug.ibexDebug(false);
+					options.csp.userDefinedConstraints(new UserDefinedRuntimeTGGAttrConstraintFactory());
 					options.registrationHelper(this);
 					return options;
 				}
