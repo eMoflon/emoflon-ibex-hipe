@@ -10,7 +10,9 @@ import IBeXLanguage.IBeXLanguagePackage;
 import IBeXLanguage.IBeXPatternSet;
 import hipe.generator.HiPEGenerator;
 import hipe.network.HiPENetwork;
-import hipe.pattern.HiPEPatternContainer;
+import hipe.pattern.HiPEContainer;
+import hipe.searchplan.SearchPlan;
+import hipe.searchplan.simple.NewTriangleSearchPlan;
 import hipe.searchplan.simple.SimpleSearchPlan;
 
 import org.eclipse.core.runtime.CoreException;
@@ -89,10 +91,10 @@ public class GTHiPEBuilderExtension implements GTBuilderExtension{
 		
 		LogUtils.info(logger, "Converting IBeX to HiPE Patterns..");
 		IBeXToHiPEPatternTransformation transformation = new IBeXToHiPEPatternTransformation();
-		HiPEPatternContainer container = transformation.transform(ibexPatterns);
+		HiPEContainer container = transformation.transform(ibexPatterns);
 		
 		LogUtils.info(logger, "Creating search plan & generating Rete network..");
-		SimpleSearchPlan searchPlan = new SimpleSearchPlan(container);
+		SearchPlan searchPlan = new NewTriangleSearchPlan(container);
 		searchPlan.generateSearchPlan();
 		HiPENetwork network = searchPlan.getNetwork();
 		

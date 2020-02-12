@@ -37,10 +37,10 @@ import org.emoflon.ibex.tgg.ide.admin.IbexTGGBuilder;
 import org.emoflon.ibex.tgg.operational.defaults.IbexOptions;
 import org.emoflon.ibex.tgg.operational.strategies.gen.MODELGEN;
 import org.emoflon.ibex.tgg.operational.strategies.modules.IbexExecutable;
+import org.emoflon.ibex.tgg.operational.strategies.modules.MatchDistributor;
 import org.emoflon.ibex.tgg.operational.strategies.opt.CC;
 import org.emoflon.ibex.tgg.operational.strategies.opt.CO;
 import org.emoflon.ibex.tgg.operational.strategies.sync.SYNC;
-import org.emoflon.ibex.tgg.runtime.hipe.HiPETGGEngine;
 import org.moflon.core.plugins.manifest.ManifestFileUpdater;
 import org.moflon.core.utilities.ClasspathUtil;
 import org.moflon.core.utilities.LogUtils;
@@ -49,8 +49,9 @@ import org.moflon.tgg.mosl.tgg.TripleGraphGrammarFile;
 import IBeXLanguage.IBeXPatternSet;
 import hipe.generator.HiPEGenerator;
 import hipe.network.HiPENetwork;
-import hipe.pattern.HiPEPatternContainer;
-import hipe.searchplan.simple.SimpleSearchPlan;
+import hipe.pattern.HiPEContainer;
+import hipe.searchplan.SearchPlan;
+import hipe.searchplan.simple.NewTriangleSearchPlan;
 
 public class IbexHiPEBuilderExtension implements BuilderExtension {
 
@@ -140,10 +141,10 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 			
 			LogUtils.info(logger,  executable.getClass().getName() + ": Converting IBeX to HiPE Patterns..");
 			IBeXToHiPEPatternTransformation transformation = new IBeXToHiPEPatternTransformation();
-			HiPEPatternContainer container = transformation.transform(ibexPatterns);
+			HiPEContainer container = transformation.transform(ibexPatterns);
 			
 			LogUtils.info(logger,  executable.getClass().getName() + ": Creating search plan & generating Rete network..");
-			SimpleSearchPlan searchPlan = new SimpleSearchPlan(container);
+			SearchPlan searchPlan = new NewTriangleSearchPlan(container);
 			searchPlan.generateSearchPlan();
 			HiPENetwork network = searchPlan.getNetwork();
 			
@@ -166,6 +167,7 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 			createNewDirectory(debugFolder);
 			saveResource(container, debugFolder+"/" +  executable.getClass().getSimpleName().toLowerCase() + "_hipe-patterns.xmi");
 			saveResource(network, debugFolder+"/" +  executable.getClass().getSimpleName().toLowerCase() + "_hipe-network.xmi");
+			saveResource(ibexPatterns, debugFolder+"/" +  executable.getClass().getSimpleName().toLowerCase() + "_ibexPatterns.xmi");
 		});
 		double toc = System.currentTimeMillis();
 		LogUtils.info(logger, "Pattern compilation and code generation completed in "+ (toc-tic)/1000.0 + " seconds.");
