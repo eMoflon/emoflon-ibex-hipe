@@ -164,6 +164,14 @@ public class HiPEBuilderUtil {
 				rs = new ResourceSetImpl();
 				util.loadDefaultSettings();
 			}
+			
+			@Override
+			public void loadModels() throws IOException {
+			}
+			
+			@Override
+			public void saveModels() throws IOException {
+			}
 		});
 		return options;
 	}
