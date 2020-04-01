@@ -22,7 +22,9 @@ Require-Bundle: com.google.guava,
  org.moflon.core.ui,
  org.emoflon.ibex.tgg.runtime,
  org.emoflon.ibex.tgg.ide,
- org.emoflon.ibex.tgg.editor
+ org.emoflon.ibex.tgg.editor,
+ org.eclipse.emf.importer.ecore,
+ org.eclipse.emf.importer
 Export-Package: org.emoflon.ibex.tgg.compiler.hipe.defaults,
  org.emoflon.ibex.tgg.ide.hipe.visualisation
 Bundle-ActivationPolicy: lazy
