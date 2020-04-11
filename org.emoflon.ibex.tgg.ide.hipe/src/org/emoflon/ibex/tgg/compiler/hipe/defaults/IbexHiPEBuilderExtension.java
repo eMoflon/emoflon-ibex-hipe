@@ -50,6 +50,7 @@ import hipe.generator.HiPEGenerator;
 import hipe.network.HiPENetwork;
 import hipe.pattern.HiPEContainer;
 import hipe.searchplan.SearchPlan;
+import hipe.searchplan.simple.TGGSimpleSearchPlan;
 import hipe.searchplan.simple.TGGTriangleSearchPlan;
 
 public class IbexHiPEBuilderExtension implements BuilderExtension {
@@ -143,7 +144,8 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 			HiPEContainer container = transformation.transform(ibexPatterns);
 			
 			LogUtils.info(logger,  executable.getClass().getName() + ": Creating search plan & generating Rete network..");
-			SearchPlan searchPlan = new TGGTriangleSearchPlan(container);
+			SearchPlan searchPlan = new TGGSimpleSearchPlan(container);
+//			SearchPlan searchPlan = new TGGTriangleSearchPlan(container);
 //			SearchPlan searchPlan = new TriangleSearchPlan(container);
 //			SearchPlan searchPlan = new SimpleSearchPlan(container);
 			searchPlan.generateSearchPlan();
