@@ -12,7 +12,7 @@ import hipe.generator.HiPEGenerator;
 import hipe.network.HiPENetwork;
 import hipe.pattern.HiPEContainer;
 import hipe.searchplan.SearchPlan;
-import hipe.searchplan.simple.NewTriangleSearchPlan;
+import hipe.searchplan.simple.TriangleSearchPlan;
 import hipe.searchplan.simple.SimpleSearchPlan;
 
 import org.eclipse.core.runtime.CoreException;
@@ -95,7 +95,8 @@ public class GTHiPEBuilderExtension implements GTBuilderExtension{
 		HiPEContainer container = transformation.transform(ibexPatterns);
 		
 		LogUtils.info(logger, "Creating search plan & generating Rete network..");
-		SearchPlan searchPlan = new NewTriangleSearchPlan(container);
+		SearchPlan searchPlan = new TriangleSearchPlan(container);
+//		SearchPlan searchPlan = new SimpleSearchPlan(container);
 		searchPlan.generateSearchPlan();
 		HiPENetwork network = searchPlan.getNetwork();
 		
