@@ -49,7 +49,8 @@ public class GTHiPEBuilderExtension implements GTBuilderExtension{
 	@Override
 	public void run(IProject project) {
 		try {
-			project.getWorkspace().getRoot().refreshLocal(IResource.DEPTH_INFINITE, new NullProgressMonitor());
+			project.getWorkspace().getRoot().refreshLocal(IResource.DEPTH_ONE, new NullProgressMonitor());
+//			project.build(IncrementalProjectBuilder.CLEAN_BUILD, new NullProgressMonitor());
 		} catch (CoreException e) {
 			LogUtils.error(logger, e.getMessage());
 		}
@@ -112,8 +113,8 @@ public class GTHiPEBuilderExtension implements GTBuilderExtension{
 		
 		LogUtils.info(logger, "Refreshing workspace and cleaning build ..");
 		try {
-			project.getWorkspace().getRoot().refreshLocal(IResource.DEPTH_INFINITE, new NullProgressMonitor());
-			project.build(IncrementalProjectBuilder.CLEAN_BUILD, new NullProgressMonitor());
+			project.getWorkspace().getRoot().refreshLocal(IResource.DEPTH_ONE, new NullProgressMonitor());
+//			project.build(IncrementalProjectBuilder.CLEAN_BUILD, new NullProgressMonitor());
 		} catch (CoreException e) {
 			LogUtils.error(logger, e.getMessage());
 		}

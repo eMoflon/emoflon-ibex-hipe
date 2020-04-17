@@ -174,8 +174,8 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 		
 		LogUtils.info(logger, "Refreshing workspace and cleaning build ..");
 		try {
-			builder.getProject().getWorkspace().getRoot().refreshLocal(IResource.DEPTH_INFINITE, new NullProgressMonitor());
-			builder.getProject().build(IncrementalProjectBuilder.CLEAN_BUILD, new NullProgressMonitor());
+			builder.getProject().getWorkspace().getRoot().refreshLocal(IResource.DEPTH_ONE, new NullProgressMonitor());
+//			builder.getProject().build(IncrementalProjectBuilder.CLEAN_BUILD, new NullProgressMonitor());
 		} catch (CoreException e) {
 			LogUtils.error(logger, e.getMessage());
 		}
