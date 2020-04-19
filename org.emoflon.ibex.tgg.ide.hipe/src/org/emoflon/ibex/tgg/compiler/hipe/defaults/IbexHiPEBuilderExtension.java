@@ -39,6 +39,8 @@ import org.emoflon.ibex.tgg.operational.strategies.gen.MODELGEN;
 import org.emoflon.ibex.tgg.operational.strategies.modules.IbexExecutable;
 import org.emoflon.ibex.tgg.operational.strategies.opt.CC;
 import org.emoflon.ibex.tgg.operational.strategies.opt.CO;
+import org.emoflon.ibex.tgg.operational.strategies.sync.INITIAL_BWD;
+import org.emoflon.ibex.tgg.operational.strategies.sync.INITIAL_FWD;
 import org.emoflon.ibex.tgg.operational.strategies.sync.SYNC;
 import org.moflon.core.plugins.manifest.ManifestFileUpdater;
 import org.moflon.core.utilities.ClasspathUtil;
@@ -78,6 +80,8 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 		LogUtils.info(logger, "Building TGG operational strategy...");
 		Collection<IbexExecutable> executables = new HashSet<>();
 		try {
+			executables.add(new INITIAL_FWD(HiPEBuilderUtil.registerResourceHandler(createIbexOptions(projectName, projectPath), metaModelImports)));
+			executables.add(new INITIAL_BWD(HiPEBuilderUtil.registerResourceHandler(createIbexOptions(projectName, projectPath), metaModelImports)));
 			executables.add(new SYNC(HiPEBuilderUtil.registerResourceHandler(createIbexOptions(projectName, projectPath), metaModelImports)));
 			executables.add(new CC(HiPEBuilderUtil.registerResourceHandler(createIbexOptions(projectName, projectPath), metaModelImports)));
 			executables.add(new CO(HiPEBuilderUtil.registerResourceHandler(createIbexOptions(projectName, projectPath), metaModelImports)));
@@ -153,7 +157,11 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 			
 			LogUtils.info(logger,  executable.getClass().getName() + ": Generating Code..");
 			
-			if(executable instanceof SYNC) 
+			if(executable instanceof INITIAL_FWD) 
+				HiPEGenerator.generateCode(projectName+".initfwd.", projectPath, network);
+			else if(executable instanceof INITIAL_BWD) 
+				HiPEGenerator.generateCode(projectName+".initbwd.", projectPath, network);
+			else if(executable instanceof SYNC) 
 				HiPEGenerator.generateCode(projectName+".sync.", projectPath, network);
 			else if(executable instanceof CC && !(executable instanceof CO)) 
 				HiPEGenerator.generateCode(projectName+".cc.", projectPath, network);

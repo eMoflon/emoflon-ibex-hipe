@@ -14,7 +14,6 @@ import org.emoflon.ibex.common.operational.IMatch;
 import org.emoflon.ibex.common.operational.IMatchObserver;
 import org.emoflon.ibex.gt.hipe.runtime.HiPEGTEngine;
 import org.emoflon.ibex.tgg.compiler.patterns.PatternSuffixes;
-import org.emoflon.ibex.tgg.compiler.patterns.PatternType;
 import org.emoflon.ibex.tgg.compiler.patterns.PatternUtil;
 import org.emoflon.ibex.tgg.operational.IBlackInterpreter;
 import org.emoflon.ibex.tgg.operational.defaults.IbexOptions;
@@ -22,6 +21,8 @@ import org.emoflon.ibex.tgg.operational.strategies.gen.MODELGEN;
 import org.emoflon.ibex.tgg.operational.strategies.modules.IbexExecutable;
 import org.emoflon.ibex.tgg.operational.strategies.opt.CC;
 import org.emoflon.ibex.tgg.operational.strategies.opt.CO;
+import org.emoflon.ibex.tgg.operational.strategies.sync.INITIAL_BWD;
+import org.emoflon.ibex.tgg.operational.strategies.sync.INITIAL_FWD;
 import org.emoflon.ibex.tgg.operational.strategies.sync.SYNC;
 
 import IBeXLanguage.IBeXContext;
@@ -88,6 +89,12 @@ public class HiPETGGEngine extends HiPEGTEngine implements IBlackInterpreter {
 	}
 	
 	private String getIbexPatternFileName() {
+		if(executable instanceof INITIAL_FWD) {
+			return "initial_fwd_ibexPatterns.xmi";
+		}
+		if(executable instanceof INITIAL_BWD) {
+			return "initial_bwd_ibexPatterns.xmi";
+		}
 		if(executable instanceof SYNC) {
 			return "sync_ibexPatterns.xmi";
 		}
@@ -105,6 +112,12 @@ public class HiPETGGEngine extends HiPEGTEngine implements IBlackInterpreter {
 	
 	@Override
 	protected String getNetworkFileName() {
+		if(executable instanceof INITIAL_FWD) {
+			return "initial_fwd_hipe-network.xmi";
+		}
+		if(executable instanceof INITIAL_BWD) {
+			return "initial_bwd_hipe-network.xmi";
+		}
 		if(executable instanceof SYNC) {
 			return "sync_hipe-network.xmi";
 		}
@@ -122,7 +135,13 @@ public class HiPETGGEngine extends HiPEGTEngine implements IBlackInterpreter {
 	
 	@Override
 	protected void generateHiPEClassName(String projectName) {
-		if(executable instanceof CC) {
+		if(executable instanceof INITIAL_FWD) {
+			engineClassName = projectName.replace("/", ".")+".initfwd.hipe.engine.HiPEEngine";	
+		} 
+		else if(executable instanceof INITIAL_FWD) {
+			engineClassName = projectName.replace("/", ".")+".initbwd.hipe.engine.HiPEEngine";	
+		}
+		else if(executable instanceof CC) {
 			engineClassName = projectName.replace("/", ".")+".cc.hipe.engine.HiPEEngine";	
 		}
 		else if(executable instanceof CO) {
