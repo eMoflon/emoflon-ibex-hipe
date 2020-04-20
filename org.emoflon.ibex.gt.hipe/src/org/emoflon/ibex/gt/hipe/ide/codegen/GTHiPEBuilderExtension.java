@@ -19,7 +19,9 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.emf.common.util.URI;
+import org.eclipse.emf.ecore.EAnnotationValidator.Registry;
 import org.eclipse.emf.ecore.EObject;
+import org.eclipse.emf.ecore.EPackage;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.resource.ResourceSet;
 import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
@@ -58,6 +60,8 @@ public class GTHiPEBuilderExtension implements GTBuilderExtension{
 
 	@Override
 	public void run(IProject project, IPath packagePath) {
+		org.eclipse.emf.ecore.EPackage.Registry reg = EPackage.Registry.INSTANCE;
+		EPackage pk = reg.getEPackage("platform:/resource/org.emoflon.ibex.common/model/Common.ecore");
 		LogUtils.info(logger, "## HiPE ## Generating HiPE-Engine code..");
 		double tic = System.currentTimeMillis();
 		
@@ -119,7 +123,7 @@ public class GTHiPEBuilderExtension implements GTBuilderExtension{
 		} catch (CoreException e) {
 			LogUtils.error(logger, e.getMessage());
 		}
-		
+		pk = reg.getEPackage("platform:/resource/org.emoflon.ibex.common/model/Common.ecore");
 		LogUtils.info(logger, "## HiPE ## --> HiPE build complete!");
 	}
 	

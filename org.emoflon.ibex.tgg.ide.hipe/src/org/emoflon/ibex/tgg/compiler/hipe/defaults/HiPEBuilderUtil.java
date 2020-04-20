@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.emf.codegen.ecore.generator.Generator;
 import org.eclipse.emf.codegen.ecore.genmodel.GenModel;
@@ -17,6 +18,7 @@ import org.eclipse.emf.codegen.ecore.genmodel.generator.GenBaseGeneratorAdapter;
 import org.eclipse.emf.codegen.ecore.genmodel.util.GenModelUtil;
 import org.eclipse.emf.common.util.BasicMonitor;
 import org.eclipse.emf.common.util.EList;
+import org.eclipse.emf.common.util.Monitor;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.EPackage;
 import org.eclipse.emf.ecore.plugin.EcorePlugin;
@@ -59,7 +61,8 @@ public class HiPEBuilderUtil {
 		URI metaModelUri = URI.createURI(metaModelLocation);
 		metaModelUri = metaModelUri.resolve(base);
 
-		BasicMonitor monitor = new BasicMonitor.Printing(System.out);
+//		BasicMonitor monitor = new BasicMonitor.Printing(System.out);
+		Monitor monitor = BasicMonitor.toMonitor(new NullProgressMonitor());
 		try {
 			EcoreImporter importer = new EcoreImporter();
 			importer.setModelLocation(metaModelUri.toString());
