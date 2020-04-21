@@ -23,6 +23,7 @@ import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.EObject;
+import org.eclipse.emf.ecore.EPackage;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.resource.ResourceSet;
 import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
@@ -74,6 +75,19 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 		metaModelImports = flattenedEditorModel.getImports().stream()
 				.map(imp -> imp.getName())
 				.collect(Collectors.toList());
+		
+		LogUtils.info(logger, "Cleaning old code..");
+		cleanOldCode(builder.getProject().getLocation().toPortableString());
+		
+		IFolder srcGenFolder = builder.getProject().getFolder("src-gen");
+		IFolder genFolder = builder.getProject().getFolder("gen");
+		try {
+			ClasspathUtil.makeSourceFolderIfNecessary(srcGenFolder);
+			ClasspathUtil.makeSourceFolderIfNecessary(genFolder);
+		} catch (CoreException e1) {
+			// TODO Auto-generated catch block
+			LogUtils.error(logger, e1.getMessage());
+		}
 
 		LogUtils.info(logger, "Building TGG options...");
 		
@@ -93,25 +107,29 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 		
 		// create the actual project path
 		projectPath = builder.getProject().getLocation().toPortableString();
+		EPackage srcPkg = flattenedEditorModel.getSchema().getSourceTypes().get(0);
+		EPackage trgPkg = flattenedEditorModel.getSchema().getTargetTypes().get(0);
+		EPackage corrPkg = flattenedEditorModel.eClass().getEPackage();
+		try {
+			if(srcPkg == null || trgPkg == null || corrPkg == null) {
+				throw new RuntimeException("Could not get flattened trg or src model from editor model.");
+			}
+		} catch (Exception e) {
+			LogUtils.error(logger, e); 
+			return;
+		}
 		
-		String srcModel = flattenedEditorModel.getSchema().getSourceTypes().get(0).getName();
-		String trgModel = flattenedEditorModel.getSchema().getTargetTypes().get(0).getName();
+		String srcModel = srcPkg.getName();
+		String trgModel = trgPkg.getName();
 		IProject srcProject = getProjectInWorkspace(srcModel, builder.getProject().getWorkspace());
 		IProject trgProject = getProjectInWorkspace(trgModel, builder.getProject().getWorkspace());
 		
-		String srcPkgName = null;
-		String trgPkgName = null;
-		String srcProjectName = null;
-		String trgProjectName = null;
-		
-		if(srcProject != null) {
-			srcPkgName = getRootPackageName(srcProject);
-			srcProjectName = srcProject.getName();
-		}
-		if(trgProject != null) {
-			trgPkgName = getRootPackageName(trgProject);
-			trgProjectName = trgProject.getName();
-		}
+		String srcPkgName = getRootPackageName(srcProject);
+		String trgPkgName = getRootPackageName(trgProject);
+		String srcProjectName = srcProject.getName();
+		String trgProjectName = trgProject.getName();
+		String srcNS = srcPkg.getNsPrefix();
+		String trgNS = trgPkg.getNsPrefix();
 		
 		LogUtils.info(logger, "Building missing app stubs...");
 		try {
@@ -121,21 +139,9 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 			LogUtils.error(logger, e);
 		}
 		
-		LogUtils.info(logger, "Cleaning old code..");
-		cleanOldCode();
-
 		LogUtils.info(logger, "Updating Manifest & build properties..");
 		updateManifest(builder.getProject(), srcProjectName, trgProjectName);
 		updateBuildProperties();
-		IFolder srcGenFolder = builder.getProject().getFolder("src-gen");
-		IFolder genFolder = builder.getProject().getFolder("gen");
-		try {
-			ClasspathUtil.makeSourceFolderIfNecessary(srcGenFolder);
-			ClasspathUtil.makeSourceFolderIfNecessary(genFolder);
-		} catch (CoreException e1) {
-			// TODO Auto-generated catch block
-			LogUtils.error(logger, e1.getMessage());
-		}
 		
 		double tic = System.currentTimeMillis();
 		executables.parallelStream().forEach(executable -> {
@@ -241,12 +247,14 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 				-> HiPEFilesGenerator.generateRegHelperFile(projectName, srcProject.getName(), trgProject.getName(), srcPkg, trgPkg));
 	}
 	
-	private void cleanOldCode() {
+	private void cleanOldCode(String projectPath) {
 		List<File> hipeRootDirectories = new LinkedList<>();
-		hipeRootDirectories.add(new File(projectPath+"/src-gen/" + projectName + "/hipe"));
+		hipeRootDirectories.add(new File(projectPath+"/gen"));
 		hipeRootDirectories.add(new File(projectPath+"/src-gen/" + projectName + "/sync/hipe"));
 		hipeRootDirectories.add(new File(projectPath+"/src-gen/" + projectName + "/cc/hipe"));
 		hipeRootDirectories.add(new File(projectPath+"/src-gen/" + projectName + "/co/hipe"));
+		hipeRootDirectories.add(new File(projectPath+"/src-gen/" + projectName + "/initbwd/hipe"));
+		hipeRootDirectories.add(new File(projectPath+"/src-gen/" + projectName + "/initfwd/hipe"));
 		hipeRootDirectories.add(new File(projectPath+"/src-gen/" + projectName + "/modelgen/hipe"));
 		hipeRootDirectories.parallelStream().forEach(dir -> {
 			if(dir.exists()) {

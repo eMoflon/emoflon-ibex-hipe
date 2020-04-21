@@ -8,10 +8,12 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.emf.codegen.ecore.generator.Generator;
+import org.eclipse.emf.codegen.ecore.genmodel.GenBase;
 import org.eclipse.emf.codegen.ecore.genmodel.GenModel;
 import org.eclipse.emf.codegen.ecore.genmodel.GenPackage;
 import org.eclipse.emf.codegen.ecore.genmodel.generator.GenBaseGeneratorAdapter;
@@ -61,7 +63,6 @@ public class HiPEBuilderUtil {
 		URI metaModelUri = URI.createURI(metaModelLocation);
 		metaModelUri = metaModelUri.resolve(base);
 
-//		BasicMonitor monitor = new BasicMonitor.Printing(System.out);
 		Monitor monitor = BasicMonitor.toMonitor(new NullProgressMonitor());
 		try {
 			EcoreImporter importer = new EcoreImporter();
@@ -69,39 +70,42 @@ public class HiPEBuilderUtil {
 			importer.computeEPackages(monitor);
 			importer.adjustEPackages(monitor);
 			
-			Set<EPackage> importedEPackages = new HashSet<>();
-			for (GenModel referencedGen : importer.getExternalGenModels()) {
-				for (GenPackage genPackage : referencedGen.getGenPackages()) {
-					EPackage ePackage = importer.getReferredEPackage(genPackage);
-					if (ePackage != null && !metaModelUri.toString().equals(ePackage.getNsURI())) {
-						importer.getReferencedGenPackages().add(genPackage);
-						importer.getReferenceGenPackageConvertInfo(genPackage).setValidReference(true);
-						importer.getEPackageConvertInfo(ePackage).setConvert(false);
-						importedEPackages.add(ePackage);
-					}
-				}
-			}
 			for(EPackage ePackage : importer.getEPackages()) {
-				if(!importedEPackages.contains(ePackage)) {
+				if(ePackage.getName().equals(metaModel.getName())) {
 					importer.getEPackageConvertInfo(ePackage).setConvert(true);
+				}else {
+					importer.getEPackageConvertInfo(ePackage).setConvert(false);
 				}
-			}
+				
+			}			
+			
 			importer.setGenModelContainerPath(new Path(pluginID).append("model"));
 			importer.setGenModelFileName(importer.computeDefaultGenModelFileName());
 			importer.prepareGenModelAndEPackages(monitor);
+
 			GenModel genModel = importer.getGenModel();
 			genModel.setModelDirectory(options.project.path() + "/gen/");
+			
+		    
+//		    Set<GenPackage> removals = genModel.getGenPackages().stream().filter(pkg -> !pkg.getEcorePackage().getName().equals(metaModel.getName())).collect(Collectors.toSet());
+//		    removals.forEach(gp -> System.out.println("Removed GP: "+gp.getNSName()));
+//			removals.forEach(pkg -> genModel.getGenPackages().remove(pkg));
+//			genModel.getUsedGenPackages().addAll(removals);
+//			genModel.getUsedGenPackages().forEach(gp -> System.out.println("Added to used GP"+gp.getNSName()));
+//			genModel.eResource().getContents().addAll(removals);
 			
 			genModel.setGenerateSchema(true);
 			genModel.setCanGenerate(true);
 		    genModel.reconcile();
 
 			EcoreUtil.resolveAll(importer.getGenModelResourceSet());
-//			importer.saveGenModelAndEPackages(monitor);
 		    genModel.eResource().save(Collections.emptyMap());
 		    
 			Generator generator = GenModelUtil.createGenerator(genModel);
+//		    HiPEGenGenerator generator = new HiPEGenGenerator();
 			generator.generate(genModel, GenBaseGeneratorAdapter.MODEL_PROJECT_TYPE, monitor);
+//		    generator.setInput(genModel);
+//	        generator.generate(genModel, GenBaseGeneratorAdapter.MODEL_PROJECT_TYPE, options.project.name(), BasicMonitor.toMonitor(new NullProgressMonitor()), options.project.name());
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

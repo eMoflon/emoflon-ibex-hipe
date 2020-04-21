@@ -57,7 +57,6 @@ public class HiPEGenGenerator extends CodeGenerator {
 					result.add(Diagnostic.CANCEL_INSTANCE);
 				}
 			}
-
 			// Give all generator adapters the chance to do tear down.
 			//
 			for (int i = 0; i < preIndex; i++) {
