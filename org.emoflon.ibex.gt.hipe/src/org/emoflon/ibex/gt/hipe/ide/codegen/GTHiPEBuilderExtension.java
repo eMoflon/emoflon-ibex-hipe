@@ -2,12 +2,12 @@ package org.emoflon.ibex.gt.hipe.ide.codegen;
 
 import org.emoflon.ibex.gt.editor.ui.builder.GTBuilderExtension;
 import org.emoflon.ibex.gt.hipe.runtime.IBeXToHiPEPatternTransformation;
+import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXPatternModelPackage;
+import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXPatternSet;
 import org.moflon.core.plugins.manifest.ManifestFileUpdater;
 import org.moflon.core.utilities.ClasspathUtil;
 import org.moflon.core.utilities.LogUtils;
 
-import IBeXLanguage.IBeXLanguagePackage;
-import IBeXLanguage.IBeXPatternSet;
 import hipe.generator.HiPEGenerator;
 import hipe.network.HiPENetwork;
 import hipe.pattern.HiPEContainer;
@@ -226,7 +226,7 @@ public class GTHiPEBuilderExtension implements GTBuilderExtension{
 			modelResource = rs.getResource(uri, true);
 		}catch(Exception e) {
 			LogUtils.error(logger, "Couldn't load ibex pattern model, trying workaround.. Message was: \n" + e.getMessage());
-			rs.getPackageRegistry().put("platform:/resource/org.emoflon.ibex.common/model/Common.ecore", IBeXLanguagePackage.eINSTANCE);
+			rs.getPackageRegistry().put("platform:/resource/org.emoflon.ibex.common/model/Common.ecore", IBeXPatternModelPackage.eINSTANCE);
 		}
 		
 		if(modelResource == null)

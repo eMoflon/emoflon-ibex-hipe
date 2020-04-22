@@ -26,7 +26,8 @@ Require-Bundle: com.google.guava,
  org.eclipse.emf.importer.ecore,
  org.eclipse.emf.importer,
  org.eclipse.emf.ecore,
- org.eclipse.emf.codegen.ecore
+ org.eclipse.emf.codegen.ecore,
+ org.emoflon.ibex.patternmodel
 Export-Package: org.emoflon.ibex.tgg.compiler.hipe.defaults,
  org.emoflon.ibex.tgg.ide.hipe.visualisation
 Bundle-ActivationPolicy: lazy
