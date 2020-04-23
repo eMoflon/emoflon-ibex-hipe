@@ -10,7 +10,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-
+import language.LanguagePackage;
 import org.apache.log4j.Logger;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IFolder;
@@ -27,11 +27,14 @@ import org.eclipse.emf.ecore.EPackage;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.resource.ResourceSet;
 import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
+import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.eclipse.emf.ecore.xmi.XMIResource;
+import org.eclipse.emf.ecore.xmi.impl.EcoreResourceFactoryImpl;
 import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
 import org.emoflon.ibex.gt.hipe.ide.codegen.BuildPropertiesHelper;
 import org.emoflon.ibex.gt.hipe.ide.codegen.ManifestHelper;
 import org.emoflon.ibex.gt.hipe.runtime.IBeXToHiPEPatternTransformation;
+import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXPatternModelPackage;
 import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXPatternSet;
 import org.emoflon.ibex.tgg.compiler.transformations.patterns.ContextPatternTransformation;
 import org.emoflon.ibex.tgg.ide.admin.BuilderExtension;
@@ -68,6 +71,13 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 	@Override
 	public void run(IbexTGGBuilder builder, TripleGraphGrammarFile editorModel, TripleGraphGrammarFile flattenedEditorModel) {
 		LogUtils.info(logger, "Starting HiPE TGG builder ... ");
+		
+		try {
+			repairMetamodelResource();
+		} catch (Exception e2) {
+			LogUtils.error(logger, e2.getMessage());
+			return;
+		}
 		
 		projectName = builder.getProject().getName();
 		projectPath = projectName;
@@ -434,5 +444,42 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 		
 		LogUtils.info(logger, "The project belonging to model "+project.getName()+" does not seem to have generated code.");
 		return null;
+	}
+	
+	private static void repairMetamodelResource() throws Exception {
+		org.eclipse.emf.ecore.EPackage.Registry reg = EPackage.Registry.INSTANCE;
+		EPackage pk = reg.getEPackage("platform:/resource/org.emoflon.ibex.patternmodel/model/IBeXPatternModel.ecore");
+		if(pk == null || pk.eIsProxy()) {
+			reg.remove("platform:/resource/org.emoflon.ibex.patternmodel/model/IBeXPatternModel.ecore");
+
+			Resource.Factory.Registry.INSTANCE.getExtensionToFactoryMap().putIfAbsent("ecore", new EcoreResourceFactoryImpl());
+			ResourceSet rs = new ResourceSetImpl();
+			rs.getResourceFactoryRegistry().getExtensionToFactoryMap().putIfAbsent("ecore", new EcoreResourceFactoryImpl());
+			Resource modelResource = rs.createResource(URI.createURI("platform:/resource/org.emoflon.ibex.patternmodel/model/IBeXPatternModel.ecore"));
+			pk = IBeXPatternModelPackage.eINSTANCE;
+			modelResource.getContents().add(pk);
+
+			EcoreUtil.resolveAll(pk);
+			IBeXPatternModelPackage.eINSTANCE.eClass();
+			reg.put("platform:/resource/org.emoflon.ibex.patternmodel/model/IBeXPatternModel.ecore", pk);
+			
+		}
+		
+		EPackage pk2 = reg.getEPackage("platform:/plugin/org.emoflon.ibex.tgg.core.language/model/Language.ecore");
+		if(pk2 == null || pk2.eIsProxy()) {
+			reg.remove("platform:/plugin/org.emoflon.ibex.tgg.core.language/model/Language.ecore");
+
+			Resource.Factory.Registry.INSTANCE.getExtensionToFactoryMap().putIfAbsent("ecore", new EcoreResourceFactoryImpl());
+			ResourceSet rs = new ResourceSetImpl();
+			rs.getResourceFactoryRegistry().getExtensionToFactoryMap().putIfAbsent("ecore", new EcoreResourceFactoryImpl());
+			Resource modelResource = rs.createResource(URI.createURI("platform:/plugin/org.emoflon.ibex.tgg.core.language/model/Language.ecore"));
+			pk2 = LanguagePackage.eINSTANCE;
+			modelResource.getContents().add(pk2);
+
+			EcoreUtil.resolveAll(pk2);
+			LanguagePackage.eINSTANCE.eClass();
+			reg.put("platform:/plugin/org.emoflon.ibex.tgg.core.language/model/Language.ecore", pk2);
+			
+		}
 	}
 }
