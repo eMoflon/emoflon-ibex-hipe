@@ -83,14 +83,14 @@ public class HiPEGenGenerator extends CodeGenerator {
 	}
 
 	protected boolean ignoreGeneratorData(GeneratorData data, String projectName) {
-		if(data.object instanceof GenPackage) {
-			GenPackage gen = (GenPackage) data.object;
-			return !gen.getNSName().contains(projectName);
-		}
-		if(data.object instanceof GenClass) {
-			GenClass gen = (GenClass) data.object;
-			return !gen.getGenPackage().getNSName().contains(projectName);
-		}
+//		if(data.object instanceof GenPackage) {
+//			GenPackage gen = (GenPackage) data.object;
+//			return !gen.getNSName().contains(projectName);
+//		}
+//		if(data.object instanceof GenClass) {
+//			GenClass gen = (GenClass) data.object;
+//			return !gen.getGenPackage().getNSName().contains(projectName);
+//		}
 		
 		return false;
 	}

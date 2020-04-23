@@ -94,12 +94,12 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 		LogUtils.info(logger, "Building TGG operational strategy...");
 		Collection<IbexExecutable> executables = new HashSet<>();
 		try {
-			executables.add(new INITIAL_FWD(HiPEBuilderUtil.registerResourceHandler(createIbexOptions(projectName, projectPath), metaModelImports)));
-			executables.add(new INITIAL_BWD(HiPEBuilderUtil.registerResourceHandler(createIbexOptions(projectName, projectPath), metaModelImports)));
-			executables.add(new SYNC(HiPEBuilderUtil.registerResourceHandler(createIbexOptions(projectName, projectPath), metaModelImports)));
-			executables.add(new CC(HiPEBuilderUtil.registerResourceHandler(createIbexOptions(projectName, projectPath), metaModelImports)));
-			executables.add(new CO(HiPEBuilderUtil.registerResourceHandler(createIbexOptions(projectName, projectPath), metaModelImports)));
-			executables.add(new MODELGEN(HiPEBuilderUtil.registerResourceHandler(createIbexOptions(projectName, projectPath), metaModelImports)));
+			executables.add(new INITIAL_FWD(HiPEBuilderUtil.registerResourceHandler(createIbexOptions(projectName, projectPath), metaModelImports, true)));
+			executables.add(new INITIAL_BWD(HiPEBuilderUtil.registerResourceHandler(createIbexOptions(projectName, projectPath), metaModelImports, false)));
+			executables.add(new SYNC(HiPEBuilderUtil.registerResourceHandler(createIbexOptions(projectName, projectPath), metaModelImports, false)));
+			executables.add(new CC(HiPEBuilderUtil.registerResourceHandler(createIbexOptions(projectName, projectPath), metaModelImports, false)));
+			executables.add(new CO(HiPEBuilderUtil.registerResourceHandler(createIbexOptions(projectName, projectPath), metaModelImports, false)));
+			executables.add(new MODELGEN(HiPEBuilderUtil.registerResourceHandler(createIbexOptions(projectName, projectPath), metaModelImports, false)));
 		} catch (IOException e) {
 			LogUtils.error(logger, e);
 			return;
@@ -279,13 +279,13 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 			}
 			// TODO: This works in most cases except for Modisco, since there is no generated code present.
 			// Fixit: MocaTreeToProcess complains about API access and only allows explicit package imports.
-			if(srcPkg != null && !helper.sectionContainsContent("Require-Bundle", srcPkg)) {
-				helper.addContentToSection("Require-Bundle", srcPkg);
-			}
-			
-			if(trgPkg != null && !helper.sectionContainsContent("Require-Bundle", trgPkg)) {
-				helper.addContentToSection("Require-Bundle", trgPkg);
-			}
+//			if(srcPkg != null && !helper.sectionContainsContent("Require-Bundle", srcPkg)) {
+//				helper.addContentToSection("Require-Bundle", srcPkg);
+//			}
+//			
+//			if(trgPkg != null && !helper.sectionContainsContent("Require-Bundle", trgPkg)) {
+//				helper.addContentToSection("Require-Bundle", trgPkg);
+//			}
 			
 			File rawManifest = new File(projectPath+"/"+manifest.getFullPath().removeFirstSegments(1).toPortableString());
 			

@@ -15,6 +15,7 @@ import org.eclipse.core.runtime.Path;
 import org.eclipse.emf.codegen.ecore.generator.Generator;
 import org.eclipse.emf.codegen.ecore.genmodel.GenBase;
 import org.eclipse.emf.codegen.ecore.genmodel.GenModel;
+import org.eclipse.emf.codegen.ecore.genmodel.GenModelFactory;
 import org.eclipse.emf.codegen.ecore.genmodel.GenPackage;
 import org.eclipse.emf.codegen.ecore.genmodel.generator.GenBaseGeneratorAdapter;
 import org.eclipse.emf.codegen.ecore.genmodel.util.GenModelUtil;
@@ -86,13 +87,19 @@ public class HiPEBuilderUtil {
 			GenModel genModel = importer.getGenModel();
 			genModel.setModelDirectory(options.project.path() + "/gen/");
 			
-		    
-//		    Set<GenPackage> removals = genModel.getGenPackages().stream().filter(pkg -> !pkg.getEcorePackage().getName().equals(metaModel.getName())).collect(Collectors.toSet());
-//		    removals.forEach(gp -> System.out.println("Removed GP: "+gp.getNSName()));
-//			removals.forEach(pkg -> genModel.getGenPackages().remove(pkg));
-//			genModel.getUsedGenPackages().addAll(removals);
-//			genModel.getUsedGenPackages().forEach(gp -> System.out.println("Added to used GP"+gp.getNSName()));
+		    Set<GenPackage> removals = genModel.getGenPackages().stream().filter(pkg -> !pkg.getEcorePackage().getName().equals(metaModel.getName())).collect(Collectors.toSet());
+		    removals.forEach(gp -> System.out.println("Removed GP: "+gp.getNSName()));
+			removals.forEach(pkg -> genModel.getGenPackages().remove(pkg));
+			genModel.getUsedGenPackages().addAll(removals);
+			genModel.getUsedGenPackages().forEach(gp -> System.out.println("Added to used GP"+gp.getNSName()));
 //			genModel.eResource().getContents().addAll(removals);
+			
+			for(GenPackage gp : removals) {
+				GenModel fakeGen = GenModelFactory.eINSTANCE.createGenModel();
+				fakeGen.setModelPluginID(gp.getEcorePackage().getNsPrefix());
+				fakeGen.getGenPackages().add(gp);
+				genModel.eResource().getContents().add(fakeGen);
+			}
 			
 			genModel.setGenerateSchema(true);
 			genModel.setCanGenerate(true);
@@ -101,11 +108,11 @@ public class HiPEBuilderUtil {
 			EcoreUtil.resolveAll(importer.getGenModelResourceSet());
 		    genModel.eResource().save(Collections.emptyMap());
 		    
-			Generator generator = GenModelUtil.createGenerator(genModel);
-//		    HiPEGenGenerator generator = new HiPEGenGenerator();
-			generator.generate(genModel, GenBaseGeneratorAdapter.MODEL_PROJECT_TYPE, monitor);
-//		    generator.setInput(genModel);
-//	        generator.generate(genModel, GenBaseGeneratorAdapter.MODEL_PROJECT_TYPE, options.project.name(), BasicMonitor.toMonitor(new NullProgressMonitor()), options.project.name());
+//			Generator generator = GenModelUtil.createGenerator(genModel);
+		    HiPEGenGenerator generator = new HiPEGenGenerator();
+		    generator.setInput(genModel);
+//			generator.generate(genModel, GenBaseGeneratorAdapter.MODEL_PROJECT_TYPE, monitor);
+	        generator.generate(genModel, GenBaseGeneratorAdapter.MODEL_PROJECT_TYPE, options.project.name(), BasicMonitor.toMonitor(new NullProgressMonitor()), options.project.name());
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -144,7 +151,7 @@ public class HiPEBuilderUtil {
 		return importedPackages;
 	}
 
-	public static IbexOptions registerResourceHandler(IbexOptions options, List<String> metaModelImports)
+	public static IbexOptions registerResourceHandler(IbexOptions options, List<String> metaModelImports, boolean generateCode)
 			throws IOException {
 		HiPEBuilderUtil util = new HiPEBuilderUtil(options);
 		options.resourceHandler(new TGGResourceHandler() {
@@ -158,7 +165,8 @@ public class HiPEBuilderUtil {
 				String genModelLocation = options.project.path() + "/model/"
 						+ MoflonUtil.lastCapitalizedSegmentOf(options.project.name()) + ".genmodel";
 				EPackage metaModel = loadAndRegisterCorrMetamodel(metaModelLocation);
-				util.generateMetaModelCode(base, metaModelLocation, genModelLocation, metaModel);
+				if(generateCode)
+					util.generateMetaModelCode(base, metaModelLocation, genModelLocation, metaModel);
 			}
 
 			@Override
