@@ -27,11 +27,16 @@ import org.eclipse.emf.ecore.resource.ResourceSet;
 import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
 import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.eclipse.emf.ecore.xmi.XMIResource;
+import org.eclipse.emf.ecore.xmi.impl.EcoreResourceFactoryImpl;
 import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
+
+import javax.management.RuntimeErrorException;
+
 import org.apache.log4j.Logger;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IFolder;
@@ -60,9 +65,14 @@ public class GTHiPEBuilderExtension implements GTBuilderExtension{
 
 	@Override
 	public void run(IProject project, IPath packagePath) {
-		org.eclipse.emf.ecore.EPackage.Registry reg = EPackage.Registry.INSTANCE;
-		EPackage pk = reg.getEPackage("platform:/resource/org.emoflon.ibex.common/model/Common.ecore");
 		LogUtils.info(logger, "## HiPE ## Generating HiPE-Engine code..");
+		try {
+			repairMetamodelResource();
+		} catch (Exception e2) {
+			LogUtils.error(logger, "Could not reload the previously unloaded IBeXPatternModel.ecore");
+			return;
+		}
+		
 		double tic = System.currentTimeMillis();
 		
 		packageName = packagePath.toString().replace("/", ".");
@@ -75,9 +85,13 @@ public class GTHiPEBuilderExtension implements GTBuilderExtension{
 		
 		LogUtils.info(logger, "Loading IBeX patterns..");
 		String patternPath = "/src-gen//" + packageName.replace(".", "//") + "//api//ibex-patterns.xmi";
-		IBeXPatternSet ibexPatterns = loadIBeXPatterns(project, patternPath);
-		if(ibexPatterns == null)
+		IBeXPatternSet ibexPatterns;
+		try {
+			ibexPatterns = loadIBeXPatterns(project, patternPath);
+		} catch (Exception e2) {
+			LogUtils.error(logger, e2.getMessage());
 			return;
+		}
 		
 		projectPath = project.getLocation().toPortableString();
 		
@@ -123,7 +137,6 @@ public class GTHiPEBuilderExtension implements GTBuilderExtension{
 		} catch (CoreException e) {
 			LogUtils.error(logger, e.getMessage());
 		}
-		pk = reg.getEPackage("platform:/resource/org.emoflon.ibex.common/model/Common.ecore");
 		LogUtils.info(logger, "## HiPE ## --> HiPE build complete!");
 	}
 	
@@ -199,18 +212,8 @@ public class GTHiPEBuilderExtension implements GTBuilderExtension{
 		}
 	}
 	
-	private static IBeXPatternSet loadIBeXPatterns(IProject project, String path) {
-		Resource res = null;
-		try {
-			res = loadResource(project, path);
-		} catch (Exception e) {
-			LogUtils.error(logger, "Couldn't load ibex pattern set: \n" + e.getMessage());
-			e.printStackTrace();
-		}
-		
-		if(res == null) {
-			return null;
-		}
+	private static IBeXPatternSet loadIBeXPatterns(IProject project, String path) throws Exception {
+		Resource res = loadResource(project, path);
 		return (IBeXPatternSet)res.getContents().get(0);
 	}
 	
@@ -225,8 +228,7 @@ public class GTHiPEBuilderExtension implements GTBuilderExtension{
 		try {
 			modelResource = rs.getResource(uri, true);
 		}catch(Exception e) {
-			LogUtils.error(logger, "Couldn't load ibex pattern model, trying workaround.. Message was: \n" + e.getMessage());
-			rs.getPackageRegistry().put("platform:/resource/org.emoflon.ibex.common/model/Common.ecore", IBeXPatternModelPackage.eINSTANCE);
+			LogUtils.error(logger, "Couldn't load ibex pattern model.. Message was: \n" + e.getMessage());
 		}
 		
 		if(modelResource == null)
@@ -234,10 +236,31 @@ public class GTHiPEBuilderExtension implements GTBuilderExtension{
 		
 		EcoreUtil.resolveAll(rs);
 		
-		if(modelResource.getContents().isEmpty()) 
-			LogUtils.error(logger, "Couldn't load ibex pattern model, workaround failed. Pattern set is empty.");
+		if(modelResource.getContents().isEmpty()) {
+			throw new RuntimeException("Couldn't load ibex pattern model, workaround failed. Pattern set is empty.");
+		}
 		
 		return modelResource;
+	}
+	
+	private static void repairMetamodelResource() throws Exception {
+		org.eclipse.emf.ecore.EPackage.Registry reg = EPackage.Registry.INSTANCE;
+		EPackage pk = reg.getEPackage("platform:/resource/org.emoflon.ibex.patternmodel/model/IBeXPatternModel.ecore");
+		if(pk == null || pk.eIsProxy()) {
+			reg.remove("platform:/resource/org.emoflon.ibex.patternmodel/model/IBeXPatternModel.ecore");
+
+			Resource.Factory.Registry.INSTANCE.getExtensionToFactoryMap().put("ecore", new EcoreResourceFactoryImpl());
+			ResourceSet rs = new ResourceSetImpl();
+			rs.getResourceFactoryRegistry().getExtensionToFactoryMap().put("ecore", new EcoreResourceFactoryImpl());
+			Resource modelResource = rs.createResource(URI.createURI("platform:/resource/org.emoflon.ibex.patternmodel/model/IBeXPatternModel.ecore"));
+			pk = IBeXPatternModelPackage.eINSTANCE;
+			modelResource.getContents().add(pk);
+
+			EcoreUtil.resolveAll(pk);
+			IBeXPatternModelPackage.eINSTANCE.eClass();
+			reg.put("platform:/resource/org.emoflon.ibex.patternmodel/model/IBeXPatternModel.ecore", pk);
+			
+		}
 	}
 	
 	public static void saveResource(EObject model, String path) {
