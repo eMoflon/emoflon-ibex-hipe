@@ -88,10 +88,8 @@ public class HiPEBuilderUtil {
 			genModel.setModelDirectory(options.project.path() + "/gen/");
 			
 		    Set<GenPackage> removals = genModel.getGenPackages().stream().filter(pkg -> !pkg.getEcorePackage().getName().equals(metaModel.getName())).collect(Collectors.toSet());
-		    removals.forEach(gp -> System.out.println("Removed GP: "+gp.getNSName()));
 			removals.forEach(pkg -> genModel.getGenPackages().remove(pkg));
 			genModel.getUsedGenPackages().addAll(removals);
-			genModel.getUsedGenPackages().forEach(gp -> System.out.println("Added to used GP"+gp.getNSName()));
 //			genModel.eResource().getContents().addAll(removals);
 			
 			for(GenPackage gp : removals) {
