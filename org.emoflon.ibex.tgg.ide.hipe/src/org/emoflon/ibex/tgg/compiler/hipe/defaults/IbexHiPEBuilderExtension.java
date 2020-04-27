@@ -261,7 +261,7 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 		String input_srcPackage = srcPkg == null ? "<<SRC_Package>>" : srcPkg;
 		String input_trgPackage = trgPkg == null ? "<<TRG_Package>>" : trgPkg;
 		
-		builder.enforceDefaultConfigFile(HiPEFilesGenerator.REGISTRATION_HELPER, (projectName, fileName)
+		builder.createDefaultRunFile(HiPEFilesGenerator.REGISTRATION_HELPER, (projectName, fileName)
 				-> HiPEFilesGenerator.generateRegHelperFile(projectName, input_srcProject, input_trgProject, input_srcPackage, input_trgPackage));
 	}
 	

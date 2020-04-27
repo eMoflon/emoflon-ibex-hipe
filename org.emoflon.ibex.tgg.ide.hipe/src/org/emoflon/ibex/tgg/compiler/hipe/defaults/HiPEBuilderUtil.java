@@ -96,9 +96,6 @@ public class HiPEBuilderUtil {
 
 			// create dummy genmodels or else the genpackages can not be found and thus persisted
 			for(GenPackage gp : removals) {
-				GenModel fakeGen = GenModelFactory.eINSTANCE.createGenModel();
-				fakeGen.setModelPluginID(gp.getEcorePackage().getNsPrefix());
-				
 				// search first in environment in case that the genmodel is exported as plugin
 				URI genURI = pack2genMapEnv.get(gp.getNSURI());
 				if(genURI == null)
@@ -110,10 +107,10 @@ public class HiPEBuilderUtil {
 					GenModel newGen = (GenModel) createResource.getContents().get(0);
 					genModel.getUsedGenPackages().remove(gp);
 					genModel.getUsedGenPackages().add(newGen.getGenPackages().get(0));
-//					fakeGen.setModelPluginID(newGen.getModelPluginID());
-//					gp.setBasePackage(newGen.getGenPackages().get(0).getBasePackage());
 				}
 				else {
+					GenModel fakeGen = GenModelFactory.eINSTANCE.createGenModel();
+					fakeGen.setModelPluginID(gp.getEcorePackage().getNsPrefix());
 					fakeGen.getGenPackages().add(gp);
 					genModel.eResource().getContents().add(fakeGen);
 				}
@@ -131,37 +128,7 @@ public class HiPEBuilderUtil {
 			generator.generate(genModel, GenBaseGeneratorAdapter.MODEL_PROJECT_TYPE, monitor);
 		} catch (Exception e) {
 			System.err.println("Could not generate TGG metamodel code!");
-//			e.printStackTrace();
 		}
-	}
-
-	private Set<GenPackage> getReferencedGenPackages(ResourceSet resourceSet) {
-		Set<GenPackage> referencedGenPackages = new HashSet<>();
-		Map<String, URI> map = EcorePlugin.getEPackageNsURIToGenModelLocationMap(true);
-		for (EPackage pack : importedPackages) {
-			URI uri = map.get(pack.getNsURI());
-			if (uri != null) {
-				Resource resource;
-				try {
-					resource = resourceSet.getResource(uri, true);
-				} catch (Exception e) {
-					if (uri.isPlatformResource()) {
-						uri = URI.createPlatformPluginURI(uri.toPlatformString(true), true);
-						try {
-							resource = resourceSet.getResource(uri, true);
-						} catch (Exception e2) {
-							continue;
-						}
-					} else {
-						continue;
-					}
-				}
-				GenModel referenced = (GenModel) resource.getContents().get(0);
-				EList<GenPackage> genPackages = referenced.getGenPackages();
-				referencedGenPackages.addAll(genPackages);
-			}
-		}
-		return referencedGenPackages;
 	}
 
 	public Collection<EPackage> getImportedPackages() {
