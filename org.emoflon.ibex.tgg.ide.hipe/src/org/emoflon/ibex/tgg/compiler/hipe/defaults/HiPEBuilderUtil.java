@@ -90,7 +90,6 @@ public class HiPEBuilderUtil {
 		    Set<GenPackage> removals = genModel.getGenPackages().stream().filter(pkg -> !pkg.getEcorePackage().getName().equals(metaModel.getName())).collect(Collectors.toSet());
 			removals.forEach(pkg -> genModel.getGenPackages().remove(pkg));
 			genModel.getUsedGenPackages().addAll(removals);
-//			genModel.eResource().getContents().addAll(removals);
 			
 			for(GenPackage gp : removals) {
 				GenModel fakeGen = GenModelFactory.eINSTANCE.createGenModel();
@@ -106,11 +105,9 @@ public class HiPEBuilderUtil {
 			EcoreUtil.resolveAll(importer.getGenModelResourceSet());
 		    genModel.eResource().save(Collections.emptyMap());
 		    
-//			Generator generator = GenModelUtil.createGenerator(genModel);
-		    HiPEGenGenerator generator = new HiPEGenGenerator();
+			Generator generator = GenModelUtil.createGenerator(genModel);
 		    generator.setInput(genModel);
-//			generator.generate(genModel, GenBaseGeneratorAdapter.MODEL_PROJECT_TYPE, monitor);
-	        generator.generate(genModel, GenBaseGeneratorAdapter.MODEL_PROJECT_TYPE, options.project.name(), BasicMonitor.toMonitor(new NullProgressMonitor()), options.project.name());
+			generator.generate(genModel, GenBaseGeneratorAdapter.MODEL_PROJECT_TYPE, monitor);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
