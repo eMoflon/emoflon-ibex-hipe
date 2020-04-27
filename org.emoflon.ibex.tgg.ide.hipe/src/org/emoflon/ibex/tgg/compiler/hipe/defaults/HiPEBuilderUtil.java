@@ -108,11 +108,15 @@ public class HiPEBuilderUtil {
 				createResource.load(null);
 				if(createResource.isLoaded()) {
 					GenModel newGen = (GenModel) createResource.getContents().get(0);
-					fakeGen.setModelPluginID(newGen.getModelPluginID());
+					genModel.getUsedGenPackages().remove(gp);
+					genModel.getUsedGenPackages().add(newGen.getGenPackages().get(0));
+//					fakeGen.setModelPluginID(newGen.getModelPluginID());
+//					gp.setBasePackage(newGen.getGenPackages().get(0).getBasePackage());
 				}
-				
-				fakeGen.getGenPackages().add(gp);
-				genModel.eResource().getContents().add(fakeGen);
+				else {
+					fakeGen.getGenPackages().add(gp);
+					genModel.eResource().getContents().add(fakeGen);
+				}
 			}
 			
 			genModel.setGenerateSchema(true);
