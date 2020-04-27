@@ -133,13 +133,15 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 		String trgModel = trgPkg.getName();
 		IProject srcProject = getProjectInWorkspace(srcModel, builder.getProject().getWorkspace());
 		IProject trgProject = getProjectInWorkspace(trgModel, builder.getProject().getWorkspace());
+		String srcPkgName = null;
+		String trgPkgName = null;
 		
-		String srcPkgName = getRootPackageName(srcProject);
-		String trgPkgName = getRootPackageName(trgProject);
-		String srcProjectName = srcProject.getName();
-		String trgProjectName = trgProject.getName();
-		String srcNS = srcPkg.getNsPrefix();
-		String trgNS = trgPkg.getNsPrefix();
+		if(srcProject != null) {
+			srcPkgName = getRootPackageName(srcProject);
+		}
+		if(trgProject != null) {
+			trgPkgName = getRootPackageName(trgProject);
+		}
 		
 		LogUtils.info(logger, "Building missing app stubs...");
 		try {
@@ -150,7 +152,7 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 		}
 		
 		LogUtils.info(logger, "Updating Manifest & build properties..");
-		updateManifest(builder.getProject(), srcProjectName, trgProjectName);
+		updateManifest(builder.getProject());
 		updateBuildProperties();
 		
 		double tic = System.currentTimeMillis();
@@ -243,18 +245,24 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 	}
 	
 	public void generateRegHelper(IbexTGGBuilder builder, IProject srcProject, IProject trgProject, String srcPkg, String trgPkg) throws Exception {
-		if(srcProject == null || trgProject == null) {
-			LogUtils.info(logger, "Project belonging to src or trg model could not be found in the workspace. "
-					+ "Therefore, the default registration helper file could not be created.");
-			return;
-		}
-		if(srcPkg == null || trgPkg == null) {
-			LogUtils.info(logger, "Source code belonging to src or trg model could not be found in the workspace. "
-					+ "Therefore, the default registration helper file could not be created.");
-			return;
-		}
+//		if(srcProject == null || trgProject == null) {
+//			LogUtils.info(logger, "Project belonging to src or trg model could not be found in the workspace. "
+//					+ "Therefore, the default registration helper file could not be created.");
+//			return;
+//		}
+//		if(srcPkg == null || trgPkg == null) {
+//			LogUtils.info(logger, "Source code belonging to src or trg model could not be found in the workspace. "
+//					+ "Therefore, the default registration helper file could not be created.");
+//			return;
+//		}
+
+		String input_srcProject = srcProject == null ? "<<SRC_Project>>" : srcProject.getName();
+		String input_trgProject = trgProject == null ? "<<TRG_Project>>" : trgProject.getName();
+		String input_srcPackage = srcPkg == null ? "<<SRC_Package>>" : srcPkg;
+		String input_trgPackage = trgPkg == null ? "<<TRG_Package>>" : trgPkg;
+		
 		builder.enforceDefaultConfigFile(HiPEFilesGenerator.REGISTRATION_HELPER, (projectName, fileName)
-				-> HiPEFilesGenerator.generateRegHelperFile(projectName, srcProject.getName(), trgProject.getName(), srcPkg, trgPkg));
+				-> HiPEFilesGenerator.generateRegHelperFile(projectName, input_srcProject, input_trgProject, input_srcPackage, input_trgPackage));
 	}
 	
 	private void cleanOldCode(String projectPath) {
@@ -279,7 +287,7 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 		});
 	}
 	
-	private void updateManifest(IProject project, String srcPkg, String trgPkg) {
+	private void updateManifest(IProject project) {
 		try {
 			IFile manifest = ManifestFileUpdater.getManifestFile(project);
 			ManifestHelper helper = new ManifestHelper();

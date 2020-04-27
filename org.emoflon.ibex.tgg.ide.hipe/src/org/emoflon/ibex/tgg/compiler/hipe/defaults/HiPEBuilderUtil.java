@@ -91,9 +91,26 @@ public class HiPEBuilderUtil {
 			removals.forEach(pkg -> genModel.getGenPackages().remove(pkg));
 			genModel.getUsedGenPackages().addAll(removals);
 			
+			Map<String, URI> pack2genMapEnv = EcorePlugin.getEPackageNsURIToGenModelLocationMap(false);
+			Map<String, URI> pack2genMapTarget = EcorePlugin.getEPackageNsURIToGenModelLocationMap(true);
+
+			// create dummy genmodels or else the genpackages can not be found and thus persisted
 			for(GenPackage gp : removals) {
 				GenModel fakeGen = GenModelFactory.eINSTANCE.createGenModel();
 				fakeGen.setModelPluginID(gp.getEcorePackage().getNsPrefix());
+				
+				// search first in environment in case that the genmodel is exported as plugin
+				URI genURI = pack2genMapEnv.get(gp.getNSURI());
+				if(genURI == null)
+					genURI = pack2genMapTarget.get(gp.getNSURI());
+				ResourceSet rs = new ResourceSetImpl();
+				Resource createResource = rs.createResource(genURI);
+				createResource.load(null);
+				if(createResource.isLoaded()) {
+					GenModel newGen = (GenModel) createResource.getContents().get(0);
+					fakeGen.setModelPluginID(newGen.getModelPluginID());
+				}
+				
 				fakeGen.getGenPackages().add(gp);
 				genModel.eResource().getContents().add(fakeGen);
 			}
@@ -109,7 +126,8 @@ public class HiPEBuilderUtil {
 		    generator.setInput(genModel);
 			generator.generate(genModel, GenBaseGeneratorAdapter.MODEL_PROJECT_TYPE, monitor);
 		} catch (Exception e) {
-			e.printStackTrace();
+			System.err.println("Could not generate TGG metamodel code!");
+//			e.printStackTrace();
 		}
 	}
 
