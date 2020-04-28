@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.eclipse.core.resources.IFile;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.emf.codegen.ecore.generator.Generator;
@@ -64,67 +65,51 @@ public class HiPEBuilderUtil {
 		URI metaModelUri = URI.createURI(metaModelLocation);
 		metaModelUri = metaModelUri.resolve(base);
 
-		Monitor monitor = BasicMonitor.toMonitor(new NullProgressMonitor());
+		BasicMonitor monitor = new BasicMonitor.Printing(System.out);
 		try {
 			EcoreImporter importer = new EcoreImporter();
 			importer.setModelLocation(metaModelUri.toString());
+			IFile genModelFile = org.eclipse.core.resources.ResourcesPlugin.getWorkspace().getRoot().getFile(new Path(genModelLocation));
+			if(!genModelFile.exists()) {
+				Resource res = new ResourceSetImpl().createResource(URI.createPlatformResourceURI(genModelFile.getFullPath().toString(), true));
+				GenModel dummyGenModel = GenModelFactory.eINSTANCE.createGenModel();
+				res.getContents().add(dummyGenModel);
+				res.save(Collections.emptyMap());
+			}
 			importer.computeEPackages(monitor);
 			importer.adjustEPackages(monitor);
 			
-			for(EPackage ePackage : importer.getEPackages()) {
-				if(ePackage.getName().equals(metaModel.getName())) {
-					importer.getEPackageConvertInfo(ePackage).setConvert(true);
-				}else {
-					importer.getEPackageConvertInfo(ePackage).setConvert(false);
+			Set<EPackage> importedEPackages = new HashSet<>();
+			for (GenModel referencedGen : importer.getExternalGenModels()) {
+				for (GenPackage genPackage : referencedGen.getGenPackages()) {
+					EPackage ePackage = importer.getReferredEPackage(genPackage);
+					if (ePackage != null && !metaModelUri.toString().equals(ePackage.getNsURI())) {
+						importer.getReferencedGenPackages().add(genPackage);
+						importer.getReferenceGenPackageConvertInfo(genPackage).setValidReference(true);
+						importer.getEPackageConvertInfo(ePackage).setConvert(false);
+						importedEPackages.add(ePackage);
+					}
 				}
-				
-			}			
-			
+			}
+			for(EPackage ePackage : importer.getEPackages()) {
+				if(!importedEPackages.contains(ePackage)) {
+					importer.getEPackageConvertInfo(ePackage).setConvert(true);
+				}
+			}
 			importer.setGenModelContainerPath(new Path(pluginID).append("model"));
 			importer.setGenModelFileName(importer.computeDefaultGenModelFileName());
 			importer.prepareGenModelAndEPackages(monitor);
-
 			GenModel genModel = importer.getGenModel();
 			genModel.setModelDirectory(options.project.path() + "/gen/");
-			
-		    Set<GenPackage> removals = genModel.getGenPackages().stream().filter(pkg -> !pkg.getEcorePackage().getName().equals(metaModel.getName())).collect(Collectors.toSet());
-			removals.forEach(pkg -> genModel.getGenPackages().remove(pkg));
-			genModel.getUsedGenPackages().addAll(removals);
-			
-			Map<String, URI> pack2genMapEnv = EcorePlugin.getEPackageNsURIToGenModelLocationMap(false);
-			Map<String, URI> pack2genMapTarget = EcorePlugin.getEPackageNsURIToGenModelLocationMap(true);
-
-			// create dummy genmodels or else the genpackages can not be found and thus persisted
-			for(GenPackage gp : removals) {
-				// search first in environment in case that the genmodel is exported as plugin
-				URI genURI = pack2genMapEnv.get(gp.getNSURI());
-				if(genURI == null)
-					genURI = pack2genMapTarget.get(gp.getNSURI());
-				ResourceSet rs = new ResourceSetImpl();
-				Resource createResource = rs.createResource(genURI);
-				createResource.load(null);
-				if(createResource.isLoaded()) {
-					GenModel newGen = (GenModel) createResource.getContents().get(0);
-					genModel.getUsedGenPackages().remove(gp);
-					genModel.getUsedGenPackages().add(newGen.getGenPackages().get(0));
-				}
-				else {
-					GenModel fakeGen = GenModelFactory.eINSTANCE.createGenModel();
-					fakeGen.setModelPluginID(gp.getEcorePackage().getNsPrefix());
-					fakeGen.getGenPackages().add(gp);
-					genModel.eResource().getContents().add(fakeGen);
-				}
-			}
-			
 			genModel.setGenerateSchema(true);
 			genModel.setCanGenerate(true);
-		    genModel.reconcile();
-
+		    	genModel.reconcile();
+	
 			EcoreUtil.resolveAll(importer.getGenModelResourceSet());
-		    genModel.eResource().save(Collections.emptyMap());
+//			importer.saveGenModelAndEPackages(monitor);
+		    	genModel.eResource().save(Collections.emptyMap());
 		    
 			Generator generator = GenModelUtil.createGenerator(genModel);
-		    generator.setInput(genModel);
 			generator.generate(genModel, GenBaseGeneratorAdapter.MODEL_PROJECT_TYPE, monitor);
 		} catch (Exception e) {
 			System.err.println("Could not generate TGG metamodel code!");
