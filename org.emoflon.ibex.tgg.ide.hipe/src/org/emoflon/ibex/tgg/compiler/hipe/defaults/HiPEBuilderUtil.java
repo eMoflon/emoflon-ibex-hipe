@@ -11,7 +11,9 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.eclipse.core.resources.IFile;
+import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IWorkspaceRoot;
+import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.emf.codegen.ecore.generator.Generator;
@@ -60,27 +62,37 @@ public class HiPEBuilderUtil {
 	}
 
 	protected void generateMetaModelCode(URI base, String metaModelLocation, String genModelLocation,
-			EPackage metaModel) {		
+			EPackage metaModel) {
 		String pluginID = options.project.name();
-		
+
 		URI metaModelUri = URI.createURI(metaModelLocation);
 		metaModelUri = metaModelUri.resolve(base);
 
 		BasicMonitor monitor = new BasicMonitor.Printing(System.out);
 		try {
+			IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
+			IFile metaModelFile = root.getFile(new Path(metaModelLocation));
+			IProject project = metaModelFile.getProject();
+			IFile pluginXml = project.getFile("plugin.xml");
+			if (pluginXml.exists()) {
+				// TODO: Check if genmodels are registered at the extension-point
+				// "org.eclipse.emf.ecore.generated_package" that do not exist
+			}
+
 			EcoreImporter importer = new EcoreImporter();
-			IWorkspaceRoot root = org.eclipse.core.resources.ResourcesPlugin.getWorkspace().getRoot();
-			importer.setModelFile(root.getFile(new Path(metaModelLocation)));
+			importer.setModelFile(metaModelFile);
 			IFile genModelFile = root.getFile(new Path(genModelLocation));
-			if(!genModelFile.exists()) {
-				Resource res = new ResourceSetImpl().createResource(URI.createPlatformResourceURI(genModelFile.getFullPath().toString(), true));
+			if (!genModelFile.exists()) {
+				// Generate a dummy GenModel in case it is already registered at "org.eclipse.emf.ecore.generated_package"
+				Resource res = new ResourceSetImpl()
+						.createResource(URI.createPlatformResourceURI(genModelFile.getFullPath().toString(), true));
 				GenModel dummyGenModel = GenModelFactory.eINSTANCE.createGenModel();
 				res.getContents().add(dummyGenModel);
 				res.save(Collections.emptyMap());
 			}
 			importer.computeEPackages(monitor);
 			importer.adjustEPackages(monitor);
-			
+
 			Set<EPackage> importedEPackages = new HashSet<>();
 			for (GenModel referencedGen : importer.getExternalGenModels()) {
 				for (GenPackage genPackage : referencedGen.getGenPackages()) {
@@ -93,8 +105,8 @@ public class HiPEBuilderUtil {
 					}
 				}
 			}
-			for(EPackage ePackage : importer.getEPackages()) {
-				if(!importedEPackages.contains(ePackage)) {
+			for (EPackage ePackage : importer.getEPackages()) {
+				if (!importedEPackages.contains(ePackage)) {
 					importer.getEPackageConvertInfo(ePackage).setConvert(true);
 				}
 			}
@@ -105,12 +117,12 @@ public class HiPEBuilderUtil {
 			genModel.setModelDirectory(options.project.path() + "/gen/");
 			genModel.setGenerateSchema(true);
 			genModel.setCanGenerate(true);
-		    	genModel.reconcile();
-	
+			genModel.reconcile();
+
 			EcoreUtil.resolveAll(importer.getGenModelResourceSet());
 //			importer.saveGenModelAndEPackages(monitor);
-		    	genModel.eResource().save(Collections.emptyMap());
-		    
+			genModel.eResource().save(Collections.emptyMap());
+
 			Generator generator = GenModelUtil.createGenerator(genModel);
 			generator.generate(genModel, GenBaseGeneratorAdapter.MODEL_PROJECT_TYPE, monitor);
 		} catch (Exception e) {
@@ -122,8 +134,8 @@ public class HiPEBuilderUtil {
 		return importedPackages;
 	}
 
-	public static IbexOptions registerResourceHandler(IbexOptions options, List<String> metaModelImports, boolean generateCode)
-			throws IOException {
+	public static IbexOptions registerResourceHandler(IbexOptions options, List<String> metaModelImports,
+			boolean generateCode) throws IOException {
 		HiPEBuilderUtil util = new HiPEBuilderUtil(options);
 		options.resourceHandler(new TGGResourceHandler() {
 			@Override
@@ -136,7 +148,7 @@ public class HiPEBuilderUtil {
 				String genModelLocation = options.project.path() + "/model/"
 						+ MoflonUtil.lastCapitalizedSegmentOf(options.project.name()) + ".genmodel";
 				EPackage metaModel = loadAndRegisterCorrMetamodel(metaModelLocation);
-				if(generateCode)
+				if (generateCode)
 					util.generateMetaModelCode(base, metaModelLocation, genModelLocation, metaModel);
 			}
 
