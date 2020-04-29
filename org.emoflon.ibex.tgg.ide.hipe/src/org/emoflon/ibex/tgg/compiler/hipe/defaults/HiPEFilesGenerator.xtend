@@ -22,7 +22,7 @@ class HiPEFilesGenerator extends DefaultFilesGenerator {
 		Collection<GenPackage> targetPackages) {
 		var variableNames = newHashMap
 		var value = '''
-			package org.emoflon.ibex.tgg.run.«corrPackage.packageName».config;
+			package org.emoflon.ibex.tgg.run.«corrPackage.packageName.toLowerCase».config;
 			
 			import java.io.File;
 			import java.io.IOException;
@@ -31,7 +31,7 @@ class HiPEFilesGenerator extends DefaultFilesGenerator {
 			import org.eclipse.emf.ecore.EPackage;
 			import org.eclipse.emf.ecore.resource.Resource;
 			import org.eclipse.emf.ecore.resource.ResourceSet;
-			import org.emoflon.ibex.tgg.operational.csp.constraints.factories.«corrPackage.packageName».UserDefinedRuntimeTGGAttrConstraintFactory;
+			import org.emoflon.ibex.tgg.operational.csp.constraints.factories.«corrPackage.packageName.toLowerCase».UserDefinedRuntimeTGGAttrConstraintFactory;
 			import org.emoflon.ibex.tgg.operational.defaults.IbexOptions;
 			import org.emoflon.ibex.tgg.operational.strategies.modules.IbexExecutable;
 			import org.emoflon.ibex.tgg.operational.strategies.opt.BWD_OPT;
@@ -67,15 +67,13 @@ class HiPEFilesGenerator extends DefaultFilesGenerator {
 				name = genPackage.packageInterfaceName.toFirstLower + i++
 			}
 			variableNames.put(genPackage, name)
-			value += '''
-			
-						EPackage «name» = null;
-				'''
+			value += 
+			'''		EPackage «name» = null;
+			'''
 		}
 
-		value += '''
-		
-					// Load and register target metamodels
+		value += 
+		'''		// Load and register target metamodels
 		'''
 
 		for (genPackage : targetPackages) {
@@ -85,28 +83,24 @@ class HiPEFilesGenerator extends DefaultFilesGenerator {
 				name = genPackage.packageInterfaceName.toFirstLower + i++
 			}
 			variableNames.put(genPackage, name)
-			value += '''
-			
-						EPackage «name» = null;
-				'''
+			value += 
+			'''		EPackage «name» = null;
+			'''
 		}
 
-		value += '''
-		
-					if(executable instanceof FWD_OPT) {
+		value += 
+		'''		if(executable instanceof FWD_OPT) {
 						Resource res = null;
 		'''
 		for (i : sourcePackages) {
-			value += '''
-			
-							res = executable.getResourceHandler().loadResource("«i.getEcorePackage().nsURI»");
+			value += 
+			'''				res = executable.getResourceHandler().loadResource("«i.getEcorePackage().nsURI»");
 							«variableNames.get(i)» = (EPackage) res.getContents().get(0);
 							rs.getResources().remove(res);
 			'''
 		}
-		value += '''
-		
-						res = executable.getResourceHandler().loadResource("platform:/resource/«corrPackage.genModel.modelPluginID»/model/«corrPackage.NSName.toFirstUpper».ecore");
+		value += 
+		'''				res = executable.getResourceHandler().loadResource("platform:/resource/«corrPackage.genModel.modelPluginID»/model/«corrPackage.NSName.toFirstUpper».ecore");
 						«variableNames.get(corrPackage)» = (EPackage) res.getContents().get(0);
 						rs.getResources().remove(res);
 					}
@@ -115,60 +109,53 @@ class HiPEFilesGenerator extends DefaultFilesGenerator {
 						Resource res = null;
 		'''
 		for (i : targetPackages) {
-			value += '''
-			
-						res = executable.getResourceHandler().loadResource("«i.getEcorePackage().nsURI»");
+			value += 
+			'''			res = executable.getResourceHandler().loadResource("«i.getEcorePackage().nsURI»");
 						«variableNames.get(i)» = (EPackage) res.getContents().get(0);
 						rs.getResources().remove(res);
 			'''
 		}
-		value += '''	
-		
-						res = executable.getResourceHandler().loadResource("platform:/resource/«corrPackage.genModel.modelPluginID»/model/«corrPackage.NSName.toFirstUpper».ecore");
+		value += 
+		'''				res = executable.getResourceHandler().loadResource("platform:/resource/«corrPackage.genModel.modelPluginID»/model/«corrPackage.NSName.toFirstUpper».ecore");
 						«variableNames.get(corrPackage)» = (EPackage) res.getContents().get(0);
 						rs.getResources().remove(res);
 				}
 		'''
 
 		for (i : sourcePackages) {
-			value += '''
-			
-						if(«variableNames.get(i)» == null) {
+			value += 
+			'''			if(«variableNames.get(i)» == null) {
 							«variableNames.get(i)» = «i.qualifiedPackageInterfaceName».eINSTANCE;
 						}
 			'''
 		}
 		for (i : targetPackages) {
-			value += '''
-			
-						if(«variableNames.get(i)» == null) {
+			value += 
+			'''			if(«variableNames.get(i)» == null) {
 							«variableNames.get(i)» = «i.qualifiedPackageInterfaceName».eINSTANCE;
 						}
 			'''
 		}
 
-		value += '''
-		
-					if(«variableNames.get(corrPackage)» == null) {
+		value += 
+		'''			if(«variableNames.get(corrPackage)» == null) {
 						«variableNames.get(corrPackage)» = «corrPackage.qualifiedPackageInterfaceName».eINSTANCE;
 						rs.getPackageRegistry().put("platform:/resource/«corrPackage.genModel.modelPluginID»/model/«corrPackage.packageName.toFirstUpper».ecore", «corrPackage.qualifiedPackageInterfaceName».eINSTANCE);
 						rs.getPackageRegistry().put("platform:/plugin/«corrPackage.genModel.modelPluginID»/model/«corrPackage.packageName.toFirstUpper».ecore", «corrPackage.qualifiedPackageInterfaceName».eINSTANCE);
 					}
 		'''
 		for (i : sourcePackages) {
-			value += '''
-			
-					rs.getPackageRegistry().put("«i.getEcorePackage.nsURI»",«i.qualifiedPackageInterfaceName».eINSTANCE);
+			value += 
+			'''		rs.getPackageRegistry().put("«i.getEcorePackage.nsURI»",«i.qualifiedPackageInterfaceName».eINSTANCE);
 			'''
 		}
 		for (i : targetPackages) {
-			value += '''
-			
-						rs.getPackageRegistry().put("«i.getEcorePackage.nsURI»",«i.qualifiedPackageInterfaceName».eINSTANCE);
+			value += 
+			'''			rs.getPackageRegistry().put("«i.getEcorePackage.nsURI»",«i.qualifiedPackageInterfaceName».eINSTANCE);
 			'''
 		}
-		value += '''
-				}
+		value += 
+		'''	}
 			
 				/** Create default options **/
 				public IbexOptions createIbexOptions() {

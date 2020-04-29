@@ -11,6 +11,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.eclipse.core.resources.IFile;
+import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.emf.codegen.ecore.generator.Generator;
@@ -68,8 +69,9 @@ public class HiPEBuilderUtil {
 		BasicMonitor monitor = new BasicMonitor.Printing(System.out);
 		try {
 			EcoreImporter importer = new EcoreImporter();
-			importer.setModelLocation(metaModelUri.toString());
-			IFile genModelFile = org.eclipse.core.resources.ResourcesPlugin.getWorkspace().getRoot().getFile(new Path(genModelLocation));
+			IWorkspaceRoot root = org.eclipse.core.resources.ResourcesPlugin.getWorkspace().getRoot();
+			importer.setModelFile(root.getFile(new Path(metaModelLocation)));
+			IFile genModelFile = root.getFile(new Path(genModelLocation));
 			if(!genModelFile.exists()) {
 				Resource res = new ResourceSetImpl().createResource(URI.createPlatformResourceURI(genModelFile.getFullPath().toString(), true));
 				GenModel dummyGenModel = GenModelFactory.eINSTANCE.createGenModel();
