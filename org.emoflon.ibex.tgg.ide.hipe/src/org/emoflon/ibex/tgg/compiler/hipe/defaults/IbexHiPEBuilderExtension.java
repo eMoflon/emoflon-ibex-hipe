@@ -247,16 +247,20 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 			Collection<EPackage> trgPkgs) throws Exception {
 		Map<String, URI> map = EcorePlugin.getEPackageNsURIToGenModelLocationMap(true);
 		GenPackage corrgenPackage = getGenPackage(map, corrPkg);
-		
+
 		builder.enforceDefaultConfigFile(HiPEFilesGenerator.REGISTRATION_HELPER,
-				(projectName, fileName) -> HiPEFilesGenerator.generateRegHelperFie(corrgenPackage, srcPkgs.stream().map(p -> getGenPackage(map, p)).filter(Objects::nonNull).collect(Collectors.toList()), trgPkgs.stream().map(p -> getGenPackage(map, p)).filter(Objects::nonNull).collect(Collectors.toList())));
+				(projectName, fileName) -> HiPEFilesGenerator.generateRegHelperFie(corrgenPackage,
+						srcPkgs.stream().map(p -> getGenPackage(map, p)).filter(Objects::nonNull)
+								.collect(Collectors.toList()),
+						trgPkgs.stream().map(p -> getGenPackage(map, p)).filter(Objects::nonNull)
+								.collect(Collectors.toList())));
 
 	}
 
 	private GenPackage getGenPackage(Map<String, URI> map, EPackage ePackage) {
 		GenModel genModel = getGenModel(map, ePackage);
-		if(genModel  == null) {
-			logger.warn("No GenModel found for EPackage: "+ePackage);
+		if (genModel == null) {
+			logger.warn("No GenModel found for EPackage: " + ePackage);
 			return null;
 		}
 		return genModel.findGenPackage(ePackage);
@@ -302,17 +306,27 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 
 			for (EPackage ePackage : srcPkg) {
 				GenModel genModel = getGenModel(map, ePackage);
-				String pluginId = genModel.getModelPluginID();
-				if (srcPkg != null && !helper.sectionContainsContent("Require-Bundle", pluginId)) {
-					helper.addContentToSection("Require-Bundle", pluginId);
+				if (genModel != null) {
+					String pluginId = genModel.getModelPluginID();
+					if (!helper.sectionContainsContent("Require-Bundle", pluginId)) {
+						helper.addContentToSection("Require-Bundle", pluginId);
+					}
+				} else {
+					logger.warn("Couldn't add dependency to project, GenModel for EPackage \"" + ePackage
+							+ "\" not found!");
 				}
 			}
 
 			for (EPackage ePackage : trgPkg) {
 				GenModel genModel = getGenModel(map, ePackage);
-				String pluginId = genModel.getModelPluginID();
-				if (srcPkg != null && !helper.sectionContainsContent("Require-Bundle", pluginId)) {
-					helper.addContentToSection("Require-Bundle", pluginId);
+				if (genModel != null) {
+					String pluginId = genModel.getModelPluginID();
+					if (!helper.sectionContainsContent("Require-Bundle", pluginId)) {
+						helper.addContentToSection("Require-Bundle", pluginId);
+					}
+				} else {
+					logger.warn("Couldn't add dependency to project, GenModel for EPackage \"" + ePackage
+							+ "\" not found!");
 				}
 			}
 
@@ -328,7 +342,7 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 
 	private GenModel getGenModel(Map<String, URI> map, EPackage ePackage) {
 		URI uri = map.get(ePackage.getNsURI());
-		if(uri == null) {
+		if (uri == null) {
 			return null;
 		}
 		if (uri.isPlatformResource()) {
