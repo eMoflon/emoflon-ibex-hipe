@@ -9,6 +9,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import language.LanguagePackage;
 import org.apache.log4j.Logger;
@@ -80,12 +81,12 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 			TripleGraphGrammarFile flattenedEditorModel) {
 		LogUtils.info(logger, "Starting HiPE TGG builder ... ");
 
-		try {
-			repairMetamodelResource();
-		} catch (Exception e2) {
-			LogUtils.error(logger, e2.getMessage());
-			return;
-		}
+//		try {
+//			repairMetamodelResource();
+//		} catch (Exception e2) {
+//			LogUtils.error(logger, e2.getMessage());
+//			return;
+//		}
 
 		projectName = builder.getProject().getName();
 		projectPath = projectName;
@@ -248,12 +249,17 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 		GenPackage corrgenPackage = getGenPackage(map, corrPkg);
 		
 		builder.enforceDefaultConfigFile(HiPEFilesGenerator.REGISTRATION_HELPER,
-				(projectName, fileName) -> HiPEFilesGenerator.generateRegHelperFie(corrgenPackage, srcPkgs.stream().map(p -> getGenPackage(map, p)).collect(Collectors.toList()), trgPkgs.stream().map(p -> getGenPackage(map, p)).collect(Collectors.toList())));
+				(projectName, fileName) -> HiPEFilesGenerator.generateRegHelperFie(corrgenPackage, srcPkgs.stream().map(p -> getGenPackage(map, p)).filter(Objects::nonNull).collect(Collectors.toList()), trgPkgs.stream().map(p -> getGenPackage(map, p)).filter(Objects::nonNull).collect(Collectors.toList())));
 
 	}
 
 	private GenPackage getGenPackage(Map<String, URI> map, EPackage ePackage) {
-		return getGenModel(map, ePackage).findGenPackage(ePackage);
+		GenModel genModel = getGenModel(map, ePackage);
+		if(genModel  == null) {
+			logger.warn("No GenModel found for EPackage: "+ePackage);
+			return null;
+		}
+		return genModel.findGenPackage(ePackage);
 	}
 
 	private void cleanOldCode(String projectPath) {
@@ -322,6 +328,9 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 
 	private GenModel getGenModel(Map<String, URI> map, EPackage ePackage) {
 		URI uri = map.get(ePackage.getNsURI());
+		if(uri == null) {
+			return null;
+		}
 		if (uri.isPlatformResource()) {
 			URI deresolve = uri.deresolve(URI.createPlatformResourceURI("", false));
 			IPath path = new org.eclipse.core.runtime.Path(deresolve.toString());
