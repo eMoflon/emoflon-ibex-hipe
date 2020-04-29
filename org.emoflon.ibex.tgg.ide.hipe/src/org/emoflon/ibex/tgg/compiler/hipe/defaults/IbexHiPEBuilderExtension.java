@@ -245,17 +245,6 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 	}
 	
 	public void generateRegHelper(IbexTGGBuilder builder, IProject srcProject, IProject trgProject, String srcPkg, String trgPkg) throws Exception {
-//		if(srcProject == null || trgProject == null) {
-//			LogUtils.info(logger, "Project belonging to src or trg model could not be found in the workspace. "
-//					+ "Therefore, the default registration helper file could not be created.");
-//			return;
-//		}
-//		if(srcPkg == null || trgPkg == null) {
-//			LogUtils.info(logger, "Source code belonging to src or trg model could not be found in the workspace. "
-//					+ "Therefore, the default registration helper file could not be created.");
-//			return;
-//		}
-
 		String input_srcProject = srcProject == null ? "<<SRC_Project>>" : srcProject.getName();
 		String input_trgProject = trgProject == null ? "<<TRG_Project>>" : trgProject.getName();
 		String input_srcPackage = srcPkg == null ? "<<SRC_Package>>" : srcPkg;
@@ -295,15 +284,6 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 			if(!helper.sectionContainsContent("Require-Bundle", "org.emoflon.ibex.tgg.runtime.hipe")) {
 				helper.addContentToSection("Require-Bundle", "org.emoflon.ibex.tgg.runtime.hipe");
 			}
-			// TODO: This works in most cases except for Modisco, since there is no generated code present.
-			// Fixit: MocaTreeToProcess complains about API access and only allows explicit package imports.
-//			if(srcPkg != null && !helper.sectionContainsContent("Require-Bundle", srcPkg)) {
-//				helper.addContentToSection("Require-Bundle", srcPkg);
-//			}
-//			
-//			if(trgPkg != null && !helper.sectionContainsContent("Require-Bundle", trgPkg)) {
-//				helper.addContentToSection("Require-Bundle", trgPkg);
-//			}
 			
 			File rawManifest = new File(projectPath+"/"+manifest.getFullPath().removeFirstSegments(1).toPortableString());
 			
