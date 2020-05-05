@@ -27,4 +27,5 @@ Require-Bundle: net.sourceforge.plantuml.eclipse;bundle-version="1.1.24",
 Automatic-Module-Name: org.emoflon.ibex.gt.democles
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Export-Package: org.emoflon.ibex.gt.hipe.ide.codegen,
- org.emoflon.ibex.gt.hipe.runtime
+ org.emoflon.ibex.gt.hipe.runtime,
+ org.emoflon.ibex.gt.hipe.visualization
