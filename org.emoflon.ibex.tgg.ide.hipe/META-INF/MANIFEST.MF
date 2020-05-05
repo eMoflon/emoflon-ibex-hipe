@@ -28,7 +28,7 @@ Require-Bundle: com.google.guava,
  org.eclipse.emf.ecore,
  org.eclipse.emf.codegen.ecore,
  org.emoflon.ibex.patternmodel,
- org.emoflon.ibex.tgg.language
+ org.emoflon.ibex.tgg.language;bundle-version="1.0.0"
 Export-Package: org.emoflon.ibex.tgg.compiler.hipe.defaults,
  org.emoflon.ibex.tgg.ide.hipe.visualisation
 Bundle-ActivationPolicy: lazy

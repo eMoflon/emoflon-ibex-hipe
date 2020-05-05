@@ -16,6 +16,33 @@ class HiPEFilesGenerator extends DefaultFilesGenerator {
 	public static final String BWD_OPT_APP = "BWD_OPT_App";
 	public static final String REGISTRATION_HELPER = "HiPERegistrationHelper";
 	 	
+ 	def static String generateDefaultRegHelperFile(String projectName) {
+		'''
+			package org.emoflon.ibex.tgg.run.«MoflonUtil.lastCapitalizedSegmentOf(projectName).toLowerCase».config;
+			
+			import java.io.IOException;
+				
+			import org.eclipse.emf.ecore.resource.ResourceSet;
+			import org.emoflon.ibex.tgg.compiler.defaults.IRegistrationHelper;
+			import org.emoflon.ibex.tgg.operational.defaults.IbexOptions;
+			import org.emoflon.ibex.tgg.operational.strategies.modules.IbexExecutable;
+			
+			public class _DefaultRegistrationHelper implements IRegistrationHelper{
+			
+				/** Load and register source and target metamodels */
+				public void registerMetamodels(ResourceSet rs, IbexExecutable executable) throws IOException {
+					// Replace to register generated code or handle other URI-related requirements
+					new HiPERegistrationHelper().registerMetamodels(rs, executable);
+				}
+			
+				/** Create default options **/
+				public IbexOptions createIbexOptions() {
+					return new HiPERegistrationHelper().createIbexOptions();
+				}
+			}
+		'''
+	}
+	 	
 	def static String generateRegHelperFile(String projectName, String srcProject, String trgProject, String srcPkg, String trgPkg) {
 		'''
 			package org.emoflon.ibex.tgg.run.«MoflonUtil.lastCapitalizedSegmentOf(projectName).toLowerCase».config;

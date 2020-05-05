@@ -1,5 +1,29 @@
 package org.emoflon.ibex.gt.hipe.ide.codegen;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.Map;
+
+import org.apache.log4j.Logger;
+import org.eclipse.core.resources.IFile;
+import org.eclipse.core.resources.IFolder;
+import org.eclipse.core.resources.IProject;
+import org.eclipse.core.resources.IResource;
+import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.IPath;
+import org.eclipse.core.runtime.NullProgressMonitor;
+import org.eclipse.emf.common.util.URI;
+import org.eclipse.emf.ecore.EObject;
+import org.eclipse.emf.ecore.EPackage;
+import org.eclipse.emf.ecore.resource.Resource;
+import org.eclipse.emf.ecore.resource.ResourceSet;
+import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
+import org.eclipse.emf.ecore.util.EcoreUtil;
+import org.eclipse.emf.ecore.xmi.XMIResource;
+import org.eclipse.emf.ecore.xmi.impl.EcoreResourceFactoryImpl;
+import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
+import org.emoflon.ibex.common.project.BuildPropertiesHelper;
+import org.emoflon.ibex.common.project.ManifestHelper;
 import org.emoflon.ibex.gt.editor.ui.builder.GTBuilderExtension;
 import org.emoflon.ibex.gt.hipe.runtime.IBeXToHiPEPatternTransformation;
 import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXPatternModelPackage;
@@ -13,36 +37,6 @@ import hipe.network.HiPENetwork;
 import hipe.pattern.HiPEContainer;
 import hipe.searchplan.SearchPlan;
 import hipe.searchplan.simple.TriangleSearchPlan;
-import hipe.searchplan.simple.SimpleSearchPlan;
-
-import org.eclipse.core.runtime.CoreException;
-import org.eclipse.core.runtime.IPath;
-import org.eclipse.core.runtime.NullProgressMonitor;
-import org.eclipse.emf.common.util.URI;
-import org.eclipse.emf.ecore.EAnnotationValidator.Registry;
-import org.eclipse.emf.ecore.EObject;
-import org.eclipse.emf.ecore.EPackage;
-import org.eclipse.emf.ecore.resource.Resource;
-import org.eclipse.emf.ecore.resource.ResourceSet;
-import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
-import org.eclipse.emf.ecore.util.EcoreUtil;
-import org.eclipse.emf.ecore.xmi.XMIResource;
-import org.eclipse.emf.ecore.xmi.impl.EcoreResourceFactoryImpl;
-import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-
-import javax.management.RuntimeErrorException;
-
-import org.apache.log4j.Logger;
-import org.eclipse.core.resources.IFile;
-import org.eclipse.core.resources.IFolder;
-import org.eclipse.core.resources.IProject;
-import org.eclipse.core.resources.IResource;
-import org.eclipse.core.resources.IncrementalProjectBuilder;
 
 public class GTHiPEBuilderExtension implements GTBuilderExtension{
 

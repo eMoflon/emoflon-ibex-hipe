@@ -31,8 +31,8 @@ import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.eclipse.emf.ecore.xmi.XMIResource;
 import org.eclipse.emf.ecore.xmi.impl.EcoreResourceFactoryImpl;
 import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
-import org.emoflon.ibex.gt.hipe.ide.codegen.BuildPropertiesHelper;
-import org.emoflon.ibex.gt.hipe.ide.codegen.ManifestHelper;
+import org.emoflon.ibex.common.project.BuildPropertiesHelper;
+import org.emoflon.ibex.common.project.ManifestHelper;
 import org.emoflon.ibex.gt.hipe.runtime.IBeXToHiPEPatternTransformation;
 import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXPatternModelPackage;
 import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXPatternSet;
@@ -240,7 +240,7 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 				-> HiPEFilesGenerator.generateFWDOptAppFile(projectName, fileName));
 		builder.createDefaultRunFile(HiPEFilesGenerator.BWD_OPT_APP, (projectName, fileName) 
 				-> HiPEFilesGenerator.generateBWDOptAppFile(projectName, fileName));
-		builder.enforceDefaultConfigFile(HiPEFilesGenerator.DEFAULT_REGISTRATION_HELPER, (projectName, fileName)
+		builder.createDefaultConfigFile(HiPEFilesGenerator.DEFAULT_REGISTRATION_HELPER, (projectName, fileName)
 				-> HiPEFilesGenerator.generateDefaultRegHelperFile(projectName));
 	}
 	
