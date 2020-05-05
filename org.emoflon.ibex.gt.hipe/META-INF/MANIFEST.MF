@@ -5,18 +5,22 @@ Bundle-SymbolicName: org.emoflon.ibex.gt.hipe;singleton:=true
 Bundle-Version: 1.0.0.qualifier
 Bundle-Vendor: eMoflon::IBeX Developers
 Bundle-ActivationPolicy: lazy
-Require-Bundle: org.eclipse.equinox.registry,
+Require-Bundle: net.sourceforge.plantuml.eclipse;bundle-version="1.1.24",
+ org.eclipse.equinox.registry,
  org.eclipse.core.resources,
+ org.eclipse.ui.workbench,
+ org.eclipse.jface,
  hipe.dependencies;bundle-version="1.0.0";visibility:=reexport,
  hipe.pattern;bundle-version="0.1.0";visibility:=reexport,
  hipe.network;bundle-version="0.1.0";visibility:=reexport,
  hipe.generator;bundle-version="1.0.0",
  hipe.engine;bundle-version="1.0.0";visibility:=reexport,
  hipe.searchplan;bundle-version="1.0.0",
- org.moflon.core.utilities;bundle-version="3.0.0",
+ org.moflon.core.utilities,
  org.emoflon.ibex.common,
  org.emoflon.ibex.gt.editor.ui,
  org.moflon.core.plugins,
+ org.moflon.core.ui,
  org.emoflon.ibex.gt,
  org.emoflon.ibex.patternmodel
 Automatic-Module-Name: org.emoflon.ibex.gt.democles
