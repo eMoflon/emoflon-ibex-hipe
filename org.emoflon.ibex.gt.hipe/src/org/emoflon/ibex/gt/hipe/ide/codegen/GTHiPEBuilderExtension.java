@@ -241,6 +241,9 @@ public class GTHiPEBuilderExtension implements GTBuilderExtension{
 		org.eclipse.emf.ecore.EPackage.Registry reg = EPackage.Registry.INSTANCE;
 		EPackage pk = reg.getEPackage("platform:/resource/org.emoflon.ibex.patternmodel/model/IBeXPatternModel.ecore");
 		if(pk == null || pk.eIsProxy()) {
+			if(pk.eResource() != null)
+				pk.eResource().unload();
+			
 			reg.remove("platform:/resource/org.emoflon.ibex.patternmodel/model/IBeXPatternModel.ecore");
 
 			Resource.Factory.Registry.INSTANCE.getExtensionToFactoryMap().put("ecore", new EcoreResourceFactoryImpl());
@@ -250,7 +253,7 @@ public class GTHiPEBuilderExtension implements GTBuilderExtension{
 			pk = IBeXPatternModelPackage.eINSTANCE;
 			modelResource.getContents().add(pk);
 
-			EcoreUtil.resolveAll(pk);
+			pk = (EPackage) EcoreUtil.resolve(pk, rs);
 			IBeXPatternModelPackage.eINSTANCE.eClass();
 			reg.put("platform:/resource/org.emoflon.ibex.patternmodel/model/IBeXPatternModel.ecore", pk);
 			
