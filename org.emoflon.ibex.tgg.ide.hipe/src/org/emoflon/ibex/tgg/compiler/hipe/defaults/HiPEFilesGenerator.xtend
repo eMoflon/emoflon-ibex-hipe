@@ -14,6 +14,7 @@ class HiPEFilesGenerator extends DefaultFilesGenerator {
 	public static final String CO_APP = "CO_App";
 	public static final String FWD_OPT_APP = "FWD_OPT_App";
 	public static final String BWD_OPT_APP = "BWD_OPT_App";
+	public static final String INTEGRATE_APP = "INTEGRATE_App";
 	public static final String REGISTRATION_HELPER = "HiPERegistrationHelper";
 	 	
  	def static String generateDefaultRegHelperFile(String projectName) {

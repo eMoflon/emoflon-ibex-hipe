@@ -10,14 +10,13 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import language.LanguagePackage;
+
 import org.apache.log4j.Logger;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IFolder;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IWorkspace;
-import org.eclipse.core.resources.IncrementalProjectBuilder;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.NullProgressMonitor;
@@ -41,6 +40,7 @@ import org.emoflon.ibex.tgg.ide.admin.BuilderExtension;
 import org.emoflon.ibex.tgg.ide.admin.IbexTGGBuilder;
 import org.emoflon.ibex.tgg.operational.defaults.IbexOptions;
 import org.emoflon.ibex.tgg.operational.strategies.gen.MODELGEN;
+import org.emoflon.ibex.tgg.operational.strategies.integrate.INTEGRATE;
 import org.emoflon.ibex.tgg.operational.strategies.modules.IbexExecutable;
 import org.emoflon.ibex.tgg.operational.strategies.opt.CC;
 import org.emoflon.ibex.tgg.operational.strategies.opt.CO;
@@ -57,7 +57,7 @@ import hipe.network.HiPENetwork;
 import hipe.pattern.HiPEContainer;
 import hipe.searchplan.SearchPlan;
 import hipe.searchplan.simple.TGGSimpleSearchPlan;
-import hipe.searchplan.simple.TGGTriangleSearchPlan;
+import language.LanguagePackage;
 
 public class IbexHiPEBuilderExtension implements BuilderExtension {
 
@@ -110,6 +110,7 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 			executables.add(new CC(HiPEBuilderUtil.registerResourceHandler(createIbexOptions(projectName, projectPath), metaModelImports, false)));
 			executables.add(new CO(HiPEBuilderUtil.registerResourceHandler(createIbexOptions(projectName, projectPath), metaModelImports, false)));
 			executables.add(new MODELGEN(HiPEBuilderUtil.registerResourceHandler(createIbexOptions(projectName, projectPath), metaModelImports, false)));
+			executables.add(new INTEGRATE(HiPEBuilderUtil.registerResourceHandler(createIbexOptions(projectName, projectPath), metaModelImports, false)));
 		} catch (IOException e) {
 			LogUtils.error(logger, e);
 			return;
@@ -187,6 +188,8 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 				HiPEGenerator.generateCode(projectName+".co.", projectPath, network);
 			else if(executable instanceof MODELGEN) 
 				HiPEGenerator.generateCode(projectName+".modelgen.", projectPath, network);
+			else if(executable instanceof INTEGRATE) 
+				HiPEGenerator.generateCode(projectName+".integrate.", projectPath, network);
 			else
 				throw new RuntimeException("Unsupported Operational Strategy detected");
 			LogUtils.info(logger,  executable.getClass().getName() + ": Code generation completed");
@@ -240,6 +243,8 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 				-> HiPEFilesGenerator.generateFWDOptAppFile(projectName, fileName));
 		builder.createDefaultRunFile(HiPEFilesGenerator.BWD_OPT_APP, (projectName, fileName) 
 				-> HiPEFilesGenerator.generateBWDOptAppFile(projectName, fileName));
+		builder.createDefaultRunFile(HiPEFilesGenerator.INTEGRATE_APP, (projectName, fileName)
+				-> HiPEFilesGenerator.generateIntegrateAppFile(projectName, fileName));
 		builder.createDefaultConfigFile(HiPEFilesGenerator.DEFAULT_REGISTRATION_HELPER, (projectName, fileName)
 				-> HiPEFilesGenerator.generateDefaultRegHelperFile(projectName));
 	}
@@ -263,6 +268,7 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 		hipeRootDirectories.add(new File(projectPath+"/src-gen/" + projectName + "/initbwd/hipe"));
 		hipeRootDirectories.add(new File(projectPath+"/src-gen/" + projectName + "/initfwd/hipe"));
 		hipeRootDirectories.add(new File(projectPath+"/src-gen/" + projectName + "/modelgen/hipe"));
+		hipeRootDirectories.add(new File(projectPath+"/src-gen/" + projectName + "/integrate/hipe"));
 		hipeRootDirectories.parallelStream().forEach(dir -> {
 			if(dir.exists()) {
 				LogUtils.info(logger, "--> Cleaning old source files in root folder: "+dir.getPath());
