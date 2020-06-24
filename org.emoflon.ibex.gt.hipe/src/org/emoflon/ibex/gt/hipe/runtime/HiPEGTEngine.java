@@ -205,7 +205,6 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 	protected Resource loadResource(String path) throws Exception {
 		Resource.Factory.Registry.INSTANCE.getExtensionToFactoryMap().put("xmi", new XMIResourceFactoryImpl());
 		resourceSet.getResourceFactoryRegistry().getExtensionToFactoryMap().put("xmi", new XMIResourceFactoryImpl());
-//		resourceSet.getPackageRegistry().put(IBeXPatternModelPackage.eNS_URI, IBeXPatternModelPackage.eINSTANCE);
 		
 		Resource modelResource = resourceSet.getResource(URI.createURI(path).resolve(base), true);
 		EcoreUtil.resolveAll(resourceSet);
@@ -221,8 +220,8 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 	 */
 	@SuppressWarnings("unchecked")
 	@Override
-	public void monitor(final ResourceSet resourceSet) {
-		for (Resource r : resourceSet.getResources()) {
+	public void monitor(final Collection<Resource> resources) {
+		for (Resource r : resources) {
 			if ("ecore".equals(r.getURI().fileExtension())) {
 				logger.warn("Are you sure your resourceSet should contain a resource for a metamodel?: " + r.getURI());
 				logger.warn("You should probably initialise this metamodel and make sure your "
@@ -230,7 +229,9 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 			}
 		}
 
-		EcoreUtil.resolveAll(resourceSet);
+		resources.forEach(r -> {
+			EcoreUtil.resolveAll(resourceSet);
+		});
 
 		EcoreUtil.UnresolvedProxyCrossReferencer//
 				.find(resourceSet)//
@@ -256,13 +257,11 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 					});
 				});
 		
-		initEngine(resourceSet);
+		initEngine(resources);
 	}
 	
 	@SuppressWarnings("unchecked")
-	protected void initEngine(final ResourceSet resourceSet) {
-		
-		
+	protected void initEngine(final Collection<Resource> resources) {
 		Class<? extends IHiPEEngine> engineClass = null;
 		try {
 			engineClass = (Class<? extends IHiPEEngine>) Class.forName(engineClassName);
@@ -292,7 +291,8 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
-		adapter = new HiPEContentAdapter(resourceSet, engine);
+		
+		adapter = new HiPEContentAdapter(resources, engine);
 	}
 	
 	protected String getProjectName() {
