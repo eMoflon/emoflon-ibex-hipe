@@ -24,6 +24,7 @@ public class HiPEGTMatch extends SimpleMatch {
 		if (patternName != null)
 			params = TGGMatchParameterOrderProvider.getParams(PatternSuffixes.removeSuffix(patternName));
 		if (params != null) {
+			// Insert parameters in a predefined order for determined match hashing
 			for (String p : params) {
 				if (match.getLabels().contains(p))
 					put(p, match.getNode(p));
