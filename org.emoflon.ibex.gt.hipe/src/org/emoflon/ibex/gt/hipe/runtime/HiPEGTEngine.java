@@ -13,6 +13,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
 import org.apache.log4j.Logger;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.EObject;
@@ -292,7 +294,7 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 			e.printStackTrace();
 		}
 		
-		adapter = new HiPEContentAdapter(resources, engine);
+		adapter = new HiPEContentAdapter(resources.stream().filter(res -> !res.getURI().toString().contains("-trash")).collect(Collectors.toSet()), engine);
 	}
 	
 	protected String getProjectName() {
