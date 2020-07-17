@@ -47,6 +47,8 @@ public class HiPEGTMatch extends SimpleMatch {
 				if (match.getLabels().contains(p))
 					put(p, match.getNode(p));
 			}
+		} else {
+			init(match);
 		}
 	}
 
