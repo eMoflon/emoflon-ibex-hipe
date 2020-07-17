@@ -7,10 +7,12 @@ import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -234,11 +236,14 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 		resources.forEach(r -> {
 			EcoreUtil.resolveAll(resourceSet);
 		});
-
+		
+		boolean[] foundConflicts = {false, false};
+		Set<String> problems = new HashSet<>();
+		Set<String> exceptions = new HashSet<>();
 		EcoreUtil.UnresolvedProxyCrossReferencer//
 				.find(resourceSet)//
 				.forEach((eob, settings) -> {
-					logger.error("Problems resolving: " + eob);
+					problems.add(eob.toString());
 					settings.forEach(setting -> {
 						EObject o = setting.getEObject();
 						EStructuralFeature f = setting.getEStructuralFeature();
@@ -246,19 +251,32 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 						try {
 							if (f.isMany()) {
 								((Collection<Object>) o.eGet(f)).remove(eob);
-								logger.warn(
-										"Removed proxy from collection.  You should probably check why this cannot be resolved!");
+								foundConflicts[0] = true;
 							} else {
 								o.eSet(f, null);
-								logger.warn(
-										"Removed proxy (set to null).  You should probably check why this cannot be resolved!");
+								foundConflicts[1] = true;
 							}
 						} catch (Exception e) {
-							logger.warn("Unable to remove proxy: " + e);
+							exceptions.add(e.getMessage());
 						}
 					});
 				});
 		
+		// Debugging output
+		if(problems.size() > 0) {
+			logger.error("Problems resolving proxy cross-references occurred for " + problems.size() + " EObjects.");
+		}
+		if(foundConflicts[0]) {
+			logger.warn(
+					"Removed proxy from collection.  You should probably check why this cannot be resolved!");
+		}
+		if(foundConflicts[1]) {
+			logger.warn(
+					"Removed proxy (set to null).  You should probably check why this cannot be resolved!");
+		}
+		exceptions.forEach(ex -> logger.warn("Unable to remove proxy: " + ex));
+		
+		// Insert model into engine
 		initEngine(resources);
 	}
 	
