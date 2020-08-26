@@ -26,6 +26,7 @@ import org.emoflon.ibex.common.project.BuildPropertiesHelper;
 import org.emoflon.ibex.common.project.ManifestHelper;
 import org.emoflon.ibex.gt.editor.ui.builder.GTBuilderExtension;
 import org.emoflon.ibex.gt.hipe.runtime.IBeXToHiPEPatternTransformation;
+import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXModel;
 import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXPatternModelPackage;
 import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXPatternSet;
 import org.moflon.core.plugins.manifest.ManifestFileUpdater;
@@ -208,7 +209,7 @@ public class GTHiPEBuilderExtension implements GTBuilderExtension{
 	
 	private static IBeXPatternSet loadIBeXPatterns(IProject project, String path) throws Exception {
 		Resource res = loadResource(project, path);
-		return (IBeXPatternSet)res.getContents().get(0);
+		return ((IBeXModel)res.getContents().get(0)).getPatternSet();
 	}
 	
 	private static Resource loadResource(IProject project, String path) throws Exception {
