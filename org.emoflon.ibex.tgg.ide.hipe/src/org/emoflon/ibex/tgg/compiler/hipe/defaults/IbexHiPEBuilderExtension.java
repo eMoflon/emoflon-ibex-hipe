@@ -33,6 +33,7 @@ import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
 import org.emoflon.ibex.common.project.BuildPropertiesHelper;
 import org.emoflon.ibex.common.project.ManifestHelper;
 import org.emoflon.ibex.gt.hipe.runtime.IBeXToHiPEPatternTransformation;
+import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXModel;
 import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXPatternModelPackage;
 import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXPatternSet;
 import org.emoflon.ibex.tgg.compiler.transformations.patterns.ContextPatternTransformation;
@@ -160,7 +161,8 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 		executables.parallelStream().forEach(executable -> {
 			LogUtils.info(logger, executable.getClass().getName() + ": Compiling ibex patterns from TGG patterns...");
 			ContextPatternTransformation compiler = new ContextPatternTransformation(executable.getOptions(), executable.getOptions().matchDistributor());
-			IBeXPatternSet ibexPatterns = compiler.transform();
+			IBeXModel ibexModel = compiler.transform();
+			IBeXPatternSet ibexPatterns = ibexModel.getPatternSet();
 			
 			LogUtils.info(logger,  executable.getClass().getName() + ": Converting IBeX to HiPE Patterns..");
 			IBeXToHiPEPatternTransformation transformation = new IBeXToHiPEPatternTransformation();
@@ -199,7 +201,7 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 			createNewDirectory(debugFolder);
 			saveResource(container, debugFolder+"/" +  executable.getClass().getSimpleName().toLowerCase() + "_hipe-patterns.xmi");
 			saveResource(network, debugFolder+"/" +  executable.getClass().getSimpleName().toLowerCase() + "_hipe-network.xmi");
-			saveResource(ibexPatterns, debugFolder+"/" +  executable.getClass().getSimpleName().toLowerCase() + "_ibexPatterns.xmi");
+			saveResource(ibexModel, debugFolder+"/" +  executable.getClass().getSimpleName().toLowerCase() + "_ibexPatterns.xmi");
 		});
 		double toc = System.currentTimeMillis();
 		LogUtils.info(logger, "Pattern compilation and code generation completed in "+ (toc-tic)/1000.0 + " seconds.");
