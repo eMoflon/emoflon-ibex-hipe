@@ -36,8 +36,8 @@ import org.emoflon.ibex.gt.hipe.runtime.IBeXToHiPEPatternTransformation;
 import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXModel;
 import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXPatternModelPackage;
 import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXPatternSet;
+import org.emoflon.ibex.tgg.codegen.TGGEngineBuilderExtension;
 import org.emoflon.ibex.tgg.compiler.transformations.patterns.ContextPatternTransformation;
-import org.emoflon.ibex.tgg.ide.admin.BuilderExtension;
 import org.emoflon.ibex.tgg.ide.admin.IbexTGGBuilder;
 import org.emoflon.ibex.tgg.operational.defaults.IbexOptions;
 import org.emoflon.ibex.tgg.operational.strategies.gen.MODELGEN;
@@ -60,17 +60,18 @@ import hipe.searchplan.SearchPlan;
 import hipe.searchplan.simple.TGGSimpleSearchPlan;
 import language.LanguagePackage;
 
-public class IbexHiPEBuilderExtension implements BuilderExtension {
+public class IbexHiPEBuilderExtension implements TGGEngineBuilderExtension {
 
 	private static final Logger logger = Logger.getLogger(IbexHiPEBuilderExtension.class);
 	
+	private IProject project;
 	private String projectName;
 	private String projectPath;
 	
 	private List<String> metaModelImports;
 	
 	@Override
-	public void run(IbexTGGBuilder builder, TripleGraphGrammarFile editorModel, TripleGraphGrammarFile flattenedEditorModel) {
+	public void run(IProject project, TripleGraphGrammarFile editorModel, TripleGraphGrammarFile flattenedEditorModel) {
 		LogUtils.info(logger, "Starting HiPE TGG builder ... ");
 		
 		try {
@@ -80,7 +81,8 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 			return;
 		}
 		
-		projectName = builder.getProject().getName();
+		this.project = project;
+		projectName = project.getName();
 		projectPath = projectName;
 		
 		metaModelImports = flattenedEditorModel.getImports().stream()
@@ -88,10 +90,10 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 				.collect(Collectors.toList());
 		
 		LogUtils.info(logger, "Cleaning old code..");
-		cleanOldCode(builder.getProject().getLocation().toPortableString());
+		cleanOldCode(project.getLocation().toPortableString());
 		
-		IFolder srcGenFolder = builder.getProject().getFolder("src-gen");
-		IFolder genFolder = builder.getProject().getFolder("gen");
+		IFolder srcGenFolder = project.getFolder("src-gen");
+		IFolder genFolder = project.getFolder("gen");
 		try {
 			ClasspathUtil.makeSourceFolderIfNecessary(srcGenFolder);
 			ClasspathUtil.makeSourceFolderIfNecessary(genFolder);
@@ -118,7 +120,7 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 		}
 		
 		// create the actual project path
-		projectPath = builder.getProject().getLocation().toPortableString();
+		projectPath = project.getLocation().toPortableString();
 		EPackage srcPkg = flattenedEditorModel.getSchema().getSourceTypes().get(0);
 		EPackage trgPkg = flattenedEditorModel.getSchema().getTargetTypes().get(0);
 		EPackage corrPkg = flattenedEditorModel.eClass().getEPackage();
@@ -133,8 +135,8 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 		
 		String srcModel = srcPkg.getName();
 		String trgModel = trgPkg.getName();
-		IProject srcProject = getProjectInWorkspace(srcModel, builder.getProject().getWorkspace());
-		IProject trgProject = getProjectInWorkspace(trgModel, builder.getProject().getWorkspace());
+		IProject srcProject = getProjectInWorkspace(srcModel, project.getWorkspace());
+		IProject trgProject = getProjectInWorkspace(trgModel, project.getWorkspace());
 		String srcPkgName = null;
 		String trgPkgName = null;
 		
@@ -147,14 +149,14 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 		
 		LogUtils.info(logger, "Building missing app stubs...");
 		try {
-			generateRegHelper(builder, srcProject, trgProject, srcPkgName, trgPkgName);
-			generateDefaultStubs(builder, editorModel, flattenedEditorModel);
+			generateRegHelper(srcProject, trgProject, srcPkgName, trgPkgName);
+			generateDefaultStubs(editorModel, flattenedEditorModel);
 		}catch(Exception e) {
 			LogUtils.error(logger, e);
 		}
 		
 		LogUtils.info(logger, "Updating Manifest & build properties..");
-		updateManifest(builder.getProject());
+		updateManifest();
 		updateBuildProperties();
 		
 		double tic = System.currentTimeMillis();
@@ -208,7 +210,7 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 		
 		LogUtils.info(logger, "Refreshing workspace and cleaning build ..");
 		try {
-			builder.getProject().getWorkspace().getRoot().refreshLocal(IResource.DEPTH_ONE, new NullProgressMonitor());
+			project.getWorkspace().getRoot().refreshLocal(IResource.DEPTH_ONE, new NullProgressMonitor());
 //			builder.getProject().build(IncrementalProjectBuilder.CLEAN_BUILD, new NullProgressMonitor());
 		} catch (CoreException e) {
 			LogUtils.error(logger, e.getMessage());
@@ -226,38 +228,38 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 		return options;
 	}
 	
-	public void generateDefaultStubs(IbexTGGBuilder builder, TripleGraphGrammarFile editorModel, TripleGraphGrammarFile flattenedEditorModel) throws CoreException {
-		builder.createDefaultDebugRunFile(HiPEFilesGenerator.MODELGEN_APP, (projectName, fileName) 
+	public void generateDefaultStubs(TripleGraphGrammarFile editorModel, TripleGraphGrammarFile flattenedEditorModel) throws CoreException {
+		IbexTGGBuilder.createDefaultDebugRunFile(project, HiPEFilesGenerator.MODELGEN_APP, (projectName, fileName) 
 				-> HiPEFilesGenerator.generateModelGenDebugFile(projectName, fileName));
-		builder.createDefaultRunFile(HiPEFilesGenerator.MODELGEN_APP, (projectName, fileName) 
+		IbexTGGBuilder.createDefaultRunFile(project, HiPEFilesGenerator.MODELGEN_APP, (projectName, fileName) 
 				-> HiPEFilesGenerator.generateModelGenFile(projectName, fileName));
-		builder.createDefaultRunFile(HiPEFilesGenerator.SYNC_APP, (projectName, fileName) 
+		IbexTGGBuilder.createDefaultRunFile(project, HiPEFilesGenerator.SYNC_APP, (projectName, fileName) 
 				-> HiPEFilesGenerator.generateSyncAppFile(projectName, fileName));
-		builder.createDefaultRunFile(HiPEFilesGenerator.INITIAL_FWD_APP, (projectName, fileName) 
+		IbexTGGBuilder.createDefaultRunFile(project, HiPEFilesGenerator.INITIAL_FWD_APP, (projectName, fileName) 
 				-> HiPEFilesGenerator.generateInitialFwdAppFile(projectName, fileName));
-		builder.createDefaultRunFile(HiPEFilesGenerator.INITIAL_BWD_APP, (projectName, fileName) 
+		IbexTGGBuilder.createDefaultRunFile(project, HiPEFilesGenerator.INITIAL_BWD_APP, (projectName, fileName) 
 				-> HiPEFilesGenerator.generateInitialBwdAppFile(projectName, fileName));
-		builder.createDefaultRunFile(HiPEFilesGenerator.CC_APP, (projectName, fileName) 
+		IbexTGGBuilder.createDefaultRunFile(project, HiPEFilesGenerator.CC_APP, (projectName, fileName) 
 				-> HiPEFilesGenerator.generateCCAppFile(projectName, fileName));
-		builder.createDefaultRunFile(HiPEFilesGenerator.CO_APP, (projectName, fileName) 
+		IbexTGGBuilder.createDefaultRunFile(project, HiPEFilesGenerator.CO_APP, (projectName, fileName) 
 				-> HiPEFilesGenerator.generateCOAppFile(projectName, fileName));
-		builder.createDefaultRunFile(HiPEFilesGenerator.FWD_OPT_APP, (projectName, fileName) 
+		IbexTGGBuilder.createDefaultRunFile(project, HiPEFilesGenerator.FWD_OPT_APP, (projectName, fileName) 
 				-> HiPEFilesGenerator.generateFWDOptAppFile(projectName, fileName));
-		builder.createDefaultRunFile(HiPEFilesGenerator.BWD_OPT_APP, (projectName, fileName) 
+		IbexTGGBuilder.createDefaultRunFile(project, HiPEFilesGenerator.BWD_OPT_APP, (projectName, fileName) 
 				-> HiPEFilesGenerator.generateBWDOptAppFile(projectName, fileName));
-		builder.createDefaultRunFile(HiPEFilesGenerator.INTEGRATE_APP, (projectName, fileName)
+		IbexTGGBuilder.createDefaultRunFile(project, HiPEFilesGenerator.INTEGRATE_APP, (projectName, fileName)
 				-> HiPEFilesGenerator.generateIntegrateAppFile(projectName, fileName));
-		builder.createDefaultConfigFile(HiPEFilesGenerator.DEFAULT_REGISTRATION_HELPER, (projectName, fileName)
+		IbexTGGBuilder.createDefaultConfigFile(project, HiPEFilesGenerator.DEFAULT_REGISTRATION_HELPER, (projectName, fileName)
 				-> HiPEFilesGenerator.generateDefaultRegHelperFile(projectName));
 	}
 	
-	public void generateRegHelper(IbexTGGBuilder builder, IProject srcProject, IProject trgProject, String srcPkg, String trgPkg) throws Exception {
+	public void generateRegHelper(IProject srcProject, IProject trgProject, String srcPkg, String trgPkg) throws Exception {
 		String input_srcProject = srcProject == null ? "<<SRC_Project>>" : srcProject.getName();
 		String input_trgProject = trgProject == null ? "<<TRG_Project>>" : trgProject.getName();
 		String input_srcPackage = srcPkg == null ? "<<SRC_Package>>" : srcPkg;
 		String input_trgPackage = trgPkg == null ? "<<TRG_Package>>" : trgPkg;
 		
-		builder.createDefaultConfigFile(HiPEFilesGenerator.REGISTRATION_HELPER, (projectName, fileName)
+		IbexTGGBuilder.createDefaultConfigFile(project, HiPEFilesGenerator.REGISTRATION_HELPER, (projectName, fileName)
 				-> HiPEFilesGenerator.generateRegHelperFile(projectName, input_srcProject, input_trgProject, input_srcPackage, input_trgPackage));
 	}
 	
@@ -284,7 +286,7 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 		});
 	}
 	
-	private void updateManifest(IProject project) {
+	private void updateManifest() {
 		try {
 			IFile manifest = ManifestFileUpdater.getManifestFile(project);
 			ManifestHelper helper = new ManifestHelper();

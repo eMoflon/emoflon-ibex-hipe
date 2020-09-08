@@ -5,7 +5,7 @@
     <engine_extension class="org.emoflon.ibex.gt.hipe.ide.codegen.GTHiPEExtension"/>
   </extension>
   <extension
-        point="org.emoflon.ibex.gt.editor.ui.GTBuilderExtension">
+        point="org.emoflon.ibex.gt.GTEngineBuilderExtension">
      <builder_extension
            class="org.emoflon.ibex.gt.hipe.ide.codegen.GTHiPEBuilderExtension">
      </builder_extension>
