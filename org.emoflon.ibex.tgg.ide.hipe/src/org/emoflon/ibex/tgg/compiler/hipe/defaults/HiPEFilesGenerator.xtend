@@ -1,7 +1,7 @@
 package org.emoflon.ibex.tgg.compiler.hipe.defaults
 
-import org.emoflon.ibex.tgg.compiler.defaults.DefaultFilesGenerator
 import org.moflon.core.utilities.MoflonUtil
+import org.emoflon.ibex.tgg.codegen.DefaultFilesGenerator
 
 class HiPEFilesGenerator extends DefaultFilesGenerator {
 	
