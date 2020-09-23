@@ -110,7 +110,7 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 			executables.add(new CC(HiPEBuilderUtil.registerResourceHandler(createIbexOptions(projectName, projectPath), metaModelImports, false)));
 			executables.add(new CO(HiPEBuilderUtil.registerResourceHandler(createIbexOptions(projectName, projectPath), metaModelImports, false)));
 			executables.add(new MODELGEN(HiPEBuilderUtil.registerResourceHandler(createIbexOptions(projectName, projectPath), metaModelImports, false)));
-			executables.add(new INTEGRATE(HiPEBuilderUtil.registerResourceHandler(createIbexOptions(projectName, projectPath).invocation.usePatternInvocation(true), metaModelImports, false)));
+			executables.add(new INTEGRATE(HiPEBuilderUtil.registerResourceHandler(createIbexOptions(projectName, projectPath).patterns.useSrcTrgPattern(true), metaModelImports, false)));
 		} catch (IOException e) {
 			LogUtils.error(logger, e);
 			return;
@@ -220,7 +220,7 @@ public class IbexHiPEBuilderExtension implements BuilderExtension {
 		options.project.name(projectName);
 		options.project.path(projectPath);
 		options.debug.ibexDebug(false);
-		options.propagate.optimizeSyncPattern(true);
+		options.patterns.optimizeSyncPattern(true);
 		return options;
 	}
 	
