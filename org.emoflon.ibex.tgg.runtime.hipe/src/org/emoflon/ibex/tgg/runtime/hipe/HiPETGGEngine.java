@@ -14,6 +14,7 @@ import org.emoflon.ibex.common.operational.IMatch;
 import org.emoflon.ibex.common.operational.IMatchObserver;
 import org.emoflon.ibex.gt.hipe.runtime.HiPEGTEngine;
 import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXContext;
+import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXModel;
 import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXPatternSet;
 import org.emoflon.ibex.tgg.compiler.patterns.PatternSuffixes;
 import org.emoflon.ibex.tgg.compiler.patterns.PatternUtil;
@@ -59,7 +60,8 @@ public class HiPETGGEngine extends HiPEGTEngine implements IBlackInterpreter {
 			e.printStackTrace();
 		}
 		
-		ibexPatterns = (IBeXPatternSet) r.getContents().get(0);
+		IBeXModel ibexModel = (IBeXModel)r.getContents().get(0);
+		ibexPatterns = ibexModel.getPatternSet();
 		
 		for(IBeXContext context : ibexPatterns.getContextPatterns()) {
 			PatternUtil.registerPattern(context.getName(), PatternSuffixes.extractType(context.getName()));

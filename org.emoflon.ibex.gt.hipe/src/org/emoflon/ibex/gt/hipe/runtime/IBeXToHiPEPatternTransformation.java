@@ -16,8 +16,8 @@ import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXContextAlternatives;
 import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXContextPattern;
 import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXEdge;
 import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXEnumLiteral;
+import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXInjectivityConstraint;
 import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXNode;
-import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXNodePair;
 import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXPatternInvocation;
 import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXPatternSet;
 import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXRelation;
@@ -112,7 +112,7 @@ public class IBeXToHiPEPatternTransformation {
 			pattern.getEdges().add(transform(context,edge));
 		}
 		
-		for(IBeXNodePair injectivity : context.getInjectivityConstraints()) {
+		for(IBeXInjectivityConstraint injectivity : context.getInjectivityConstraints()) {
 			pattern.getNodeConstraints().add(transform(context,injectivity));
 		}
 		
@@ -153,7 +153,7 @@ public class IBeXToHiPEPatternTransformation {
 		return hEdge;
 	}
 	
-	private UnequalConstraint transform(IBeXContextPattern context, IBeXNodePair pair) {
+	private UnequalConstraint transform(IBeXContextPattern context, IBeXInjectivityConstraint pair) {
 		UnequalConstraint constr = factory.createUnequalConstraint();
 		container.getNodeConstraints().add(constr);
 		constr.setLeftNode(transform(context, pair.getValues().get(0)));
