@@ -113,7 +113,7 @@ public class IbexHiPEBuilderExtension implements TGGEngineBuilderExtension {
 			executables.add(new CC(HiPEBuilderUtil.registerResourceHandler(createIbexOptions(projectName, projectPath), metaModelImports, false)));
 			executables.add(new CO(HiPEBuilderUtil.registerResourceHandler(createIbexOptions(projectName, projectPath), metaModelImports, false)));
 			executables.add(new MODELGEN(HiPEBuilderUtil.registerResourceHandler(createIbexOptions(projectName, projectPath), metaModelImports, false)));
-			executables.add(new INTEGRATE(HiPEBuilderUtil.registerResourceHandler(createIbexOptions(projectName, projectPath), metaModelImports, false)));
+			executables.add(new INTEGRATE(HiPEBuilderUtil.registerResourceHandler(createIbexOptions(projectName, projectPath).patterns.useSrcTrgPattern(true), metaModelImports, false)));
 		} catch (IOException e) {
 			LogUtils.error(logger, e);
 			return;
@@ -224,7 +224,7 @@ public class IbexHiPEBuilderExtension implements TGGEngineBuilderExtension {
 		options.project.name(projectName);
 		options.project.path(projectPath);
 		options.debug.ibexDebug(false);
-		options.propagate.optimizeSyncPattern(true);
+		options.patterns.optimizeSyncPattern(true);
 		return options;
 	}
 	
@@ -477,7 +477,6 @@ public class IbexHiPEBuilderExtension implements TGGEngineBuilderExtension {
 			EcoreUtil.resolveAll(pk2);
 			LanguagePackage.eINSTANCE.eClass();
 			reg.put("platform:/plugin/org.emoflon.ibex.tgg.core.language/model/Language.ecore", pk2);
-			
 		}
 	}
 }
