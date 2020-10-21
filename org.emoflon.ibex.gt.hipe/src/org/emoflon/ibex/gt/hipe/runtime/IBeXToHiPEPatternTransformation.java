@@ -164,8 +164,8 @@ public class IBeXToHiPEPatternTransformation {
 	private HiPEAttributeConstraint transform(IBeXContextPattern context, HiPEPattern pattern, IBeXAttributeConstraint constr) {
 		RelationalConstraint rConstraint = factory.createRelationalConstraint();
 		container.getAttributeConstraints().add(rConstraint);
-		HiPEAttribute attrLeft = transform(context, constr.getNode(), constr.getType());
-		HiPEAttribute attrRight = transform(context, constr.getValue());
+		HiPEAttribute attrLeft = transform(context, constr.getLhs());
+		HiPEAttribute attrRight = transform(context, constr.getRhs());
 		if(attrLeft != null) {
 			pattern.getAttributes().add(attrLeft);
 			rConstraint.setLeftAttribute(attrLeft);
