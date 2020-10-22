@@ -1,5 +1,6 @@
 package org.emoflon.ibex.gt.hipe.visualization
 
+import hipe.pattern.HiPEAbstractPattern
 import java.util.Collection
 import java.util.Map
 import java.util.Optional
@@ -16,7 +17,6 @@ import org.moflon.core.ui.visualisation.diagrams.EdgeType
 import org.moflon.core.ui.visualisation.diagrams.VisualEdge
 import org.moflon.core.ui.visualisation.metamodels.ClassDiagram
 import org.moflon.core.ui.visualisation.models.ObjectDiagram
-import hipe.pattern.HiPEAbstractPattern
 
 class HiPEPatternPlantUMLGenerator {
 	static final String REPL_STR = "…";

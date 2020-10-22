@@ -57,7 +57,8 @@ import hipe.generator.HiPEGenerator;
 import hipe.network.HiPENetwork;
 import hipe.pattern.HiPEContainer;
 import hipe.searchplan.SearchPlan;
-import hipe.searchplan.simple.TGGSimpleSearchPlan;
+import hipe.searchplan.simple.LocalSearchPlan;
+import hipe.searchplan.simple.TGGTriangleSearchPlan;
 import language.LanguagePackage;
 
 public class IbexHiPEBuilderExtension implements TGGEngineBuilderExtension {
@@ -113,7 +114,7 @@ public class IbexHiPEBuilderExtension implements TGGEngineBuilderExtension {
 			executables.add(new CC(HiPEBuilderUtil.registerResourceHandler(createIbexOptions(projectName, projectPath), metaModelImports, false)));
 			executables.add(new CO(HiPEBuilderUtil.registerResourceHandler(createIbexOptions(projectName, projectPath), metaModelImports, false)));
 			executables.add(new MODELGEN(HiPEBuilderUtil.registerResourceHandler(createIbexOptions(projectName, projectPath), metaModelImports, false)));
-			executables.add(new INTEGRATE(HiPEBuilderUtil.registerResourceHandler(createIbexOptions(projectName, projectPath).patterns.useSrcTrgPattern(true), metaModelImports, false)));
+			executables.add(new INTEGRATE(HiPEBuilderUtil.registerResourceHandler(createIbexOptions(projectName, projectPath).patterns.optimizePattern(true).patterns.useGenPattern(false), metaModelImports, false)));
 		} catch (IOException e) {
 			LogUtils.error(logger, e);
 			return;
@@ -171,10 +172,11 @@ public class IbexHiPEBuilderExtension implements TGGEngineBuilderExtension {
 			HiPEContainer container = transformation.transform(ibexPatterns);
 			
 			LogUtils.info(logger,  executable.getClass().getName() + ": Creating search plan & generating Rete network..");
-			SearchPlan searchPlan = new TGGSimpleSearchPlan(container);
+//			SearchPlan searchPlan = new TGGSimpleSearchPlan(container);
 //			SearchPlan searchPlan = new TGGTriangleSearchPlan(container);
 //			SearchPlan searchPlan = new TriangleSearchPlan(container);
 //			SearchPlan searchPlan = new SimpleSearchPlan(container);
+			SearchPlan searchPlan = new LocalSearchPlan(container);
 			searchPlan.generateSearchPlan();
 			HiPENetwork network = searchPlan.getNetwork();
 			
@@ -224,7 +226,7 @@ public class IbexHiPEBuilderExtension implements TGGEngineBuilderExtension {
 		options.project.name(projectName);
 		options.project.path(projectPath);
 		options.debug.ibexDebug(false);
-		options.patterns.optimizeSyncPattern(true);
+		options.patterns.optimizePattern(true);
 		return options;
 	}
 	
