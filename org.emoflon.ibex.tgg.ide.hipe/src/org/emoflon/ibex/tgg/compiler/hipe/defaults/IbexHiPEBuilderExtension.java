@@ -58,7 +58,6 @@ import hipe.network.HiPENetwork;
 import hipe.pattern.HiPEContainer;
 import hipe.searchplan.SearchPlan;
 import hipe.searchplan.simple.LocalSearchPlan;
-import hipe.searchplan.simple.TGGTriangleSearchPlan;
 import language.LanguagePackage;
 
 public class IbexHiPEBuilderExtension implements TGGEngineBuilderExtension {
@@ -114,7 +113,7 @@ public class IbexHiPEBuilderExtension implements TGGEngineBuilderExtension {
 			executables.add(new CC(HiPEBuilderUtil.registerResourceHandler(createIbexOptions(projectName, projectPath), metaModelImports, false)));
 			executables.add(new CO(HiPEBuilderUtil.registerResourceHandler(createIbexOptions(projectName, projectPath), metaModelImports, false)));
 			executables.add(new MODELGEN(HiPEBuilderUtil.registerResourceHandler(createIbexOptions(projectName, projectPath), metaModelImports, false)));
-			executables.add(new INTEGRATE(HiPEBuilderUtil.registerResourceHandler(createIbexOptions(projectName, projectPath).patterns.useSrcTrgPattern(true), metaModelImports, false)));
+			executables.add(new INTEGRATE(HiPEBuilderUtil.registerResourceHandler(createIbexOptions(projectName, projectPath).patterns.optimizePattern(true), metaModelImports, false)));
 		} catch (IOException e) {
 			LogUtils.error(logger, e);
 			return;
