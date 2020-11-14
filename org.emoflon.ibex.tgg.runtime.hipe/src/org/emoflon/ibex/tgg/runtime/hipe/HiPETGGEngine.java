@@ -2,8 +2,10 @@ package org.emoflon.ibex.tgg.runtime.hipe;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.EObject;
@@ -30,6 +32,7 @@ import org.emoflon.ibex.tgg.operational.strategies.sync.INITIAL_FWD;
 import org.emoflon.ibex.tgg.operational.strategies.sync.SYNC;
 
 import hipe.engine.match.ProductionMatch;
+import hipe.engine.message.production.ProductionResult;
 
 /**
  * Engine for (bidirectional) graph transformations with HiPE.
@@ -193,6 +196,41 @@ public class HiPETGGEngine extends HiPEGTEngine implements IBlackInterpreter {
 			rs.getResources().remove(hipePatterns);
 		} catch (Exception e) {
 			e.printStackTrace();
+		}
+	}
+	
+	@Override
+	protected void addNewMatches(Map<String, ProductionResult> extractData) {
+		// TODO Auto-generated method stub
+		if(!options.patterns.parallelizeMatchProcessing()) {
+			super.addNewMatches(extractData);
+			return;
+		}
+		
+		for(String patternName : extractData.keySet()) {
+			if(patterns.get(patternName) == null)
+				continue;
+			String pName = patterns.get(patternName);
+			Collection<ProductionMatch> matches = extractData.get(patternName).getNewMatches();
+			Collection<IMatch> iMatches = matches.parallelStream().map(m -> createMatch(m, pName)).collect(Collectors.toList());
+			app.addMatches(iMatches);
+		}
+	}
+	
+	@Override
+	protected void deleteInvalidMatches(Map<String, ProductionResult> extractData) {
+		if(!options.patterns.parallelizeMatchProcessing()) {
+			super.deleteInvalidMatches(extractData);
+			return;
+		}
+		
+		for(String patternName : extractData.keySet()) {
+			if(patterns.get(patternName) == null)
+				continue;
+			String pName = patterns.get(patternName);
+			Collection<ProductionMatch> matches = extractData.get(patternName).getDeleteMatches();
+			Collection<IMatch> iMatches = matches.parallelStream().map(m -> createMatch(m, pName)).collect(Collectors.toList());
+			app.removeMatches(iMatches);
 		}
 	}
 

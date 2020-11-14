@@ -341,7 +341,7 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 		}
 	}
 	
-	private void addNewMatches(Map<String, ProductionResult> extractData) {
+	protected void addNewMatches(Map<String, ProductionResult> extractData) {
 		for(String patternName : extractData.keySet()) {
 			Collection<ProductionMatch> matches = extractData.get(patternName).getNewMatches();
 			for(ProductionMatch match : matches) {
@@ -354,7 +354,7 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 		}
 	}
 	
-	private void deleteInvalidMatches(Map<String, ProductionResult> extractData) {
+	protected void deleteInvalidMatches(Map<String, ProductionResult> extractData) {
 		for(String patternName : extractData.keySet()) {
 			Collection<ProductionMatch> matches = extractData.get(patternName).getDeleteMatches();
 			for(ProductionMatch match : matches) {
