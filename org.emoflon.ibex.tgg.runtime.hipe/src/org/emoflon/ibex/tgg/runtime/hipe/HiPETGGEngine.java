@@ -254,7 +254,6 @@ public class HiPETGGEngine extends HiPEGTEngine implements IBlackInterpreter, Ti
 			times.addTo("findMatches", Timer.stop());
 			addNewMatches(extractData);
 			deleteInvalidMatches(extractData);
-			app.notifySubscriptions();
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
