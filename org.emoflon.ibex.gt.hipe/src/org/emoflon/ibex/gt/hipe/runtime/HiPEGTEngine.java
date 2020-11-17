@@ -101,6 +101,11 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 	protected Optional<String> debugPath = Optional.empty();
 
 	/**
+	 * The pattern matcher properties
+	 */
+	private final IPatternInterpreterProperties properties = new HiPEProperties();
+
+	/**
 	 * Creates a new HiPEGTEngine.
 	 */
 	public HiPEGTEngine() {
@@ -395,7 +400,7 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 
 	@Override
 	public IPatternInterpreterProperties getProperties() {
-		return new HiPEProperties();
+		return properties;
 	}
 
 }
