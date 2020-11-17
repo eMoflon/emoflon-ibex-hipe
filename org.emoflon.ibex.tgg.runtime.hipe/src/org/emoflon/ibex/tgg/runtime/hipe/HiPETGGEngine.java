@@ -21,6 +21,10 @@ import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXPatternSet;
 import org.emoflon.ibex.tgg.compiler.patterns.PatternSuffixes;
 import org.emoflon.ibex.tgg.compiler.patterns.PatternUtil;
 import org.emoflon.ibex.tgg.operational.IBlackInterpreter;
+import org.emoflon.ibex.tgg.operational.benchmark.TimeMeasurable;
+import org.emoflon.ibex.tgg.operational.benchmark.TimeRegistry;
+import org.emoflon.ibex.tgg.operational.benchmark.Timer;
+import org.emoflon.ibex.tgg.operational.benchmark.Times;
 import org.emoflon.ibex.tgg.operational.defaults.IbexOptions;
 import org.emoflon.ibex.tgg.operational.strategies.gen.MODELGEN;
 import org.emoflon.ibex.tgg.operational.strategies.integrate.INTEGRATE;
@@ -37,16 +41,18 @@ import hipe.engine.message.production.ProductionResult;
 /**
  * Engine for (bidirectional) graph transformations with HiPE.
  */
-public class HiPETGGEngine extends HiPEGTEngine implements IBlackInterpreter {
+public class HiPETGGEngine extends HiPEGTEngine implements IBlackInterpreter, TimeMeasurable {
 	private IbexOptions options;
 	private IBeXPatternSet ibexPatterns;
 	private IbexExecutable executable;
-
+	private final Times times = new Times();
+	
 	/**
 	 * Creates a new DemoclesTGGEngine.
 	 */
 	public HiPETGGEngine() {
 		super();
+		TimeRegistry.register(this);
 	}
 
 	@Override
@@ -239,4 +245,23 @@ public class HiPETGGEngine extends HiPEGTEngine implements IBlackInterpreter {
 		return new HiPETGGMatch(match, patternName);
 	}
 	
+	@Override
+	public void updateMatches() {
+		Timer.start();
+		// Trigger the Rete network
+		try {
+			Map<String, ProductionResult> extractData = engine.extractData();
+			times.addTo("findMatches", Timer.stop());
+			addNewMatches(extractData);
+			deleteInvalidMatches(extractData);
+			app.notifySubscriptions();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+	}
+
+	@Override
+	public Times getTimes() {
+		return times;
+	}
 }

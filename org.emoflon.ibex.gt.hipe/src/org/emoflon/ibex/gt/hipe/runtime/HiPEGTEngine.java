@@ -31,6 +31,7 @@ import org.emoflon.ibex.common.emf.EMFSaveUtils;
 import org.emoflon.ibex.common.operational.IContextPatternInterpreter;
 import org.emoflon.ibex.common.operational.IMatch;
 import org.emoflon.ibex.common.operational.IMatchObserver;
+import org.emoflon.ibex.common.operational.IPatternInterpreterProperties;
 import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXContext;
 import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXContextAlternatives;
 import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXContextPattern;
@@ -390,6 +391,11 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 
 	protected IMatch createMatch(final ProductionMatch match, final String patternName) {
 		return new HiPEGTMatch(match, patternName);
+	}
+
+	@Override
+	public IPatternInterpreterProperties getProperties() {
+		return new HiPEProperties();
 	}
 
 }
