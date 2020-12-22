@@ -4,7 +4,7 @@ import hipe.pattern.HiPEAbstractPattern
 import java.util.Collection
 import java.util.Map
 import java.util.Optional
-import org.apache.commons.lang3.StringUtils
+import org.apache.commons.lang.StringUtils
 import org.eclipse.emf.ecore.EAnnotation
 import org.eclipse.emf.ecore.EClass
 import org.eclipse.emf.ecore.ENamedElement
