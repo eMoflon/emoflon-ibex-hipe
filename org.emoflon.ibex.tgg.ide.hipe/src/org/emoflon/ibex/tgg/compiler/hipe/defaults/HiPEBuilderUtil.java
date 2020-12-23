@@ -3,12 +3,14 @@ package org.emoflon.ibex.tgg.compiler.hipe.defaults;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.emf.codegen.ecore.generator.Generator;
@@ -23,6 +25,7 @@ import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.EPackage;
 import org.eclipse.emf.ecore.plugin.EcorePlugin;
 import org.eclipse.emf.ecore.resource.Resource;
+import org.eclipse.emf.ecore.resource.Resource.Factory.Registry;
 import org.eclipse.emf.ecore.resource.ResourceSet;
 import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
 import org.eclipse.emf.ecore.util.EcoreUtil;
@@ -74,7 +77,6 @@ public class HiPEBuilderUtil {
 				}else {
 					importer.getEPackageConvertInfo(ePackage).setConvert(false);
 				}
-				
 			}			
 			
 			importer.setGenModelContainerPath(new Path(pluginID).append("model"));
@@ -91,6 +93,17 @@ public class HiPEBuilderUtil {
 			Map<String, URI> pack2genMapEnv = EcorePlugin.getEPackageNsURIToGenModelLocationMap(false);
 			Map<String, URI> pack2genMapTarget = EcorePlugin.getEPackageNsURIToGenModelLocationMap(true);
 
+			Map<String, URI> uriName2PluginUri = new HashMap<>();
+			for(URI uri : pack2genMapEnv.values()) {
+				uriName2PluginUri.put(uri.toString(), uri);
+			}
+			Map<String, URI> uriName2ResourceUri = new HashMap<>();
+			for(URI uri : pack2genMapTarget.values()) {
+				uriName2ResourceUri.put(uri.toString(), uri);
+			}
+			
+//			List<GenPackage> removalList = removals.stream().collect(Collectors.toList());
+			
 			// create dummy genmodels or else the genpackages can not be found and thus persisted
 			for(GenPackage gp : removals) {
 				// search first in environment in case that the genmodel is exported as plugin
@@ -104,6 +117,7 @@ public class HiPEBuilderUtil {
 					GenModel newGen = (GenModel) createResource.getContents().get(0);
 					genModel.getUsedGenPackages().remove(gp);
 					genModel.getUsedGenPackages().add(newGen.getGenPackages().get(0));
+					fixSubPackages(newGen, pack2genMapEnv, pack2genMapTarget, uriName2PluginUri, uriName2ResourceUri);
 				}
 				else {
 					GenModel fakeGen = GenModelFactory.eINSTANCE.createGenModel();
@@ -126,6 +140,86 @@ public class HiPEBuilderUtil {
 		} catch (Exception e) {
 			System.err.println("Could not generate TGG metamodel code!");
 		}
+	}
+
+	private void fixSubPackages(GenModel genModel, Map<String, URI> pack2genMapEnv, Map<String, URI> pack2genMapTarget, Map<String, URI> uriName2PluginUri, Map<String, URI> uriName2ResourceUri) {
+		Collection<GenPackage> usedPackages = genModel.getUsedGenPackages().stream().collect(Collectors.toList());
+			
+		for(GenPackage gp : usedPackages) {
+			// if genmodel is already there -> continue
+			if(gp.getGenModel() != null) {
+				fixSubPackages(gp.getGenModel(), pack2genMapEnv, pack2genMapTarget, uriName2PluginUri, uriName2ResourceUri);
+				continue;
+			}
+			
+			// else try to load it from registry and continue
+			try {
+				String nsUri = gp.getNSURI();
+				URI genURI = pack2genMapEnv.get(nsUri);
+				if(genURI == null)
+					genURI = pack2genMapTarget.get(nsUri);
+				ResourceSet rs = new ResourceSetImpl();
+				Resource createResource = rs.createResource(genURI);
+				createResource.load(null);
+				if(createResource.isLoaded()) {
+					GenModel newGen = (GenModel) createResource.getContents().get(0);
+					fixSubPackages(newGen, pack2genMapEnv, pack2genMapTarget, uriName2PluginUri, uriName2ResourceUri);
+				}
+				continue;
+			} catch(Exception e) {
+			}
+			
+			// if uri was null -> try to extract the uri from proxyURI via toString (ugly) and try again
+			String gpString = gp.toString();
+			if(!gpString.contains("eProxyURI"))
+				throw new RuntimeException("Cannot generate GenModel for " + gpString);
+			
+			String genUri = gpString.trim().split("eProxyURI:")[1];
+			if(genUri.contains("#")) {
+				genUri = genUri.trim().split("#")[0];
+			}
+
+			String resourceNSURI = genUri;
+			String pluginNSURI = resourceNSURI.replace("/resource/", "/plugin/");
+			
+			URI pluginUri = null;
+			if(uriName2PluginUri.containsKey(pluginNSURI)) 
+				pluginUri = uriName2PluginUri.get(pluginNSURI);
+			else
+				if(uriName2ResourceUri.containsKey(pluginNSURI))
+					pluginUri = uriName2ResourceUri.get(pluginNSURI);
+			
+			if(setGenModel(pluginUri, genModel, gp, pack2genMapEnv, pack2genMapTarget, uriName2PluginUri, uriName2ResourceUri))
+				continue;
+			
+			URI resourceUri = null;
+			if(uriName2PluginUri.containsKey(resourceNSURI)) 
+				resourceUri = uriName2PluginUri.get(resourceNSURI);
+			else
+				if(uriName2ResourceUri.containsKey(resourceNSURI))
+					resourceUri = uriName2ResourceUri.get(resourceNSURI);
+			
+			if(setGenModel(resourceUri, genModel, gp, pack2genMapEnv, pack2genMapTarget, uriName2PluginUri, uriName2ResourceUri))
+				continue;
+			
+			throw new RuntimeException("Cannot generate GenModel for " + gpString);
+		}
+	}
+	
+	public boolean setGenModel(URI uri, GenModel gen, GenPackage pkg, Map<String, URI> pack2genMapEnv, Map<String, URI> pack2genMapTarget, Map<String, URI> uriName2PluginUri, Map<String, URI> uriName2ResourceUri) {
+		try {
+			ResourceSet rs = new ResourceSetImpl();
+			Resource createResource = rs.createResource(uri);
+			createResource.load(null);
+			GenModel newGen = (GenModel) createResource.getContents().get(0);
+			GenPackage newPkg = (GenPackage) newGen.eContents().stream().filter(c -> c instanceof GenPackage).findFirst().get();
+			gen.getUsedGenPackages().remove(pkg);
+			gen.getUsedGenPackages().add(newPkg);
+			fixSubPackages(newGen, pack2genMapEnv, pack2genMapTarget, uriName2PluginUri, uriName2ResourceUri);
+		} catch(Exception e) {
+			return false;
+		}
+		return true;
 	}
 
 	public Collection<EPackage> getImportedPackages() {
