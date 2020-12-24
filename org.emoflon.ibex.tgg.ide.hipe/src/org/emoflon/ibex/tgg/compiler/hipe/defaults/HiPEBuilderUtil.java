@@ -154,18 +154,20 @@ public class HiPEBuilderUtil {
 			
 			// else try to load it from registry and continue
 			try {
-				String nsUri = gp.getNSURI();
-				URI genURI = pack2genMapEnv.get(nsUri);
-				if(genURI == null)
-					genURI = pack2genMapTarget.get(nsUri);
-				ResourceSet rs = new ResourceSetImpl();
-				Resource createResource = rs.createResource(genURI);
-				createResource.load(null);
-				if(createResource.isLoaded()) {
-					GenModel newGen = (GenModel) createResource.getContents().get(0);
-					fixSubPackages(newGen, pack2genMapEnv, pack2genMapTarget, uriName2PluginUri, uriName2ResourceUri);
+				if(gp.getEcorePackage() != null) {
+					String nsUri = gp.getNSURI();
+					URI genURI = pack2genMapEnv.get(nsUri);
+					if(genURI == null)
+						genURI = pack2genMapTarget.get(nsUri);
+					ResourceSet rs = new ResourceSetImpl();
+					Resource createResource = rs.createResource(genURI);
+					createResource.load(null);
+					if(createResource.isLoaded()) {
+						GenModel newGen = (GenModel) createResource.getContents().get(0);
+						fixSubPackages(newGen, pack2genMapEnv, pack2genMapTarget, uriName2PluginUri, uriName2ResourceUri);
+					}
+					continue;
 				}
-				continue;
 			} catch(Exception e) {
 			}
 			

@@ -290,6 +290,4 @@ public class IBeXToHiPEPatternTransformation {
 		hAttr.setEAttribute(attr);
 		return hAttr;
 	}
-
-	
 }
