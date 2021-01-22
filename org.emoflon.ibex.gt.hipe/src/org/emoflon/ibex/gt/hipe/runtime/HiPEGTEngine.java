@@ -288,30 +288,31 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 	
 	@SuppressWarnings("unchecked")
 	protected void initEngine(final Collection<Resource> resources) {
-		Class<? extends IHiPEEngine> engineClass = null;
-		try {
-			engineClass = (Class<? extends IHiPEEngine>) Class.forName(engineClassName);
-		} catch (ClassNotFoundException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
-		
-		try {
-			if(engineClass == null) {
-				throw new RuntimeException("Engine class: "+engineClassName+ " -> not found!");
+		if(engine == null) {
+			Class<? extends IHiPEEngine> engineClass = null;
+			try {
+				engineClass = (Class<? extends IHiPEEngine>) Class.forName(engineClassName);
+			} catch (ClassNotFoundException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
 			}
-			Constructor<? extends IHiPEEngine> constructor = engineClass.getConstructor(HiPENetwork.class);
-			constructor.setAccessible(true);
 			
-			HiPENetwork network = loadNetwork(getProjectName() +"/debug/" + getNetworkFileName());
-			if(network == null)
-				throw new RuntimeException("No " + getNetworkFileName() + " could be found");
-			engine = constructor.newInstance(network);
-		} catch (InstantiationException | IllegalAccessException | NoSuchMethodException | 
-				SecurityException | IllegalArgumentException | InvocationTargetException e) {
-			e.printStackTrace();
+			try {
+				if(engineClass == null) {
+					throw new RuntimeException("Engine class: "+engineClassName+ " -> not found!");
+				}
+				Constructor<? extends IHiPEEngine> constructor = engineClass.getConstructor(HiPENetwork.class);
+				constructor.setAccessible(true);
+				
+				HiPENetwork network = loadNetwork(getProjectName() +"/debug/" + getNetworkFileName());
+				if(network == null)
+					throw new RuntimeException("No " + getNetworkFileName() + " could be found");
+				engine = constructor.newInstance(network);
+			} catch (InstantiationException | IllegalAccessException | NoSuchMethodException | 
+					SecurityException | IllegalArgumentException | InvocationTargetException e) {
+				e.printStackTrace();
+			}
 		}
-		
 		try {
 			engine.initialize();
 		} catch (InterruptedException e) {

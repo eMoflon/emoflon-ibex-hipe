@@ -35,6 +35,7 @@ import org.emoflon.ibex.tgg.operational.strategies.sync.INITIAL_BWD;
 import org.emoflon.ibex.tgg.operational.strategies.sync.INITIAL_FWD;
 import org.emoflon.ibex.tgg.operational.strategies.sync.SYNC;
 
+import hipe.engine.IHiPEEngine;
 import hipe.engine.match.ProductionMatch;
 import hipe.engine.message.production.ProductionResult;
 
@@ -53,6 +54,11 @@ public class HiPETGGEngine extends HiPEGTEngine implements IBlackInterpreter, Ti
 	public HiPETGGEngine() {
 		super();
 		TimeRegistry.register(this);
+	}
+	
+	public HiPETGGEngine(IHiPEEngine engine) {
+		this();
+		this.engine = engine;
 	}
 
 	@Override
