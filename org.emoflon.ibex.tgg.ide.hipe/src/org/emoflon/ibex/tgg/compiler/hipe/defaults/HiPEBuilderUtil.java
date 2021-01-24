@@ -237,9 +237,9 @@ public class HiPEBuilderUtil {
 				for (String imp : metaModelImports) {
 					util.getImportedPackages().add(loadAndRegisterMetamodel(imp));
 				}
-				String metaModelLocation = options.project.path() + "/model/"
+				String metaModelLocation = options.project.name() + "/model/"
 						+ MoflonUtil.lastCapitalizedSegmentOf(options.project.name()) + ".ecore";
-				String genModelLocation = options.project.path() + "/model/"
+				String genModelLocation = options.project.name() + "/model/"
 						+ MoflonUtil.lastCapitalizedSegmentOf(options.project.name()) + ".genmodel";
 				EPackage metaModel = loadAndRegisterCorrMetamodel(metaModelLocation);
 				if(generateCode)
