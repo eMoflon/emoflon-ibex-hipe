@@ -49,7 +49,7 @@ public class HiPETGGEngine extends HiPEGTEngine implements IBlackInterpreter, Ti
 	private final Times times = new Times();
 	
 	/**
-	 * Creates a new DemoclesTGGEngine.
+	 * Creates a new HiPETGGEngine.
 	 */
 	public HiPETGGEngine() {
 		super();
@@ -70,7 +70,7 @@ public class HiPETGGEngine extends HiPEGTEngine implements IBlackInterpreter, Ti
 		
 		Resource r = null;
 		try {
-			r = loadResource(options.project.path() + "/debug/" +  getIbexPatternFileName());
+			r = loadResource("file://" + executable.getClass().getProtectionDomain().getCodeSource().getLocation().getPath()+ generateHiPEClassName().replace(".", "/").replace("HiPEEngine", "ibex-patterns.xmi"));
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -89,96 +89,37 @@ public class HiPETGGEngine extends HiPEGTEngine implements IBlackInterpreter, Ti
 	public void initPatterns(final IBeXPatternSet ibexPatternSet) {
 		this.ibexPatternSet = ibexPatternSet;
 		setPatterns(ibexPatternSet);
-		generateHiPEClassName(options.project.name());
+		engineClassName = generateHiPEClassName();
 	}	
-	
-//	@Override
-	protected String getPackageName(URI patternURI) {
-		Pattern pattern = Pattern.compile("^(.*/)(.*)(/debug/.*)$");
-		Matcher matcher = pattern.matcher(patternURI.toString());
-		matcher.matches();
-		String packageName = matcher.group(2);
-		return packageName;
-	}
 	
 	@Override
 	protected String getProjectName() {
 		return options.project.name();
 	}
 	
-	private String getIbexPatternFileName() {
-		if(executable instanceof INITIAL_FWD) {
-			return "initial_fwd_ibexPatterns.xmi";
-		}
-		if(executable instanceof INITIAL_BWD) {
-			return "initial_bwd_ibexPatterns.xmi";
-		}
-		if(executable instanceof SYNC) {
-			return "sync_ibexPatterns.xmi";
-		}
-		if(executable instanceof CC) {
-			return "cc_ibexPatterns.xmi";
-		}
-		if(executable instanceof CO) {
-			return "co_ibexPatterns.xmi";
-		}
-		if(executable instanceof MODELGEN) {
-			return "modelgen_ibexPatterns.xmi";
-		}
-		if(executable instanceof INTEGRATE) {
-			return "integrate_ibexPatterns.xmi";
-		}
-		throw new RuntimeException("Unsupported operationalization detected! - " + executable.getClass().getSimpleName());
-	}
-	
 	@Override
-	protected String getNetworkFileName() {
+	protected String generateHiPEClassName() {
+		String projectName = options.project.name();
 		if(executable instanceof INITIAL_FWD) {
-			return "initial_fwd_hipe-network.xmi";
-		}
-		if(executable instanceof INITIAL_BWD) {
-			return "initial_bwd_hipe-network.xmi";
-		}
-		if(executable instanceof SYNC) {
-			return "sync_hipe-network.xmi";
-		}
-		if(executable instanceof CC) {
-			return "cc_hipe-network.xmi";
-		}
-		if(executable instanceof CO) {
-			return "co_hipe-network.xmi";
-		}
-		if(executable instanceof MODELGEN) {
-			return "modelgen_hipe-network.xmi";
-		}
-		if(executable instanceof INTEGRATE) {
-			return "integrate_hipe-network.xmi";
-		}
-		throw new RuntimeException("Unsupported operationalization detected! - " + executable.getClass().getSimpleName());
-	}
-	
-	@Override
-	protected void generateHiPEClassName(String projectName) {
-		if(executable instanceof INITIAL_FWD) {
-			engineClassName = projectName.replace("/", ".")+".initfwd.hipe.engine.HiPEEngine";	
+			return projectName.replace("/", ".")+".initfwd.hipe.engine.HiPEEngine";	
 		} 
 		else if(executable instanceof INITIAL_FWD) {
-			engineClassName = projectName.replace("/", ".")+".initbwd.hipe.engine.HiPEEngine";	
+			return projectName.replace("/", ".")+".initbwd.hipe.engine.HiPEEngine";	
 		}
 		else if(executable instanceof CC) {
-			engineClassName = projectName.replace("/", ".")+".cc.hipe.engine.HiPEEngine";	
+			return projectName.replace("/", ".")+".cc.hipe.engine.HiPEEngine";	
 		}
 		else if(executable instanceof CO) {
-			engineClassName = projectName.replace("/", ".")+".co.hipe.engine.HiPEEngine";	
+			return projectName.replace("/", ".")+".co.hipe.engine.HiPEEngine";	
 		}
 		else if(executable instanceof SYNC) {
-			engineClassName = projectName.replace("/", ".")+".sync.hipe.engine.HiPEEngine";	
+			return projectName.replace("/", ".")+".sync.hipe.engine.HiPEEngine";	
 		}
 		else if(executable instanceof INTEGRATE) {
-			engineClassName = projectName.replace("/", ".")+".integrate.hipe.engine.HiPEEngine";	
+			return projectName.replace("/", ".")+".integrate.hipe.engine.HiPEEngine";	
 		}
 		else {
-			engineClassName = projectName.replace("/", ".")+".modelgen.hipe.engine.HiPEEngine";	
+			return projectName.replace("/", ".")+".modelgen.hipe.engine.HiPEEngine";	
 		}
 	}
 	

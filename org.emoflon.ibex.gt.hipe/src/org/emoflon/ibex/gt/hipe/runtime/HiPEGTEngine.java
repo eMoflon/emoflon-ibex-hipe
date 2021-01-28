@@ -151,7 +151,7 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 	public void initPatterns(final IBeXPatternSet ibexPatternSet) {
 		this.ibexPatternSet = ibexPatternSet;
 		setPatterns(this.ibexPatternSet);
-		generateHiPEClassName();
+		engineClassName = generateHiPEClassName();
 	}
 	
 	protected void setPatterns(IBeXPatternSet ibexPatternSet) {
@@ -176,7 +176,7 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 		}
 	}
 	
-	protected void generateHiPEClassName() {
+	protected String generateHiPEClassName() {
 		URI patternURI = ibexPatternSet.eResource().getURI();
 		Pattern pattern = Pattern.compile("^(.*src-gen/)(.*)(api/ibex-patterns.xmi)$");
 		Matcher matcher = pattern.matcher(patternURI.toString());
@@ -186,30 +186,7 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 		packageName = packageName.substring(0, packageName.length()-1);
 		packageName = packageName.replace("/", ".");
 		
-		engineClassName = packageName+".hipe.engine.HiPEEngine";
-	}
-	
-	protected void generateHiPEClassName(String projectName) {
-		engineClassName = projectName.replace("/", ".")+".hipe.engine.HiPEEngine";
-	}
-	
-	protected HiPENetwork loadNetwork(String path) {
-		Resource res = null;
-		try {
-			res = loadResource(path);
-		} catch (Exception e) {
-			LogUtils.error(logger, "Couldn't load ibex pattern set: \n" + e.getMessage());
-			e.printStackTrace();
-		}
-		
-		if(res == null) {
-			return null;
-		}
-		for(EObject content : res.getContents()) {
-			if(content instanceof HiPENetwork)
-				return (HiPENetwork) content;
-		}
-		return null;
+		return packageName+".hipe.engine.HiPEEngine";
 	}
 	
 	protected Resource loadResource(String path) throws Exception {
@@ -301,13 +278,10 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 				if(engineClass == null) {
 					throw new RuntimeException("Engine class: "+engineClassName+ " -> not found!");
 				}
-				Constructor<? extends IHiPEEngine> constructor = engineClass.getConstructor(HiPENetwork.class);
+				Constructor<? extends IHiPEEngine> constructor = engineClass.getConstructor();
 				constructor.setAccessible(true);
 				
-				HiPENetwork network = loadNetwork(getProjectName() +"/debug/" + getNetworkFileName());
-				if(network == null)
-					throw new RuntimeException("No " + getNetworkFileName() + " could be found");
-				engine = constructor.newInstance(network);
+				engine = constructor.newInstance();
 			} catch (InstantiationException | IllegalAccessException | NoSuchMethodException | 
 					SecurityException | IllegalArgumentException | InvocationTargetException e) {
 				e.printStackTrace();

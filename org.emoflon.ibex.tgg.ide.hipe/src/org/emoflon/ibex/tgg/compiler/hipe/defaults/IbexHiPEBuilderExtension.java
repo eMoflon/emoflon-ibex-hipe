@@ -181,30 +181,33 @@ public class IbexHiPEBuilderExtension implements TGGEngineBuilderExtension {
 			
 			LogUtils.info(logger,  executable.getClass().getName() + ": Generating Code..");
 			
+			String packageName = null;
 			if(executable instanceof INITIAL_FWD) 
-				HiPEGenerator.generateCode(projectName+".initfwd.", projectPath, network);
+				packageName = "initfwd";
 			else if(executable instanceof INITIAL_BWD) 
-				HiPEGenerator.generateCode(projectName+".initbwd.", projectPath, network);
+				packageName = "initbwd";
 			else if(executable instanceof SYNC) 
-				HiPEGenerator.generateCode(projectName+".sync.", projectPath, network);
+				packageName = "sync";
 			else if(executable instanceof CC && !(executable instanceof CO)) 
-				HiPEGenerator.generateCode(projectName+".cc.", projectPath, network);
+				packageName = "cc";
 			else if(executable instanceof CO) 
-				HiPEGenerator.generateCode(projectName+".co.", projectPath, network);
+				packageName = "co";
 			else if(executable instanceof MODELGEN) 
-				HiPEGenerator.generateCode(projectName+".modelgen.", projectPath, network);
+				packageName = "modelgen";
 			else if(executable instanceof INTEGRATE) 
-				HiPEGenerator.generateCode(projectName+".integrate.", projectPath, network);
+				packageName = "integrate";
 			else
 				throw new RuntimeException("Unsupported Operational Strategy detected");
+			
+			HiPEGenerator.generateCode(projectName+"." + packageName + ".", projectPath, network);
+			
 			LogUtils.info(logger,  executable.getClass().getName() + ": Code generation completed");
-
+			String hipePath = "src-gen/" + projectName + "/" + packageName + "/hipe/engine/";
+			
 			LogUtils.info(logger,  executable.getClass().getName() + ": Saving HiPE patterns and HiPE network..");
-			String debugFolder = projectPath + "/debug";
-			createNewDirectory(debugFolder);
-			saveResource(container, debugFolder+"/" +  executable.getClass().getSimpleName().toLowerCase() + "_hipe-patterns.xmi");
-			saveResource(network, debugFolder+"/" +  executable.getClass().getSimpleName().toLowerCase() + "_hipe-network.xmi");
-			saveResource(ibexModel, debugFolder+"/" +  executable.getClass().getSimpleName().toLowerCase() + "_ibexPatterns.xmi");
+			saveResource(container, projectPath +"/" + hipePath + "/hipe-patterns.xmi");
+			saveResource(network, projectPath +"/" + hipePath + "/hipe-network.xmi");
+			saveResource(ibexModel, projectPath +"/" + hipePath + "/ibex-patterns.xmi");
 		});
 		double toc = System.currentTimeMillis();
 		LogUtils.info(logger, "Pattern compilation and code generation completed in "+ (toc-tic)/1000.0 + " seconds.");
