@@ -80,7 +80,7 @@ public class IbexHiPEBuilderExtension implements TGGEngineBuilderExtension {
 	public void run(IProject project, TripleGraphGrammarFile editorModel, TripleGraphGrammarFile flattenedEditorModel) {
 		LogUtils.info(logger, "Starting HiPE TGG builder ... ");
 		
-		registerMetamodels(project);
+		registerMetamodels();
 		
 		try {
 			repairMetamodelResource();
@@ -217,6 +217,8 @@ public class IbexHiPEBuilderExtension implements TGGEngineBuilderExtension {
 			saveResource(container, projectPath +"/" + hipePath + "/hipe-patterns.xmi");
 			saveResource(network, projectPath +"/" + hipePath + "/hipe-network.xmi");
 			saveResource(ibexModel, projectPath +"/" + hipePath + "/ibex-patterns.xmi");
+			
+			deregisterMetamodels();
 		});
 		double toc = System.currentTimeMillis();
 		LogUtils.info(logger, "Pattern compilation and code generation completed in "+ (toc-tic)/1000.0 + " seconds.");
@@ -233,7 +235,7 @@ public class IbexHiPEBuilderExtension implements TGGEngineBuilderExtension {
 	}
 	
 	// TODO: make this generic!
-	private void registerMetamodels(IProject project) {
+	private void registerMetamodels() {
 		org.eclipse.emf.ecore.EPackage.Registry reg = EPackage.Registry.INSTANCE;
 
 		reg.put("platform:/resource/org.eclipse.xtext.common.types/model/JavaVMTypes.ecore", TypesPackageImpl.init());
@@ -242,8 +244,21 @@ public class IbexHiPEBuilderExtension implements TGGEngineBuilderExtension {
 		reg.put("platform:/resource/org.eclipse.xtext.xbase/model/Xtype.ecore", XtypePackageImpl.init());
 		reg.put("platform:/plugin/org.eclipse.xtext.xbase/model/Xtype.ecore", XtypePackageImpl.init());
 		
-//		reg.put("platform:/resource/org.eclipse.xtext.xbase/model/XAnnotations.ecore", XAnnotationsPackageImpl.init());
-//		reg.put("platform:/plugin/org.eclipse.xtext.xbase/model/XAnnotations.ecore", XAnnotationsPackageImpl.init());
+		reg.put("platform:/resource/org.eclipse.xtext.xbase/model/XAnnotations.ecore", XAnnotationsPackageImpl.init());
+		reg.put("platform:/plugin/org.eclipse.xtext.xbase/model/XAnnotations.ecore", XAnnotationsPackageImpl.init());
+	}
+	
+	private void deregisterMetamodels() {
+		org.eclipse.emf.ecore.EPackage.Registry reg = EPackage.Registry.INSTANCE;
+
+		reg.remove("platform:/resource/org.eclipse.xtext.common.types/model/JavaVMTypes.ecore");
+		reg.remove("platform:/plugin/org.eclipse.xtext.common.types/model/JavaVMTypes.ecore");
+		
+		reg.remove("platform:/resource/org.eclipse.xtext.xbase/model/Xtype.ecore");
+		reg.remove("platform:/plugin/org.eclipse.xtext.xbase/model/Xtype.ecore");
+		
+		reg.remove("platform:/resource/org.eclipse.xtext.xbase/model/XAnnotations.ecore");
+		reg.remove("platform:/plugin/org.eclipse.xtext.xbase/model/XAnnotations.ecore");
 	}
 
 	public IbexOptions createIbexOptions(String projectName, String projectPath) {
