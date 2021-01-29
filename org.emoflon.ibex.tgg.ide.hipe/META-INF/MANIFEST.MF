@@ -32,4 +32,7 @@ Require-Bundle: com.google.guava,
 Export-Package: org.emoflon.ibex.tgg.compiler.hipe.defaults,
  org.emoflon.ibex.tgg.ide.hipe.visualisation
 Bundle-ActivationPolicy: lazy
-Import-Package: org.emoflon.ibex.tgg.runtime.hipe
+Import-Package: org.eclipse.xtext.common.types.impl,
+ org.eclipse.xtext.xbase.annotations.xAnnotations.impl,
+ org.eclipse.xtext.xtype.impl,
+ org.emoflon.ibex.tgg.runtime.hipe

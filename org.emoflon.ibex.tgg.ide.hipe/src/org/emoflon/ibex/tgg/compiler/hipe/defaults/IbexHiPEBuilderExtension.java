@@ -2,6 +2,8 @@ package org.emoflon.ibex.tgg.compiler.hipe.defaults;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collection;
@@ -30,6 +32,9 @@ import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.eclipse.emf.ecore.xmi.XMIResource;
 import org.eclipse.emf.ecore.xmi.impl.EcoreResourceFactoryImpl;
 import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
+import org.eclipse.xtext.common.types.impl.TypesPackageImpl;
+import org.eclipse.xtext.xbase.annotations.xAnnotations.impl.XAnnotationsPackageImpl;
+import org.eclipse.xtext.xtype.impl.XtypePackageImpl;
 import org.emoflon.ibex.common.project.BuildPropertiesHelper;
 import org.emoflon.ibex.common.project.ManifestHelper;
 import org.emoflon.ibex.gt.hipe.runtime.IBeXToHiPEPatternTransformation;
@@ -37,6 +42,7 @@ import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXModel;
 import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXPatternModelPackage;
 import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXPatternSet;
 import org.emoflon.ibex.tgg.codegen.TGGEngineBuilderExtension;
+import org.emoflon.ibex.tgg.compiler.defaults.IRegistrationHelper;
 import org.emoflon.ibex.tgg.compiler.transformations.patterns.ContextPatternTransformation;
 import org.emoflon.ibex.tgg.ide.admin.IbexTGGBuilder;
 import org.emoflon.ibex.tgg.operational.defaults.IbexOptions;
@@ -74,6 +80,8 @@ public class IbexHiPEBuilderExtension implements TGGEngineBuilderExtension {
 	public void run(IProject project, TripleGraphGrammarFile editorModel, TripleGraphGrammarFile flattenedEditorModel) {
 		LogUtils.info(logger, "Starting HiPE TGG builder ... ");
 		
+		registerMetamodels(project);
+		
 		try {
 			repairMetamodelResource();
 		} catch (Exception e2) {
@@ -85,6 +93,7 @@ public class IbexHiPEBuilderExtension implements TGGEngineBuilderExtension {
 		projectName = project.getName();
 		projectPath = projectName;
 		
+
 		metaModelImports = flattenedEditorModel.getImports().stream()
 				.map(imp -> imp.getName())
 				.collect(Collectors.toList());
@@ -223,6 +232,20 @@ public class IbexHiPEBuilderExtension implements TGGEngineBuilderExtension {
 		LogUtils.info(logger, "## HiPE ## --> HiPE build complete!");
 	}
 	
+	// TODO: make this generic!
+	private void registerMetamodels(IProject project) {
+		org.eclipse.emf.ecore.EPackage.Registry reg = EPackage.Registry.INSTANCE;
+
+		reg.put("platform:/resource/org.eclipse.xtext.common.types/model/JavaVMTypes.ecore", TypesPackageImpl.init());
+		reg.put("platform:/plugin/org.eclipse.xtext.common.types/model/JavaVMTypes.ecore", TypesPackageImpl.init());
+		
+		reg.put("platform:/resource/org.eclipse.xtext.xbase/model/Xtype.ecore", XtypePackageImpl.init());
+		reg.put("platform:/plugin/org.eclipse.xtext.xbase/model/Xtype.ecore", XtypePackageImpl.init());
+		
+//		reg.put("platform:/resource/org.eclipse.xtext.xbase/model/XAnnotations.ecore", XAnnotationsPackageImpl.init());
+//		reg.put("platform:/plugin/org.eclipse.xtext.xbase/model/XAnnotations.ecore", XAnnotationsPackageImpl.init());
+	}
+
 	public IbexOptions createIbexOptions(String projectName, String projectPath) {
 		IbexOptions options = new IbexOptions();
 		options.project.name(projectName);
