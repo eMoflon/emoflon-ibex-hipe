@@ -1,5 +1,7 @@
 package org.emoflon.ibex.tgg.runtime.hipe;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
@@ -67,10 +69,19 @@ public class HiPETGGEngine extends HiPEGTEngine implements IBlackInterpreter, Ti
 		
 		this.options = options;
 		this.executable = executable; 
-		
+		String cp = "";
+		File file = new File(executable.getClass().getProtectionDomain().getCodeSource().getLocation().getPath()+ generateHiPEClassName().replace(".", "/").replace("HiPEEngine", "ibex-patterns.xmi"));
+		try {
+			cp = file.getCanonicalPath();
+			cp = cp.replace("%20", " ");
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
 		Resource r = null;
 		try {
-			r = loadResource("file://" + executable.getClass().getProtectionDomain().getCodeSource().getLocation().getPath()+ generateHiPEClassName().replace(".", "/").replace("HiPEEngine", "ibex-patterns.xmi"));
+			//r = loadResource("file://" + executable.getClass().getProtectionDomain().getCodeSource().getLocation().getPath()+ generateHiPEClassName().replace(".", "/").replace("HiPEEngine", "ibex-patterns.xmi"));
+			r = loadResource("file://" + cp);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

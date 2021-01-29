@@ -249,12 +249,19 @@ public class IBeXToHiPEPatternTransformation {
 			initCode += "csp_" + csp_id + ".getVariables().add(new org.emoflon.ibex.tgg.operational.csp.RuntimeTGGAttributeConstraintVariable(true, ";
 			if(value instanceof IBeXAttributeExpression ) {
 				IBeXAttributeExpression iExpr = (IBeXAttributeExpression) value;
-				String getOrIs = iExpr.getAttribute().getEType().getInstanceClassName().equals("boolean") ? ".is" : ".get";
+				String getOrIs = ".get";
+				if(iExpr.getAttribute().getEType().getInstanceClassName() != null) {
+					getOrIs = iExpr.getAttribute().getEType().getInstanceClassName().equals("boolean") ? ".is" : ".get";
+				}
 				initCode += iExpr.getNode().getName() + getOrIs + iExpr.getAttribute().getName().substring(0, 1).toUpperCase() + iExpr.getAttribute().getName().substring(1) + "()";
 				HiPEAttribute hAttr = transform(context, iExpr);
 				cConstraint.getAttributes().add(hAttr);
 				pattern.getAttributes().add(hAttr);
-				initCode += ", \"" + iExpr.getAttribute().getEType().getInstanceClassName() + "\"));\n";
+				if(iExpr.getAttribute().getEType().getInstanceClassName() != null) {
+					initCode += ", \"" + iExpr.getAttribute().getEType().getInstanceClassName() + "\"));\n";
+				} else {
+					initCode += ", \"Enum::" + iExpr.getAttribute().getEType().getName() + "\"));\n";
+				}
 			}
 			if(value instanceof IBeXConstant) {
 				IBeXConstant iConst= (IBeXConstant) value;
