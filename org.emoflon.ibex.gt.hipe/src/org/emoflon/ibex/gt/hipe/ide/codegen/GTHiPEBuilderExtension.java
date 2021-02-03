@@ -84,8 +84,8 @@ public class GTHiPEBuilderExtension implements GTEngineBuilderExtension{
 		LogUtils.info(logger, "Code generation completed in "+ (toc-tic)/1000.0 + " seconds.");	
 		
 		LogUtils.info(logger, "Saving HiPE patterns and HiPE network..");
-		saveResource(container, projectPath + "/src-gen/" + packageName +"/hipe/engine/hipe-patterns.xmi");
-		saveResource(network, projectPath + "/src-gen/" + packageName +"/hipe/engine/hipe-network.xmi");
+		saveResource(container, projectPath + "/src-gen/" + packagePath.toString() +"/hipe/engine/hipe-patterns.xmi");
+		saveResource(network, projectPath + "/src-gen/" + packagePath.toString() +"/hipe/engine/hipe-network.xmi");
 		
 		LogUtils.info(logger, "Refreshing workspace and cleaning build ..");
 		try {
