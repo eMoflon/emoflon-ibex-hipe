@@ -241,7 +241,7 @@ public class HiPEBuilderUtil {
 						+ MoflonUtil.lastCapitalizedSegmentOf(options.project.name()) + ".ecore";
 				String genModelLocation = options.project.name() + "/model/"
 						+ MoflonUtil.lastCapitalizedSegmentOf(options.project.name()) + ".genmodel";
-				EPackage metaModel = loadAndRegisterCorrMetamodel(metaModelLocation);
+				EPackage metaModel = loadAndRegisterCorrMetamodel();
 				if(generateCode)
 					util.generateMetaModelCode(base, metaModelLocation, genModelLocation, metaModel);
 			}

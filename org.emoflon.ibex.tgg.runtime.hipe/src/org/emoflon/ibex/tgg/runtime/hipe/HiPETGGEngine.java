@@ -70,7 +70,14 @@ public class HiPETGGEngine extends HiPEGTEngine implements IBlackInterpreter, Ti
 		this.options = options;
 		this.executable = executable; 
 		String cp = "";
-		File file = new File(executable.getClass().getProtectionDomain().getCodeSource().getLocation().getPath()+ generateHiPEClassName().replace(".", "/").replace("HiPEEngine", "ibex-patterns.xmi"));
+		
+		String path = executable.getClass().getProtectionDomain().getCodeSource().getLocation().getPath();
+		// this is a fix for situation where emoflon is executed within an eclipse plugin
+		if(!path.contains("bin/"))
+			path += "bin/";
+		path +=  generateHiPEClassName().replace(".", "/").replace("HiPEEngine", "ibex-patterns.xmi");
+		
+		File file = new File(path);
 		try {
 			cp = file.getCanonicalPath();
 			cp = cp.replace("%20", " ");
