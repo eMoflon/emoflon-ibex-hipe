@@ -138,7 +138,7 @@ public class HiPEBuilderUtil {
 		    generator.setInput(genModel);
 			generator.generate(genModel, GenBaseGeneratorAdapter.MODEL_PROJECT_TYPE, monitor);
 		} catch (Exception e) {
-			System.err.println("Could not generate TGG metamodel code!");
+			System.err.println("Could not generate TGG metamodel code!\nException: \n"+e.getMessage());
 		}
 	}
 
