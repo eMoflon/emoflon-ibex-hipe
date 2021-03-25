@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -178,14 +179,15 @@ public class HiPETGGEngine extends HiPEGTEngine implements IBlackInterpreter, Ti
 			return;
 		}
 		
+		Collection<IMatch> iMatches = new LinkedList<>();
 		for(String patternName : extractData.keySet()) {
 			if(patterns.get(patternName) == null)
 				continue;
 			String pName = patterns.get(patternName);
 			Collection<ProductionMatch> matches = extractData.get(patternName).getNewMatches();
-			Collection<IMatch> iMatches = matches.parallelStream().map(m -> createMatch(m, pName)).collect(Collectors.toList());
-			app.addMatches(iMatches);
+			iMatches.addAll(matches.parallelStream().map(m -> createMatch(m, pName)).collect(Collectors.toList()));
 		}
+		app.addMatches(iMatches);
 	}
 	
 	@Override
