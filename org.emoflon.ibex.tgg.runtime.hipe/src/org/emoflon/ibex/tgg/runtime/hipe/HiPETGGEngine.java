@@ -122,7 +122,7 @@ public class HiPETGGEngine extends HiPEGTEngine implements IBlackInterpreter, Ti
 		if(executable instanceof INITIAL_FWD) {
 			return projectName.replace("/", ".")+".initfwd.hipe.engine.HiPEEngine";	
 		} 
-		else if(executable instanceof INITIAL_FWD) {
+		else if(executable instanceof INITIAL_BWD) {
 			return projectName.replace("/", ".")+".initbwd.hipe.engine.HiPEEngine";	
 		}
 		else if(executable instanceof CC) {

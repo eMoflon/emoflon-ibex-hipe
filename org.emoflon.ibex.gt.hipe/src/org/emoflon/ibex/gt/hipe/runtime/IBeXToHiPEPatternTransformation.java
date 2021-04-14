@@ -5,6 +5,8 @@ import java.util.Map;
 
 import org.eclipse.emf.common.util.EMap;
 import org.eclipse.emf.ecore.EAttribute;
+import org.eclipse.emf.ecore.EEnum;
+import org.emoflon.ibex.common.patterns.IBeXPatternFactory;
 import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXAttributeConstraint;
 import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXAttributeExpression;
 import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXAttributeParameter;
@@ -19,8 +21,10 @@ import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXEnumLiteral;
 import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXInjectivityConstraint;
 import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXNode;
 import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXPatternInvocation;
+import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXPatternModelFactory;
 import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXPatternSet;
 import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXRelation;
+import org.emoflon.ibex.patternmodel.IBeXPatternModel.impl.IBeXPatternModelFactoryImpl;
 
 import hipe.pattern.ComparatorType;
 import hipe.pattern.ComplexConstraint;
@@ -262,6 +266,20 @@ public class IBeXToHiPEPatternTransformation {
 				} else {
 					initCode += ", \"Enum::" + iExpr.getAttribute().getEType().getName() + "\"));\n";
 				}
+			}
+			if(value instanceof IBeXEnumLiteral) {
+				IBeXEnumLiteral literal = (IBeXEnumLiteral) value;
+				EEnum eenum = literal.getLiteral().getEEnum();
+				
+				IBeXConstant iConst= IBeXPatternModelFactory.eINSTANCE.createIBeXConstant();
+				iConst.setValue(literal.getLiteral());
+				iConst.setStringValue(eenum.getEPackage().getNsPrefix() + "." + eenum.getName() + "." + literal.getLiteral().getName());
+				
+				initCode += iConst.getStringValue().replaceAll("\"\"", "\"");
+				HiPEAttribute hAttr = transform(context, iConst);
+				cConstraint.getAttributes().add(hAttr);
+				pattern.getAttributes().add(hAttr);
+				initCode += ", \"" + iConst.getValue().getClass().getName() + "\"));\n";
 			}
 			if(value instanceof IBeXConstant) {
 				IBeXConstant iConst= (IBeXConstant) value;
