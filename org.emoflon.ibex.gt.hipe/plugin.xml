@@ -10,20 +10,18 @@
            class="org.emoflon.ibex.gt.hipe.ide.codegen.GTHiPEBuilderExtension">
      </builder_extension>
   </extension>
+  <extension
+        point="org.moflon.core.ui.DiagramTextProvider">
+     <diagram_text_provider
+           class="org.emoflon.ibex.gt.hipe.visualization.HiPENetworkModelVisualiser">
+     </diagram_text_provider>
+  </extension>
+  <extension
+        point="org.moflon.core.ui.DiagramTextProvider">
+     <diagram_text_provider
+           class="org.emoflon.ibex.gt.hipe.visualization.HiPEPatternModelVisualiser">
+     </diagram_text_provider>
+  </extension>
   
-     <extension
-         point="net.sourceforge.plantuml.eclipse.diagramTextProvider">
-      <diagramTextProvider
-            priority="20"
-            providerClass="org.emoflon.ibex.gt.hipe.visualization.HiPENetworkModelVisualiser">
-      </diagramTextProvider>
-   </extension>
    
-      <extension
-         point="net.sourceforge.plantuml.eclipse.diagramTextProvider">
-      <diagramTextProvider
-            priority="21"
-            providerClass="org.emoflon.ibex.gt.hipe.visualization.HiPEPatternModelVisualiser">
-      </diagramTextProvider>
-   </extension>
 </plugin>
