@@ -1,16 +1,23 @@
 package org.emoflon.ibex.gt.hipe.runtime;
 
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 
+import org.apache.log4j.Logger;
 import org.eclipse.emf.common.util.EMap;
-import org.eclipse.emf.ecore.EAttribute;
 import org.eclipse.emf.ecore.EEnum;
-import org.emoflon.ibex.common.patterns.IBeXPatternFactory;
+import org.emoflon.ibex.gt.hipe.ide.codegen.GTHiPEBuilderExtension;
+import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXArithmeticAttribute;
+import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXArithmeticConstraint;
+import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXArithmeticExpression;
+import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXArithmeticValueLiteral;
 import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXAttributeConstraint;
 import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXAttributeExpression;
 import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXAttributeParameter;
 import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXAttributeValue;
+import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXBinaryExpression;
 import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXCSP;
 import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXConstant;
 import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXContext;
@@ -24,7 +31,8 @@ import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXPatternInvocation;
 import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXPatternModelFactory;
 import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXPatternSet;
 import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXRelation;
-import org.emoflon.ibex.patternmodel.IBeXPatternModel.impl.IBeXPatternModelFactoryImpl;
+import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXUnaryExpression;
+import org.moflon.core.utilities.LogUtils;
 
 import hipe.pattern.ComparatorType;
 import hipe.pattern.ComplexConstraint;
@@ -40,6 +48,8 @@ import hipe.pattern.RelationalConstraint;
 import hipe.pattern.UnequalConstraint;
 
 public class IBeXToHiPEPatternTransformation {
+	
+	private static Logger logger = Logger.getLogger(GTHiPEBuilderExtension.class);
 
 	private HiPEPatternFactory factory;
 	
@@ -121,7 +131,21 @@ public class IBeXToHiPEPatternTransformation {
 		}
 		
 		for(IBeXAttributeConstraint constr : context.getAttributeConstraint()) {
-			HiPEAttributeConstraint constraint = transform(context, pattern, constr);
+			HiPEAttributeConstraint constraint = null;
+			if(isSimpleAttributeValue(constr.getLhs()) && isSimpleAttributeValue(constr.getRhs())) {
+				constraint = transformSimpleAC(context, pattern, constr);
+			} else {
+				LogUtils.error(logger, "Arithmetic expressions are not allowed in simple attribute constraints!");	
+			}
+			 
+			if(constraint != null)
+				pattern.getAttributeConstraints().add(constraint);
+		}
+		
+		for(IBeXArithmeticConstraint constr : context.getArithmeticConstraints()) {
+			HiPEAttributeConstraint constraint = null;
+			constraint = transformComplexAC(context, pattern, constr);
+			
 			if(constraint != null)
 				pattern.getAttributeConstraints().add(constraint);
 		}
@@ -131,6 +155,19 @@ public class IBeXToHiPEPatternTransformation {
 		}
 		
 		return pattern;
+	}
+	
+	public boolean isSimpleAttributeValue(IBeXAttributeValue value) {
+		if(value instanceof IBeXConstant)
+			return true;
+		if(value instanceof IBeXEnumLiteral)
+			return true;
+		if(value instanceof IBeXAttributeParameter)
+			return true;
+		if(value instanceof IBeXAttributeExpression)
+			return true;
+		
+		return false;
 	}
 	
 	public HiPENode transform(IBeXContextPattern context, IBeXNode node) {
@@ -165,9 +202,8 @@ public class IBeXToHiPEPatternTransformation {
 		return constr;
 	}
 	
-	private HiPEAttributeConstraint transform(IBeXContextPattern context, HiPEPattern pattern, IBeXAttributeConstraint constr) {
+	private HiPEAttributeConstraint transformSimpleAC(IBeXContextPattern context, HiPEPattern pattern, IBeXAttributeConstraint constr) {
 		RelationalConstraint rConstraint = factory.createRelationalConstraint();
-		container.getAttributeConstraints().add(rConstraint);
 		HiPEAttribute attrLeft = transform(context, constr.getLhs());
 		HiPEAttribute attrRight = transform(context, constr.getRhs());
 		if(attrLeft != null) {
@@ -182,11 +218,221 @@ public class IBeXToHiPEPatternTransformation {
 		
 		if(attrLeft == null || attrRight == null)
 			return null;
+		
+		container.getAttributeConstraints().add(rConstraint);
 
 		pattern.getAttributes().add(rConstraint.getLeftAttribute());
 		pattern.getAttributes().add(rConstraint.getRightAttribute());
 		
 		return rConstraint;
+	}
+	
+	private HiPEAttributeConstraint transformComplexAC(IBeXContextPattern context, HiPEPattern pattern, IBeXArithmeticConstraint constr) {
+		ComplexConstraint cConstraint = factory.createComplexConstraint();
+		Collection<HiPEAttribute> attributes = new HashSet<>();
+		String leftExpr = null;
+		String rightExpr = null;
+		try {
+			leftExpr = transformAttributeValue2Java(context, constr.getLhs(), attributes);
+		} catch(UnsupportedOperationException e) {
+			LogUtils.error(logger, e.getMessage());
+			return null;
+		}
+		try {
+			rightExpr = transformAttributeValue2Java(context, constr.getRhs(), attributes);
+		} catch(UnsupportedOperationException e) {
+			LogUtils.error(logger, e.getMessage());	
+			return null;
+		}
+		
+		StringBuilder sb = new StringBuilder();
+		sb.append(leftExpr);
+		switch(constr.getRelation()) {
+		case EQUAL:
+			sb.append(" == ");
+			break;
+		case GREATER:
+			sb.append(" > ");
+			break;
+		case GREATER_OR_EQUAL:
+			sb.append(" >= ");
+			break;
+		case SMALLER:
+			sb.append(" < ");
+			break;
+		case SMALLER_OR_EQUAL:
+			sb.append(" <= ");
+			break;
+		case UNEQUAL:
+			sb.append(" != ");
+			break;
+		default:
+			LogUtils.error(logger, "Unknown relational operator -> constraint will be ignored..");	
+			return null;
+		}
+		sb.append(rightExpr);
+		cConstraint.getAttributes().addAll(attributes);
+		cConstraint.setInitializationCode("");
+		cConstraint.setPredicateCode(sb.toString());
+		
+		container.getAttributeConstraints().add(cConstraint);
+		return cConstraint;
+	}
+	
+	private String transformAttributeValue2Java(IBeXContextPattern context, IBeXArithmeticExpression expr, Collection<HiPEAttribute> attributes) {
+		if(expr instanceof IBeXArithmeticValueLiteral) {
+			return transformAttributeValue2Java(context, (IBeXArithmeticValueLiteral)expr, attributes);
+		} else if (expr instanceof IBeXArithmeticAttribute){
+			return transformAttributeValue2Java(context, (IBeXArithmeticAttribute)expr, attributes);
+		} else if (expr instanceof IBeXUnaryExpression) {
+			IBeXUnaryExpression uexpr = (IBeXUnaryExpression)expr;
+			StringBuilder sb = new StringBuilder();
+			if(uexpr.isNegative()) {
+				sb.append("-");
+			}
+			switch(uexpr.getOperator()) {
+				case ABSOLUTE:
+					sb.append("java.lang.Math.abs(");
+					sb.append(transformAttributeValue2Java(context, uexpr.getOperand(), attributes));
+					sb.append(")");
+					break;
+				case BRACKET:
+					sb.append("(");
+					sb.append(transformAttributeValue2Java(context, uexpr.getOperand(), attributes));
+					sb.append(")");
+					break;
+				case COS:
+					sb.append("java.lang.Math.cos(");
+					sb.append(transformAttributeValue2Java(context, uexpr.getOperand(), attributes));
+					sb.append(")");
+					break;
+				case COUNT:
+					//TODO: Implement
+					throw new UnsupportedOperationException("COUNT is an operator type that is currently not supported by HiPE -> Constraint will be handled by eMoflon.");
+				case EEXPONENTIAL:
+					sb.append("java.lang.Math.exp(");
+					sb.append(transformAttributeValue2Java(context, uexpr.getOperand(), attributes));
+					sb.append(")");
+					break;
+				case LG:
+					sb.append("java.lang.Math.log(");
+					sb.append(transformAttributeValue2Java(context, uexpr.getOperand(), attributes));
+					sb.append(")");
+					break;
+				case LOG:
+					sb.append("java.lang.Math.log10(");
+					sb.append(transformAttributeValue2Java(context, uexpr.getOperand(), attributes));
+					sb.append(")");
+					break;
+				case SIN:
+					sb.append("java.lang.Math.sin(");
+					sb.append(transformAttributeValue2Java(context, uexpr.getOperand(), attributes));
+					sb.append(")");
+					break;
+				case SQRT:
+					sb.append("java.lang.Math.sqrt(");
+					sb.append(transformAttributeValue2Java(context, uexpr.getOperand(), attributes));
+					sb.append(")");
+					break;
+				case TAN:
+					sb.append("java.lang.Math.tan(");
+					sb.append(transformAttributeValue2Java(context, uexpr.getOperand(), attributes));
+					sb.append(")");
+					break;
+				default:
+					throw new UnsupportedOperationException("Unknown arithmetic operator type -> constraint will be ignored..");
+			}
+			return sb.toString();
+		} else if (expr instanceof IBeXBinaryExpression) {
+			IBeXBinaryExpression bexpr = (IBeXBinaryExpression)expr;
+			StringBuilder sb = new StringBuilder();
+			switch(bexpr.getOperator()) {
+				case ADDITION:
+					sb.append(transformAttributeValue2Java(context, bexpr.getLeft(), attributes));
+					sb.append(" + ");
+					sb.append(transformAttributeValue2Java(context, bexpr.getRight(), attributes));
+					break;
+				case DIVISION:
+					sb.append(transformAttributeValue2Java(context, bexpr.getLeft(), attributes));
+					sb.append(" / ");
+					sb.append(transformAttributeValue2Java(context, bexpr.getRight(), attributes));
+					break;
+				case EXPONENTIATION:
+					sb.append("java.lang.Math.pow(");
+					sb.append(transformAttributeValue2Java(context, bexpr.getLeft(), attributes));
+					sb.append(", ");
+					sb.append(transformAttributeValue2Java(context, bexpr.getRight(), attributes));
+					sb.append(")");
+					break;
+				case MAXIMUM:
+					sb.append("java.lang.Math.max(");
+					sb.append(transformAttributeValue2Java(context, bexpr.getLeft(), attributes));
+					sb.append(", ");
+					sb.append(transformAttributeValue2Java(context, bexpr.getRight(), attributes));
+					sb.append(")");
+					break;
+				case MINIMUM:
+					sb.append("java.lang.Math.min(");
+					sb.append(transformAttributeValue2Java(context, bexpr.getLeft(), attributes));
+					sb.append(", ");
+					sb.append(transformAttributeValue2Java(context, bexpr.getRight(), attributes));
+					sb.append(")");
+					break;
+				case MODULUS:
+					sb.append(transformAttributeValue2Java(context, bexpr.getLeft(), attributes));
+					sb.append(" % ");
+					sb.append(transformAttributeValue2Java(context, bexpr.getRight(), attributes));
+					break;
+				case MULTIPLICATION:
+					sb.append(transformAttributeValue2Java(context, bexpr.getLeft(), attributes));
+					sb.append(" * ");
+					sb.append(transformAttributeValue2Java(context, bexpr.getRight(), attributes));
+					break;
+				case SUBTRACTION:
+					sb.append(transformAttributeValue2Java(context, bexpr.getLeft(), attributes));
+					sb.append(" - ");
+					sb.append(transformAttributeValue2Java(context, bexpr.getRight(), attributes));
+					break;
+				default:
+					throw new UnsupportedOperationException("Unknown arithmetic operator type -> constraint will be ignored..");
+			}
+			return sb.toString();
+		} else {
+			throw new UnsupportedOperationException("Unknown arithmetic expression type -> constraint will be ignored..");
+		}
+		
+	}
+	
+	private String transformAttributeValue2Java(IBeXContextPattern context, IBeXArithmeticValueLiteral expr, Collection<HiPEAttribute> attributes) {
+		return String.valueOf(expr.getValue());
+	}
+	
+	private String transformAttributeValue2Java(IBeXContextPattern context, IBeXArithmeticAttribute expr, Collection<HiPEAttribute> attributes) {
+		if(expr.getAttribute().getEType().getInstanceClassName() == null) {
+			throw new UnsupportedOperationException("IBeXEnumLiteral not supported in complex attribute constraints -> constraint will be ignored..");
+		}
+		
+		if(expr.getAttribute().getEType().getInstanceClassName().equals("boolean")) {
+			throw new UnsupportedOperationException("Boolean not supported in complex attribute constraints -> constraint will be ignored..");
+		}
+		
+		HiPEAttribute attr = factory.createHiPEAttribute();
+		container.getAttributes().add(attr);
+		IBeXNode node = null;
+		try {
+			node =context.getSignatureNodes().stream()
+					.filter(n -> n.getName().equals(expr.getName()))
+					.findAny().get();
+		} catch(Exception e) {
+			throw new UnsupportedOperationException("Access to attibutes of non-signature nodes is prohibited -> constraint will be ignored..");
+		}	
+		
+		attr.setNode(transform(context, node));
+		attr.setValue(expr.getAttribute());
+		attr.setEAttribute(expr.getAttribute());
+		attributes.add(attr);
+		
+		return node.getName() + ".get" + expr.getAttribute().getName().substring(0, 1).toUpperCase() + expr.getAttribute().getName().substring(1) + "()";
 	}
 	
 	private HiPEAttribute transform(IBeXContextPattern context, IBeXAttributeValue value) {
@@ -214,13 +460,6 @@ public class IBeXToHiPEPatternTransformation {
 		HiPEAttribute attr = factory.createHiPEAttribute();
 		container.getAttributes().add(attr);
 		attr.setValue(literal.getLiteral());
-		return attr;
-	}
-	
-	private HiPEAttribute transform(IBeXContextPattern context, IBeXAttributeParameter attributeParam) {
-		HiPEAttribute attr = factory.createHiPEAttribute();
-		container.getAttributes().add(attr);
-		attr.setName(attributeParam.getName());
 		return attr;
 	}
 	
@@ -306,13 +545,4 @@ public class IBeXToHiPEPatternTransformation {
 		return name.substring(0, 1).toUpperCase() + name.substring(1);
 	}
 
-	private HiPEAttribute transform(IBeXContextPattern context, IBeXNode iBeXNode, EAttribute attr) {
-		HiPEAttribute hAttr = factory.createHiPEAttribute();
-		container.getAttributes().add(hAttr);
-		hAttr.setName(attr.getName());
-		hAttr.setValue(attr);
-		hAttr.setNode(transform(context, iBeXNode));
-		hAttr.setEAttribute(attr);
-		return hAttr;
-	}
 }
