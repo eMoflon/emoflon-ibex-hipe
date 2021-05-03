@@ -8,4 +8,10 @@ public class HiPEProperties implements IPatternInterpreterProperties {
 	public boolean uses_synchroneous_matching() {
 		return true;
 	}
+	
+	@Override
+	public boolean supports_arithmetic_attr_constraints() {
+		return true;
+	}
+
 }

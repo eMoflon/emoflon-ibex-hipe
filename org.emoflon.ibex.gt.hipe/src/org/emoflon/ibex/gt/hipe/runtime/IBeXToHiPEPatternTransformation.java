@@ -7,13 +7,11 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 import org.eclipse.emf.common.util.EMap;
-import org.eclipse.emf.ecore.EAttribute;
 import org.eclipse.emf.ecore.EEnum;
-import org.emoflon.ibex.common.patterns.IBeXPatternFactory;
 import org.emoflon.ibex.gt.hipe.ide.codegen.GTHiPEBuilderExtension;
 import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXArithmeticAttribute;
+import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXArithmeticConstraint;
 import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXArithmeticExpression;
-import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXArithmeticValue;
 import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXArithmeticValueLiteral;
 import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXAttributeConstraint;
 import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXAttributeExpression;
@@ -33,9 +31,7 @@ import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXPatternInvocation;
 import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXPatternModelFactory;
 import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXPatternSet;
 import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXRelation;
-import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXStochasticAttributeValue;
 import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXUnaryExpression;
-import org.emoflon.ibex.patternmodel.IBeXPatternModel.impl.IBeXPatternModelFactoryImpl;
 import org.moflon.core.utilities.LogUtils;
 
 import hipe.pattern.ComparatorType;
@@ -139,10 +135,17 @@ public class IBeXToHiPEPatternTransformation {
 			if(isSimpleAttributeValue(constr.getLhs()) && isSimpleAttributeValue(constr.getRhs())) {
 				constraint = transformSimpleAC(context, pattern, constr);
 			} else {
-				constraint = transformComplexAC(context, pattern, constr);
+				LogUtils.error(logger, "Arithmetic expressions are not allowed in simple attribute constraints!");	
 			}
-	
 			 
+			if(constraint != null)
+				pattern.getAttributeConstraints().add(constraint);
+		}
+		
+		for(IBeXArithmeticConstraint constr : context.getArithmeticConstraints()) {
+			HiPEAttributeConstraint constraint = null;
+			constraint = transformComplexAC(context, pattern, constr);
+			
 			if(constraint != null)
 				pattern.getAttributeConstraints().add(constraint);
 		}
@@ -224,7 +227,7 @@ public class IBeXToHiPEPatternTransformation {
 		return rConstraint;
 	}
 	
-	private HiPEAttributeConstraint transformComplexAC(IBeXContextPattern context, HiPEPattern pattern, IBeXAttributeConstraint constr) {
+	private HiPEAttributeConstraint transformComplexAC(IBeXContextPattern context, HiPEPattern pattern, IBeXArithmeticConstraint constr) {
 		ComplexConstraint cConstraint = factory.createComplexConstraint();
 		Collection<HiPEAttribute> attributes = new HashSet<>();
 		String leftExpr = null;
@@ -276,46 +279,6 @@ public class IBeXToHiPEPatternTransformation {
 		return cConstraint;
 	}
 	
-	private String transformAttributeValue2Java(IBeXContextPattern context, IBeXAttributeValue value, Collection<HiPEAttribute> attributes) throws UnsupportedOperationException{
-		if(value instanceof IBeXConstant)
-			return transformAttributeValue2Java(context, (IBeXConstant) value, attributes);
-		else if(value instanceof IBeXEnumLiteral) // Enum literals do not make sense in attribute constraints with arithmetic expressions
-			throw new UnsupportedOperationException("IBeXEnumLiteral not supported in complex attribute constraints -> constraint will be ignored..");	
-		else if(value instanceof IBeXAttributeParameter) // TODO: implement attribute parameter
-			throw new UnsupportedOperationException("IBeXAttributeParameter not yet supported -> constraint will be ignored..");
-		else if(value instanceof IBeXStochasticAttributeValue) // TODO: implement attribute parameter
-			throw new UnsupportedOperationException("IBeXStochasticAttributeValue not yet supported -> constraint will be ignored..");
-		else if(value instanceof IBeXAttributeExpression)
-			return transformAttributeValue2Java(context, (IBeXAttributeExpression) value, attributes);
-		else if(value instanceof IBeXArithmeticValue)
-			return transformAttributeValue2Java(context, ((IBeXArithmeticValue) value).getExpression(), attributes);
-		else
-			throw new UnsupportedOperationException("Unknown attribute expression type -> constraint will be ignored..");
-	}
-	
-	private String transformAttributeValue2Java(IBeXContextPattern context, IBeXConstant constant, Collection<HiPEAttribute> attributes) {
-		return constant.getStringValue();
-	}
-	
-	private String transformAttributeValue2Java(IBeXContextPattern context, IBeXAttributeExpression expr, Collection<HiPEAttribute> attributes) {
-		if(expr.getAttribute().getEType().getInstanceClassName() == null) {
-			throw new UnsupportedOperationException("IBeXEnumLiteral not supported in complex attribute constraints -> constraint will be ignored..");
-		}
-		
-		if(expr.getAttribute().getEType().getInstanceClassName().equals("boolean")) {
-			throw new UnsupportedOperationException("Boolean not supported in complex attribute constraints -> constraint will be ignored..");
-		}
-		
-		HiPEAttribute attr = factory.createHiPEAttribute();
-		container.getAttributes().add(attr);
-		attr.setNode(transform(context, expr.getNode()));
-		attr.setValue(expr.getAttribute());
-		attr.setEAttribute(expr.getAttribute());
-		attributes.add(attr);
-		
-		return expr.getNode().getName() + ".get" + expr.getAttribute().getName().substring(0, 1).toUpperCase() + expr.getAttribute().getName().substring(1) + "()";
-	}
-	
 	private String transformAttributeValue2Java(IBeXContextPattern context, IBeXArithmeticExpression expr, Collection<HiPEAttribute> attributes) {
 		if(expr instanceof IBeXArithmeticValueLiteral) {
 			return transformAttributeValue2Java(context, (IBeXArithmeticValueLiteral)expr, attributes);
@@ -345,7 +308,7 @@ public class IBeXToHiPEPatternTransformation {
 					break;
 				case COUNT:
 					//TODO: Implement
-					throw new UnsupportedOperationException("COUNT an operator type that is currently not supported by HiPE -> constraint will be ignored..");
+					throw new UnsupportedOperationException("COUNT is an operator type that is currently not supported by HiPE -> Constraint will be handled by eMoflon.");
 				case EEXPONENTIAL:
 					sb.append("java.lang.Math.exp(");
 					sb.append(transformAttributeValue2Java(context, uexpr.getOperand(), attributes));
@@ -499,14 +462,6 @@ public class IBeXToHiPEPatternTransformation {
 		attr.setValue(literal.getLiteral());
 		return attr;
 	}
-	
-// TODO
-//	private HiPEAttribute transform(IBeXContextPattern context, IBeXAttributeParameter attributeParam) {
-//		HiPEAttribute attr = factory.createHiPEAttribute();
-//		container.getAttributes().add(attr);
-//		attr.setName(attributeParam.getName());
-//		return attr;
-//	}
 	
 	private HiPEAttribute transform(IBeXContextPattern context, IBeXAttributeExpression attributeExpr) {
 		HiPEAttribute attr = factory.createHiPEAttribute();
