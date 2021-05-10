@@ -4,6 +4,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import org.apache.log4j.Logger;
 import org.eclipse.emf.common.util.EMap;
@@ -26,6 +27,7 @@ import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXContextPattern;
 import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXEdge;
 import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXEnumLiteral;
 import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXInjectivityConstraint;
+import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXMatchCount;
 import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXNode;
 import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXPatternInvocation;
 import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXPatternModelFactory;
@@ -34,6 +36,7 @@ import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXRelation;
 import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXUnaryExpression;
 import org.moflon.core.utilities.LogUtils;
 
+import hipe.network.CountInvocation;
 import hipe.pattern.ComparatorType;
 import hipe.pattern.ComplexConstraint;
 import hipe.pattern.HiPEAttribute;
@@ -42,6 +45,7 @@ import hipe.pattern.HiPEEdge;
 import hipe.pattern.HiPENode;
 import hipe.pattern.HiPEPattern;
 import hipe.pattern.HiPEContainer;
+import hipe.pattern.HiPECountInvocation;
 import hipe.pattern.HiPEPatternFactory;
 import hipe.pattern.HiPEPatternInvocation;
 import hipe.pattern.RelationalConstraint;
@@ -56,6 +60,8 @@ public class IBeXToHiPEPatternTransformation {
 	protected Map<String, HiPEPattern> name2pattern = new HashMap<>();
 	protected Map<IBeXNode, HiPENode> node2node = new HashMap<>();
 	protected HiPEContainer container;
+	protected Map<IBeXContextPattern, HiPEPattern> ibexPattern2pattern = new HashMap<>();
+	protected Map<HiPECountInvocation, IBeXMatchCount> hipeCount2Count = new HashMap<>();
 	
 	private int csp_id = 0;
 	
@@ -82,6 +88,20 @@ public class IBeXToHiPEPatternTransformation {
 					
 					container.getPatterns().add(transform(alternative));
 				}
+		}
+		
+		// Finish count Invocations
+		for(HiPECountInvocation hipeCount : hipeCount2Count.keySet()) {
+			IBeXMatchCount ibexCount = hipeCount2Count.get(hipeCount);
+			
+			hipeCount.setInvokedPattern(ibexPattern2pattern.get(ibexCount.getInvocation().getInvokedPattern()));
+			
+			EMap<IBeXNode, IBeXNode> mapping = ibexCount.getInvocation().getMapping();
+			for(IBeXNode node : mapping.keySet()) {
+				HiPENode srcNode = node2node.get(node);
+				HiPENode trgNode = node2node.get(mapping.get(node));
+				hipeCount.getInvocationNodeMap().put(srcNode, trgNode);
+			}
 		}
 		
 		return container;
@@ -154,6 +174,7 @@ public class IBeXToHiPEPatternTransformation {
 			pattern.getAttributeConstraints().add(transform(context, pattern, csp));
 		}
 		
+		ibexPattern2pattern.put(context, pattern);
 		return pattern;
 	}
 	
@@ -233,13 +254,13 @@ public class IBeXToHiPEPatternTransformation {
 		String leftExpr = null;
 		String rightExpr = null;
 		try {
-			leftExpr = transformAttributeValue2Java(context, constr.getLhs(), attributes);
+			leftExpr = transformAttributeValue2Java(context, cConstraint, constr.getLhs(), attributes);
 		} catch(UnsupportedOperationException e) {
 			LogUtils.error(logger, e.getMessage());
 			return null;
 		}
 		try {
-			rightExpr = transformAttributeValue2Java(context, constr.getRhs(), attributes);
+			rightExpr = transformAttributeValue2Java(context, cConstraint, constr.getRhs(), attributes);
 		} catch(UnsupportedOperationException e) {
 			LogUtils.error(logger, e.getMessage());	
 			return null;
@@ -279,7 +300,7 @@ public class IBeXToHiPEPatternTransformation {
 		return cConstraint;
 	}
 	
-	private String transformAttributeValue2Java(IBeXContextPattern context, IBeXArithmeticExpression expr, Collection<HiPEAttribute> attributes) {
+	private String transformAttributeValue2Java(IBeXContextPattern context, ComplexConstraint constraint, IBeXArithmeticExpression expr, Collection<HiPEAttribute> attributes) {
 		if(expr instanceof IBeXArithmeticValueLiteral) {
 			return transformAttributeValue2Java(context, (IBeXArithmeticValueLiteral)expr, attributes);
 		} else if (expr instanceof IBeXArithmeticAttribute){
@@ -293,50 +314,69 @@ public class IBeXToHiPEPatternTransformation {
 			switch(uexpr.getOperator()) {
 				case ABSOLUTE:
 					sb.append("java.lang.Math.abs(");
-					sb.append(transformAttributeValue2Java(context, uexpr.getOperand(), attributes));
+					sb.append(transformAttributeValue2Java(context, constraint, uexpr.getOperand(), attributes));
 					sb.append(")");
 					break;
 				case BRACKET:
 					sb.append("(");
-					sb.append(transformAttributeValue2Java(context, uexpr.getOperand(), attributes));
+					sb.append(transformAttributeValue2Java(context, constraint, uexpr.getOperand(), attributes));
 					sb.append(")");
 					break;
 				case COS:
 					sb.append("java.lang.Math.cos(");
-					sb.append(transformAttributeValue2Java(context, uexpr.getOperand(), attributes));
+					sb.append(transformAttributeValue2Java(context, constraint, uexpr.getOperand(), attributes));
 					sb.append(")");
 					break;
-				case COUNT:
-					//TODO: Implement
-					throw new UnsupportedOperationException("COUNT is an operator type that is currently not supported by HiPE -> Constraint will be handled by eMoflon.");
+				case COUNT: {
+					IBeXMatchCount mc = (IBeXMatchCount) uexpr;
+					HiPECountInvocation hipeCount = factory.createHiPECountInvocation();
+					constraint.getCountInvocations().add(hipeCount);
+					hipeCount2Count.put(hipeCount, mc);
+					
+					StringBuilder nestedSB = new StringBuilder();
+					nestedSB.append("COUNT_");
+					nestedSB.append(mc.getInvocation().getInvokedPattern().getName());
+					for(Entry<IBeXNode, IBeXNode> node : mc.getInvocation().getMapping()) {
+						nestedSB.append("_");
+						nestedSB.append(node.getKey().getName());
+						nestedSB.append("2");
+						nestedSB.append(node.getValue().getName());
+					}
+					
+					hipeCount.setExpressionID(nestedSB.toString());
+					sb.append("getCount(match, ");
+					sb.append(hipeCount.getExpressionID());
+					sb.append(")");
+					break;
+				}
 				case EEXPONENTIAL:
 					sb.append("java.lang.Math.exp(");
-					sb.append(transformAttributeValue2Java(context, uexpr.getOperand(), attributes));
+					sb.append(transformAttributeValue2Java(context, constraint, uexpr.getOperand(), attributes));
 					sb.append(")");
 					break;
 				case LG:
 					sb.append("java.lang.Math.log(");
-					sb.append(transformAttributeValue2Java(context, uexpr.getOperand(), attributes));
+					sb.append(transformAttributeValue2Java(context, constraint, uexpr.getOperand(), attributes));
 					sb.append(")");
 					break;
 				case LOG:
 					sb.append("java.lang.Math.log10(");
-					sb.append(transformAttributeValue2Java(context, uexpr.getOperand(), attributes));
+					sb.append(transformAttributeValue2Java(context, constraint, uexpr.getOperand(), attributes));
 					sb.append(")");
 					break;
 				case SIN:
 					sb.append("java.lang.Math.sin(");
-					sb.append(transformAttributeValue2Java(context, uexpr.getOperand(), attributes));
-					sb.append(")");
+					sb.append(transformAttributeValue2Java(context, constraint, uexpr.getOperand(), attributes));
+					sb.append(")"); 
 					break;
 				case SQRT:
 					sb.append("java.lang.Math.sqrt(");
-					sb.append(transformAttributeValue2Java(context, uexpr.getOperand(), attributes));
+					sb.append(transformAttributeValue2Java(context, constraint, uexpr.getOperand(), attributes));
 					sb.append(")");
 					break;
 				case TAN:
 					sb.append("java.lang.Math.tan(");
-					sb.append(transformAttributeValue2Java(context, uexpr.getOperand(), attributes));
+					sb.append(transformAttributeValue2Java(context, constraint, uexpr.getOperand(), attributes));
 					sb.append(")");
 					break;
 				default:
@@ -348,50 +388,50 @@ public class IBeXToHiPEPatternTransformation {
 			StringBuilder sb = new StringBuilder();
 			switch(bexpr.getOperator()) {
 				case ADDITION:
-					sb.append(transformAttributeValue2Java(context, bexpr.getLeft(), attributes));
+					sb.append(transformAttributeValue2Java(context, constraint, bexpr.getLeft(), attributes));
 					sb.append(" + ");
-					sb.append(transformAttributeValue2Java(context, bexpr.getRight(), attributes));
+					sb.append(transformAttributeValue2Java(context, constraint, bexpr.getRight(), attributes));
 					break;
 				case DIVISION:
-					sb.append(transformAttributeValue2Java(context, bexpr.getLeft(), attributes));
+					sb.append(transformAttributeValue2Java(context, constraint, bexpr.getLeft(), attributes));
 					sb.append(" / ");
-					sb.append(transformAttributeValue2Java(context, bexpr.getRight(), attributes));
+					sb.append(transformAttributeValue2Java(context, constraint, bexpr.getRight(), attributes));
 					break;
 				case EXPONENTIATION:
 					sb.append("java.lang.Math.pow(");
-					sb.append(transformAttributeValue2Java(context, bexpr.getLeft(), attributes));
+					sb.append(transformAttributeValue2Java(context, constraint, bexpr.getLeft(), attributes));
 					sb.append(", ");
-					sb.append(transformAttributeValue2Java(context, bexpr.getRight(), attributes));
+					sb.append(transformAttributeValue2Java(context, constraint, bexpr.getRight(), attributes));
 					sb.append(")");
 					break;
 				case MAXIMUM:
 					sb.append("java.lang.Math.max(");
-					sb.append(transformAttributeValue2Java(context, bexpr.getLeft(), attributes));
+					sb.append(transformAttributeValue2Java(context, constraint, bexpr.getLeft(), attributes));
 					sb.append(", ");
-					sb.append(transformAttributeValue2Java(context, bexpr.getRight(), attributes));
+					sb.append(transformAttributeValue2Java(context, constraint, bexpr.getRight(), attributes));
 					sb.append(")");
 					break;
 				case MINIMUM:
 					sb.append("java.lang.Math.min(");
-					sb.append(transformAttributeValue2Java(context, bexpr.getLeft(), attributes));
+					sb.append(transformAttributeValue2Java(context, constraint, bexpr.getLeft(), attributes));
 					sb.append(", ");
-					sb.append(transformAttributeValue2Java(context, bexpr.getRight(), attributes));
+					sb.append(transformAttributeValue2Java(context, constraint, bexpr.getRight(), attributes));
 					sb.append(")");
 					break;
 				case MODULUS:
-					sb.append(transformAttributeValue2Java(context, bexpr.getLeft(), attributes));
+					sb.append(transformAttributeValue2Java(context, constraint, bexpr.getLeft(), attributes));
 					sb.append(" % ");
-					sb.append(transformAttributeValue2Java(context, bexpr.getRight(), attributes));
+					sb.append(transformAttributeValue2Java(context, constraint, bexpr.getRight(), attributes));
 					break;
 				case MULTIPLICATION:
-					sb.append(transformAttributeValue2Java(context, bexpr.getLeft(), attributes));
+					sb.append(transformAttributeValue2Java(context, constraint, bexpr.getLeft(), attributes));
 					sb.append(" * ");
-					sb.append(transformAttributeValue2Java(context, bexpr.getRight(), attributes));
+					sb.append(transformAttributeValue2Java(context, constraint, bexpr.getRight(), attributes));
 					break;
 				case SUBTRACTION:
-					sb.append(transformAttributeValue2Java(context, bexpr.getLeft(), attributes));
+					sb.append(transformAttributeValue2Java(context, constraint, bexpr.getLeft(), attributes));
 					sb.append(" - ");
-					sb.append(transformAttributeValue2Java(context, bexpr.getRight(), attributes));
+					sb.append(transformAttributeValue2Java(context, constraint, bexpr.getRight(), attributes));
 					break;
 				default:
 					throw new UnsupportedOperationException("Unknown arithmetic operator type -> constraint will be ignored..");
