@@ -522,7 +522,7 @@ public class IBeXToHiPEPatternTransformation {
 			}
 			if(value instanceof IBeXConstant) {
 				IBeXConstant iConst= (IBeXConstant) value;
-				initCode += iConst.getStringValue().replaceAll("\"\"", "\"");
+				initCode += iConst.getStringValue().replaceAll("\"", "\"");
 				HiPEAttribute hAttr = transform(context, iConst);
 				cConstraint.getAttributes().add(hAttr);
 				pattern.getAttributes().add(hAttr);
