@@ -13,5 +13,10 @@ public class HiPEProperties implements IPatternInterpreterProperties {
 	public boolean supports_arithmetic_attr_constraints() {
 		return true;
 	}
+	
+	@Override
+	public boolean supports_count_matches() {
+		return true;
+	}
 
 }
