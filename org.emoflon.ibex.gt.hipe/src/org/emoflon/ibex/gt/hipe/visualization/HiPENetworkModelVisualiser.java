@@ -89,7 +89,7 @@ public class HiPENetworkModelVisualiser extends EMoflonEcoreVisualiser<ObjectDia
 				patternName = patternName.substring(0, patternName.lastIndexOf("_"));
 				
 			for(AbstractPort p : n.getInputPort()) {
-				MatchingNode mNode = p.getParent().getMatchingnode();
+				MatchingNode mNode = p.getMatchingNode();
 				selection.add(mNode);
 				
 				if(patternName != null && mNode.getPatternName() != null && mNode.getPatternName().contains(patternName))
