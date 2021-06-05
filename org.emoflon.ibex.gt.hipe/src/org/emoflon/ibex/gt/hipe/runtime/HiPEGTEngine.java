@@ -190,7 +190,7 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 	}
 	
 	protected Resource loadResource(String path) throws Exception {
-		Resource.Factory.Registry.INSTANCE.getExtensionToFactoryMap().put("xmi", new XtendXMIResourceFactoryImpl());
+		Resource.Factory.Registry.INSTANCE.getExtensionToFactoryMap().put("xmi",new XtendXMIResourceFactoryImpl());
 		resourceSet.getResourceFactoryRegistry().getExtensionToFactoryMap().put("xmi",new XtendXMIResourceFactoryImpl());
 		
 		Resource modelResource = resourceSet.getResource(URI.createURI(path).resolve(base), true);
