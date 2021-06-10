@@ -37,13 +37,13 @@ import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXContextAlternatives;
 import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXContextPattern;
 import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXPatternSet;
 import org.moflon.core.utilities.LogUtils;
+import org.moflon.smartemf.persistence.SmartEMFResourceFactoryImpl;
 
 import hipe.engine.HiPEContentAdapter;
 import hipe.engine.IHiPEEngine;
 import hipe.engine.match.ProductionMatch;
 import hipe.engine.message.production.ProductionResult;
 import hipe.network.HiPENetwork;
-import persistence.XtendXMIResourceFactoryImpl;
 
 /**
  * Engine for (unidirectional) graph transformations with HiPE.
@@ -123,7 +123,7 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 	private ResourceSet createAndPrepareResourceSet_internal(final String workspacePath) {
 		ResourceSet rs = new ResourceSetImpl();
 		rs.getResourceFactoryRegistry().getExtensionToFactoryMap()
-				.put(Resource.Factory.Registry.DEFAULT_EXTENSION, new XtendXMIResourceFactoryImpl());
+				.put(Resource.Factory.Registry.DEFAULT_EXTENSION, new SmartEMFResourceFactoryImpl());
 		try {
 			rs.getURIConverter().getURIMap().put(URI.createPlatformResourceURI("/", true), URI.createFileURI(new File(workspacePath).getCanonicalPath() + File.separator));
 		} catch (IOException e) {
@@ -190,8 +190,8 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 	}
 	
 	protected Resource loadResource(String path) throws Exception {
-		Resource.Factory.Registry.INSTANCE.getExtensionToFactoryMap().put("xmi",new XtendXMIResourceFactoryImpl());
-		resourceSet.getResourceFactoryRegistry().getExtensionToFactoryMap().put("xmi",new XtendXMIResourceFactoryImpl());
+		Resource.Factory.Registry.INSTANCE.getExtensionToFactoryMap().put("xmi",new SmartEMFResourceFactoryImpl());
+		resourceSet.getResourceFactoryRegistry().getExtensionToFactoryMap().put("xmi",new SmartEMFResourceFactoryImpl());
 		
 		Resource modelResource = resourceSet.getResource(URI.createURI(path).resolve(base), true);
 		EcoreUtil.resolveAll(resourceSet);
