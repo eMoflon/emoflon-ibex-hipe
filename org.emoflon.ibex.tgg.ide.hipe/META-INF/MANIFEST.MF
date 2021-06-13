@@ -28,7 +28,8 @@ Require-Bundle: com.google.guava,
  org.eclipse.emf.importer,
  org.eclipse.emf.ecore,
  org.eclipse.emf.codegen.ecore,
- org.emoflon.ibex.patternmodel
+ org.emoflon.ibex.patternmodel,
+ org.moflon.core.propertycontainer
 Export-Package: org.emoflon.ibex.tgg.compiler.hipe.defaults
 Bundle-ActivationPolicy: lazy
 Import-Package: org.eclipse.xtext.common.types.impl,
