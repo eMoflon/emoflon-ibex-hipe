@@ -38,6 +38,7 @@ import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
 import org.eclipse.emf.importer.ecore.EcoreImporter;
 import org.emoflon.ibex.tgg.operational.defaults.IbexOptions;
 import org.emoflon.ibex.tgg.operational.strategies.modules.TGGResourceHandler;
+import org.moflon.core.plugins.manifest.ExportedPackagesInManifestUpdater;
 import org.moflon.core.propertycontainer.MoflonPropertiesContainer;
 import org.moflon.core.propertycontainer.MoflonPropertiesContainerHelper;
 import org.moflon.core.utilities.MoflonUtil;
@@ -171,7 +172,9 @@ public class HiPEBuilderUtil {
 				//because of smartemf: the gen folder needs to be refreshed automatically; 
 				//else the user will need to do this manually 
 				project.refreshLocal(IResource.DEPTH_INFINITE, new NullProgressMonitor());
+				
 		    }
+		    ExportedPackagesInManifestUpdater.updateExportedPackageInManifest(project, genModel);
 		    
 			
 		} catch (Exception e) {
