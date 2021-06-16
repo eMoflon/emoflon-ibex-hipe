@@ -44,7 +44,7 @@ import org.moflon.core.propertycontainer.MoflonPropertiesContainerHelper;
 import org.moflon.core.utilities.MoflonUtil;
 import org.moflon.emf.codegen.StandalonePackageDescriptor;
 import org.moflon.emf.codegen.resource.GenModelResourceFactory;
-import org.moflon.smartemf.EMFCodeGenerator;
+import org.moflon.smartemf.SmartEMFGenerator;
 
 public class HiPEBuilderUtil {
 	public Collection<String> metaModelImports;
@@ -152,18 +152,12 @@ public class HiPEBuilderUtil {
 			    generator.setInput(genModel);
 				generator.generate(genModel, GenBaseGeneratorAdapter.MODEL_PROJECT_TYPE, monitor);
 				break;
-		    case SMART_EMF:
-		    	IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();			
-		    	
-				File genmodelFile = new File(project.getLocation().toOSString() + "/model/" + project.getName() + ".genmodel");
+		    case SMART_EMF:	
 				File ecoreFile = new File(project.getLocation().toOSString() + "/model/" + project.getName() + ".ecore");
-				
-				String genModelPath = genmodelFile.getAbsolutePath();
 				String ecorePath = ecoreFile.getAbsolutePath();
-	
-				if(genmodelFile.exists() && !genmodelFile.isDirectory() && ecoreFile.exists() && !ecoreFile.isDirectory()) {
+				if(ecoreFile.exists() && !ecoreFile.isDirectory()) {
 					//paths of the files necessary for smartEMF extension
-					final EMFCodeGenerator codeGenerator = new EMFCodeGenerator(ecorePath,genModelPath);
+					final SmartEMFGenerator codeGenerator = new SmartEMFGenerator(metaModel, genModel, ecorePath);
 					codeGenerator.generate_all_model_code();				
 				} else {
 					throw new RuntimeException("Problem when generating code: the genmodel file needs to be in the same folder as the ecore file.");
