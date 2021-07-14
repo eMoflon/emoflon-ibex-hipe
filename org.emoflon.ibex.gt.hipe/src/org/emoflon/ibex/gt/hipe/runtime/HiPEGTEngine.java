@@ -37,6 +37,7 @@ import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXContextAlternatives;
 import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXContextPattern;
 import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXPatternSet;
 import org.moflon.core.utilities.LogUtils;
+import org.moflon.smartemf.persistence.SmartEMFResource;
 import org.moflon.smartemf.persistence.SmartEMFResourceFactoryImpl;
 
 import hipe.engine.HiPEContentAdapter;
@@ -288,7 +289,12 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 			}
 		}
 		try {
-			engine.initialize();
+			if(resources.stream().filter(res -> !(res instanceof SmartEMFResource)).findAny().isPresent())
+				engine.initialize(false);
+			else {
+				// Make use of cascading notifications in case of SmartEMF -> true
+				engine.initialize(true);
+			}
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
