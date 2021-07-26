@@ -281,7 +281,7 @@ public class HiPEBuilderUtil {
 			}
 
 			@Override
-			protected void createAndPrepareResourceSet() {
+			protected void createAndPrepareResourceSets() {
 				rs = new ResourceSetImpl();
 				util.loadDefaultSettings();
 			}
