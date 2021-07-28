@@ -59,12 +59,12 @@ public class HiPEBuilderUtil {
 
 	public void loadDefaultSettings() {
 		TGGResourceHandler resourceHandler = options.resourceHandler();
-		resourceHandler.getResourceSet().getPackageRegistry().put("http://www.eclipse.org/emf/2002/GenModel",
+		resourceHandler.getModelResourceSet().getPackageRegistry().put("http://www.eclipse.org/emf/2002/GenModel",
 				new StandalonePackageDescriptor("org.eclipse.emf.codegen.ecore.genmodel.GenModelPackage"));
 
-		resourceHandler.getResourceSet().getResourceFactoryRegistry().getExtensionToFactoryMap().put("genmodel",
+		resourceHandler.getModelResourceSet().getResourceFactoryRegistry().getExtensionToFactoryMap().put("genmodel",
 				new GenModelResourceFactory());
-		resourceHandler.getResourceSet().getResourceFactoryRegistry().getExtensionToFactoryMap().put("xmi",
+		resourceHandler.getModelResourceSet().getResourceFactoryRegistry().getExtensionToFactoryMap().put("xmi",
 				new XMIResourceFactoryImpl());
 	}
 
@@ -283,6 +283,7 @@ public class HiPEBuilderUtil {
 			@Override
 			protected void createAndPrepareResourceSets() {
 				rs = new ResourceSetImpl();
+				specificationRS = new ResourceSetImpl();
 				util.loadDefaultSettings();
 			}
 
