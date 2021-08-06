@@ -290,10 +290,10 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 			}
 		}
 		try {
-			if(resources.stream().filter(res -> !(res instanceof SmartEMFResource)).findAny().isPresent())
+			if(resources.stream().filter(res -> !(res instanceof SmartEMFResource && ((SmartEMFResource) res).getCascade())).findAny().isPresent())
 				engine.initialize(false);
 			else {
-				// Make use of cascading notifications in case of SmartEMF -> true
+				// Make use of cascading notifications in case of SmartEMF -> true an cascading is activated
 				engine.initialize(true);
 			}
 		} catch (InterruptedException e) {
