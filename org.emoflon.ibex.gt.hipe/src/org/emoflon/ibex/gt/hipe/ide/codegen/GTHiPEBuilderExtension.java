@@ -30,6 +30,7 @@ import org.moflon.core.utilities.ClasspathUtil;
 import org.moflon.core.utilities.LogUtils;
 
 import hipe.generator.HiPEGenerator;
+import hipe.generator.HiPEGeneratorConfig;
 import hipe.network.HiPENetwork;
 import hipe.pattern.HiPEContainer;
 import hipe.searchplan.SearchPlan;
@@ -78,7 +79,8 @@ public class GTHiPEBuilderExtension implements GTEngineBuilderExtension{
 		HiPENetwork network = searchPlan.getNetwork();
 		
 		LogUtils.info(logger, "Generating Code..");
-		HiPEGenerator.generateCode(packageName+".", projectPath, network);
+		HiPEGeneratorConfig config = new HiPEGeneratorConfig();
+		HiPEGenerator.generateCode(packageName+".", projectPath, network, config);
 		
 		double toc = System.currentTimeMillis();
 		LogUtils.info(logger, "Code generation completed in "+ (toc-tic)/1000.0 + " seconds.");	

@@ -55,11 +55,16 @@ import org.emoflon.ibex.tgg.operational.strategies.sync.INITIAL_BWD;
 import org.emoflon.ibex.tgg.operational.strategies.sync.INITIAL_FWD;
 import org.emoflon.ibex.tgg.operational.strategies.sync.SYNC;
 import org.moflon.core.plugins.manifest.ManifestFileUpdater;
+import org.moflon.core.propertycontainer.MoflonPropertiesContainer;
+import org.moflon.core.propertycontainer.MoflonPropertiesContainerHelper;
+import org.moflon.core.propertycontainer.UsedCodeGen;
+import org.moflon.core.propertycontainer.impl.MoflonPropertiesContainerImpl;
 import org.moflon.core.utilities.ClasspathUtil;
 import org.moflon.core.utilities.LogUtils;
 import org.moflon.tgg.mosl.tgg.TripleGraphGrammarFile;
 
 import hipe.generator.HiPEGenerator;
+import hipe.generator.HiPEGeneratorConfig;
 import hipe.network.HiPENetwork;
 import hipe.pattern.HiPEContainer;
 import hipe.searchplan.SearchPlan;
@@ -165,6 +170,8 @@ public class IbexHiPEBuilderExtension implements TGGEngineBuilderExtension {
 		LogUtils.info(logger, "Updating Manifest & build properties..");
 		updateManifest();
 		updateBuildProperties();
+		MoflonPropertiesContainerHelper helper = new MoflonPropertiesContainerHelper(project, null);
+		MoflonPropertiesContainer moflonProperties = helper.load();
 		
 		double tic = System.currentTimeMillis();
 		executables.parallelStream().forEach(executable -> {
@@ -178,10 +185,6 @@ public class IbexHiPEBuilderExtension implements TGGEngineBuilderExtension {
 			HiPEContainer container = transformation.transform(ibexPatterns);
 			
 			LogUtils.info(logger,  executable.getClass().getName() + ": Creating search plan & generating Rete network..");
-//			SearchPlan searchPlan = new TGGSimpleSearchPlan(container);
-//			SearchPlan searchPlan = new TGGTriangleSearchPlan(container);
-//			SearchPlan searchPlan = new TriangleSearchPlan(container);
-//			SearchPlan searchPlan = new SimpleSearchPlan(container);
 			SearchPlan searchPlan = new LocalSearchPlan(container);
 			searchPlan.generateSearchPlan();
 			HiPENetwork network = searchPlan.getNetwork();
@@ -206,7 +209,9 @@ public class IbexHiPEBuilderExtension implements TGGEngineBuilderExtension {
 			else
 				throw new RuntimeException("Unsupported Operational Strategy detected");
 			
-			HiPEGenerator.generateCode(projectName+"." + packageName + ".", projectPath, network);
+			HiPEGeneratorConfig config = new HiPEGeneratorConfig();
+			config.setEnforcedBidirectionalRefs(moflonProperties.getUsedCodeGen() == UsedCodeGen.SMART_EMF);
+			HiPEGenerator.generateCode(projectName+"." + packageName + ".", projectPath, network, config);
 			
 			LogUtils.info(logger,  executable.getClass().getName() + ": Code generation completed");
 			String hipePath = "src-gen/" + projectName + "/" + packageName + "/hipe/engine/";
