@@ -170,9 +170,30 @@ public class IbexHiPEBuilderExtension implements TGGEngineBuilderExtension {
 		LogUtils.info(logger, "Updating Manifest & build properties..");
 		updateManifest();
 		updateBuildProperties();
-		MoflonPropertiesContainerHelper helper = new MoflonPropertiesContainerHelper(project, null);
-		MoflonPropertiesContainer moflonProperties = helper.load();
 		
+		// load properties and set useSmartEMF if all projects are gnerated with smart emf
+		boolean useSmartEMF = true;
+		MoflonPropertiesContainerHelper corrHelper = new MoflonPropertiesContainerHelper(project, null);
+		MoflonPropertiesContainer corrProperties = corrHelper.load();
+		useSmartEMF = useSmartEMF && corrProperties.getUsedCodeGen() == UsedCodeGen.SMART_EMF;
+		if(srcProject != null) {
+			MoflonPropertiesContainerHelper srcHelper = new MoflonPropertiesContainerHelper(srcProject, null);
+			MoflonPropertiesContainer srcProperties = srcHelper.load();
+			useSmartEMF = useSmartEMF && srcProperties.getUsedCodeGen() == UsedCodeGen.SMART_EMF;
+		}
+		else {
+			useSmartEMF = false;
+		}
+		if(trgProject != null) {
+			MoflonPropertiesContainerHelper trgHelper = new MoflonPropertiesContainerHelper(trgProject, null);
+			MoflonPropertiesContainer trgProperties = trgHelper.load();
+			useSmartEMF = useSmartEMF && trgProperties.getUsedCodeGen() == UsedCodeGen.SMART_EMF;
+		}
+		else {
+			useSmartEMF = false;
+		}
+		
+		final boolean enforceBidirectionalEdges = useSmartEMF;
 		double tic = System.currentTimeMillis();
 		executables.parallelStream().forEach(executable -> {
 			LogUtils.info(logger, executable.getClass().getName() + ": Compiling ibex patterns from TGG patterns...");
@@ -210,7 +231,7 @@ public class IbexHiPEBuilderExtension implements TGGEngineBuilderExtension {
 				throw new RuntimeException("Unsupported Operational Strategy detected");
 			
 			HiPEGeneratorConfig config = new HiPEGeneratorConfig();
-			config.setEnforcedBidirectionalRefs(moflonProperties.getUsedCodeGen() == UsedCodeGen.SMART_EMF);
+			config.setEnforcedBidirectionalRefs(enforceBidirectionalEdges);
 			HiPEGenerator.generateCode(projectName+"." + packageName + ".", projectPath, network, config);
 			
 			LogUtils.info(logger,  executable.getClass().getName() + ": Code generation completed");
