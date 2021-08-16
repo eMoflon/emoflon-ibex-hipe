@@ -36,11 +36,11 @@ import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXContext;
 import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXContextAlternatives;
 import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXContextPattern;
 import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXPatternSet;
-import org.moflon.core.utilities.LogUtils;
 import org.moflon.smartemf.persistence.SmartEMFResource;
 import org.moflon.smartemf.persistence.SmartEMFResourceFactoryImpl;
 
 import hipe.engine.HiPEContentAdapter;
+import hipe.engine.HiPEOptions;
 import hipe.engine.IHiPEEngine;
 import hipe.engine.match.ProductionMatch;
 import hipe.engine.message.production.ProductionResult;
@@ -290,12 +290,10 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 			}
 		}
 		try {
-			if(resources.stream().filter(res -> !(res instanceof SmartEMFResource && ((SmartEMFResource) res).getCascade())).findAny().isPresent())
-				engine.initialize(false);
-			else {
-				// Make use of cascading notifications in case of SmartEMF -> true an cascading is activated
-				engine.initialize(true);
-			}
+			HiPEOptions options = new HiPEOptions();
+			options.cascadingNotifications = !resources.stream().filter(res -> !(res instanceof SmartEMFResource && ((SmartEMFResource) res).getCascade())).findAny().isPresent();
+			options.lazyInitialization = !resources.stream().filter(res -> !(res instanceof SmartEMFResource)).findAny().isPresent();
+			engine.initialize(options);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
