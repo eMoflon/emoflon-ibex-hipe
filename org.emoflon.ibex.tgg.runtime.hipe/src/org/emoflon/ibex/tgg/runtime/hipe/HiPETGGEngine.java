@@ -37,6 +37,7 @@ import org.emoflon.ibex.tgg.operational.strategies.opt.CO;
 import org.emoflon.ibex.tgg.operational.strategies.sync.INITIAL_BWD;
 import org.emoflon.ibex.tgg.operational.strategies.sync.INITIAL_FWD;
 import org.emoflon.ibex.tgg.operational.strategies.sync.SYNC;
+import org.moflon.smartemf.runtime.SmartPackage;
 
 import hipe.engine.IHiPEEngine;
 import hipe.engine.match.ProductionMatch;
@@ -229,5 +230,15 @@ public class HiPETGGEngine extends HiPEGTEngine implements IBlackInterpreter, Ti
 	@Override
 	public Times getTimes() {
 		return times;
+	}
+	
+	public IbexOptions getOptions() {
+		return options;
+	}
+	
+	@Override
+	protected boolean initializeLazy() {
+		// TODO lfritsche: we have to find a better solution to make sure that smartobjects are only contained within these resources
+		return options.tgg.corrMetamodel() instanceof SmartPackage;
 	}
 }

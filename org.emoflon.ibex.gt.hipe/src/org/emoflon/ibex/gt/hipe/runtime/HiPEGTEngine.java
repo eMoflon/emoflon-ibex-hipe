@@ -125,6 +125,7 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 		ResourceSet rs = new ResourceSetImpl();
 		rs.getResourceFactoryRegistry().getExtensionToFactoryMap()
 				.put(Resource.Factory.Registry.DEFAULT_EXTENSION, new SmartEMFResourceFactoryImpl(workspacePath));
+//				.put(Resource.Factory.Registry.DEFAULT_EXTENSION, new XMIResourceFactoryImpl());
 		try {
 			rs.getURIConverter().getURIMap().put(URI.createPlatformResourceURI("/", true), URI.createFileURI(new File(workspacePath).getCanonicalPath() + File.separator));
 		} catch (IOException e) {
@@ -292,7 +293,7 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 		try {
 			HiPEOptions options = new HiPEOptions();
 			options.cascadingNotifications = !resources.stream().filter(res -> !(res instanceof SmartEMFResource && ((SmartEMFResource) res).getCascade())).findAny().isPresent();
-			options.lazyInitialization = !resources.stream().filter(res -> !(res instanceof SmartEMFResource)).findAny().isPresent();
+			options.lazyInitialization = initializeLazy();
 			engine.initialize(options);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
@@ -301,6 +302,10 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 		adapter = new HiPEContentAdapter(resources.stream().filter(res -> !res.getURI().toString().contains("-trash")).collect(Collectors.toSet()), engine);
 	}
 	
+	protected boolean initializeLazy() {
+		return false;
+	}
+
 	protected String getProjectName() {
 		URI patternURI = ibexPatternSet.eResource().getURI();
 		Pattern pattern = Pattern.compile("../(.*)/src-gen/(.*)(/api/ibex-patterns.xmi)$");
