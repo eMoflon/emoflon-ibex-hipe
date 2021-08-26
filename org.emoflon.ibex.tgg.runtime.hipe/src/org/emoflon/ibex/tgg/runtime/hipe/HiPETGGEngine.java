@@ -239,7 +239,6 @@ public class HiPETGGEngine extends HiPEGTEngine implements IBlackInterpreter, Ti
 	@Override
 	protected boolean initializeLazy() {
 		// TODO lfritsche: we have to find a better solution to make sure that smartobjects are only contained within these resources
-//		return options.tgg.corrMetamodel() instanceof SmartPackage;
-		return false;
+		return options.tgg.corrMetamodel() instanceof SmartPackage;
 	}
 }
