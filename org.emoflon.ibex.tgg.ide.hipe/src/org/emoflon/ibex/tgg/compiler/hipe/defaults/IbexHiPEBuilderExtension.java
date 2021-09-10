@@ -60,6 +60,7 @@ import org.moflon.core.utilities.LogUtils;
 import org.moflon.tgg.mosl.tgg.TripleGraphGrammarFile;
 
 import hipe.generator.HiPEGenerator;
+import hipe.generator.HiPEGeneratorConfig;
 import hipe.network.HiPENetwork;
 import hipe.pattern.HiPEContainer;
 import hipe.searchplan.SearchPlan;
@@ -206,7 +207,8 @@ public class IbexHiPEBuilderExtension implements TGGEngineBuilderExtension {
 			else
 				throw new RuntimeException("Unsupported Operational Strategy detected");
 			
-			HiPEGenerator.generateCode(projectName+"." + packageName + ".", projectPath, network);
+			HiPEGeneratorConfig config = new HiPEGeneratorConfig();
+			HiPEGenerator.generateCode(projectName+"." + packageName + ".", projectPath, network, config);
 			
 			LogUtils.info(logger,  executable.getClass().getName() + ": Code generation completed");
 			String hipePath = "src-gen/" + projectName + "/" + packageName + "/hipe/engine/";
