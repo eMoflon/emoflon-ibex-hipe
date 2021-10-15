@@ -200,7 +200,7 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 		EcoreUtil.resolveAll(resourceSet);
 		
 		if(modelResource == null)
-			throw new IOException("File did not contain a vaild model.");
+			throw new IOException("File did not contain a valid model.");
 		return modelResource;
 	}
 	
