@@ -11,6 +11,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import javax.management.RuntimeErrorException;
+
 import org.apache.commons.lang3.tuple.Pair;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
@@ -113,13 +115,13 @@ public class HiPEBuilderUtil {
 			}
 			
 //			List<GenPackage> removalList = removals.stream().collect(Collectors.toList());
-			
 			// create dummy genmodels or else the genpackages can not be found and thus persisted
 			for(GenPackage gp : removals) {
 				// search first in environment in case that the genmodel is exported as plugin
 				URI genURI = pack2genMapEnv.get(gp.getNSURI());
 				if(genURI == null)
 					genURI = pack2genMapTarget.get(gp.getNSURI());
+
 				ResourceSet rs = new ResourceSetImpl();
 				Resource createResource = rs.createResource(genURI);
 				createResource.load(null);
@@ -139,15 +141,16 @@ public class HiPEBuilderUtil {
 			
 			genModel.setGenerateSchema(true);
 			genModel.setCanGenerate(true);
-		    genModel.reconcile();
 
+			genModel.reconcile();
 			EcoreUtil.resolveAll(importer.getGenModelResourceSet());
+
 		    genModel.eResource().save(Collections.emptyMap());
 		    
 		    MoflonPropertiesContainerHelper helper = new MoflonPropertiesContainerHelper(project, new NullProgressMonitor());
 		    MoflonPropertiesContainer container = helper.load();
 		    switch(container.getUsedCodeGen()) {
-		    case EMF:
+		    case EMF:  	
 		    	Generator generator = GenModelUtil.createGenerator(genModel);
 			    generator.setInput(genModel);
 				generator.generate(genModel, GenBaseGeneratorAdapter.MODEL_PROJECT_TYPE, monitor);
@@ -173,6 +176,7 @@ public class HiPEBuilderUtil {
 			
 		} catch (Exception e) {
 			System.err.println("Could not generate TGG metamodel code!\nException: \n"+e.getMessage());
+			e.printStackTrace();
 		}
 	}
 
