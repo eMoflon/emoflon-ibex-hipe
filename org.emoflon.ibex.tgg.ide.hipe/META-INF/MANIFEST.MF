@@ -4,7 +4,7 @@ Bundle-Name: HiPE
 Bundle-SymbolicName: org.emoflon.ibex.tgg.ide.hipe;singleton:=true
 Bundle-Version: 1.0.0.qualifier
 Automatic-Module-Name: org.emoflon.ibex.tgg.ide.hipe
-Bundle-RequiredExecutionEnvironment: JavaSE-15
+Bundle-RequiredExecutionEnvironment: JavaSE-16
 Require-Bundle: com.google.guava,
  net.sourceforge.plantuml.eclipse,
  org.eclipse.ui.workbench,
