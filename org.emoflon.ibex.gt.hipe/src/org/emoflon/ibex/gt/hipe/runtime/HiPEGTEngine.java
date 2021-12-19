@@ -162,14 +162,14 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 		for(IBeXContext context : ibexPatternSet.getContextPatterns()) {
 			if(context instanceof IBeXContextPattern) {
 				IBeXContextPattern pattern = (IBeXContextPattern) context;
-				if(pattern.getSignatureNodes().isEmpty())
+				if(pattern.getSignatureNodes().isEmpty() && pattern.getLocalNodes().isEmpty())
 					continue;
 				
 				patterns.put(context.getName().replace("-", "_"), context.getName());
 			}
 			if(context instanceof IBeXContextAlternatives)
 				for(IBeXContextPattern alternative : ((IBeXContextAlternatives) context).getAlternativePatterns()) {
-					if(alternative.getSignatureNodes().isEmpty()) {
+					if(alternative.getSignatureNodes().isEmpty() && alternative.getLocalNodes().isEmpty()) {
 						continue;
 					}
 					
