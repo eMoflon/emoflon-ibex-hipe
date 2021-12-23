@@ -115,13 +115,13 @@ public class IbexHiPEBuilderExtension implements TGGEngineBuilderExtension {
 		LogUtils.info(logger, "Building TGG operational strategy...");
 		Collection<IbexExecutable> executables = new HashSet<>();
 		try {
-			executables.add(new INITIAL_FWD(HiPEBuilderUtil.registerResourceHandler(createIbexOptions(projectName, projectPath), metaModelImports, true)));
-			executables.add(new INITIAL_BWD(HiPEBuilderUtil.registerResourceHandler(createIbexOptions(projectName, projectPath), metaModelImports, false)));
-			executables.add(new SYNC(HiPEBuilderUtil.registerResourceHandler(createIbexOptions(projectName, projectPath), metaModelImports, false)));
-			executables.add(new CC(HiPEBuilderUtil.registerResourceHandler(createIbexOptions(projectName, projectPath), metaModelImports, false)));
-			executables.add(new CO(HiPEBuilderUtil.registerResourceHandler(createIbexOptions(projectName, projectPath), metaModelImports, false)));
-			executables.add(new MODELGEN(HiPEBuilderUtil.registerResourceHandler(createIbexOptions(projectName, projectPath), metaModelImports, false)));
-			executables.add(new INTEGRATE(HiPEBuilderUtil.registerResourceHandler(createIbexOptions(projectName, projectPath).patterns.optimizePattern(true), metaModelImports, false)));
+			executables.add(new INITIAL_FWD(HiPEBuilderUtil.registerResourceHandler(createIbexOptions(projectName, projectPath), project, metaModelImports, true)));
+			executables.add(new INITIAL_BWD(HiPEBuilderUtil.registerResourceHandler(createIbexOptions(projectName, projectPath), project, metaModelImports, false)));
+			executables.add(new SYNC(HiPEBuilderUtil.registerResourceHandler(createIbexOptions(projectName, projectPath), project, metaModelImports, false)));
+			executables.add(new CC(HiPEBuilderUtil.registerResourceHandler(createIbexOptions(projectName, projectPath), project, metaModelImports, false)));
+			executables.add(new CO(HiPEBuilderUtil.registerResourceHandler(createIbexOptions(projectName, projectPath), project, metaModelImports, false)));
+			executables.add(new MODELGEN(HiPEBuilderUtil.registerResourceHandler(createIbexOptions(projectName, projectPath), project, metaModelImports, false)));
+			executables.add(new INTEGRATE(HiPEBuilderUtil.registerResourceHandler(createIbexOptions(projectName, projectPath).patterns.optimizePattern(true), project, metaModelImports, false)));
 		} catch (IOException e) {
 			LogUtils.error(logger, e);
 			return;
