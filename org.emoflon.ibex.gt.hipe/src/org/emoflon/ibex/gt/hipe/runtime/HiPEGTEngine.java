@@ -292,7 +292,7 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 		}
 		try {
 			HiPEOptions options = new HiPEOptions();
-			options.cascadingNotifications = !resources.stream().filter(res -> !(res instanceof SmartEMFResource && ((SmartEMFResource) res).getCascade())).findAny().isPresent();
+			options.cascadingNotifications = cascadingNotifications(resources);
 			options.lazyInitialization = initializeLazy();
 			engine.initialize(options);
 		} catch (InterruptedException e) {
@@ -302,6 +302,10 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 		adapter = new HiPEContentAdapter(resources.stream().filter(res -> !res.getURI().toString().contains("-trash")).collect(Collectors.toSet()), engine);
 	}
 	
+	protected boolean cascadingNotifications(final Collection<Resource> resources) {
+		return !resources.stream().filter(res -> !(res instanceof SmartEMFResource && ((SmartEMFResource) res).getCascade())).findAny().isPresent();
+	}
+
 	protected boolean initializeLazy() {
 		return false;
 	}

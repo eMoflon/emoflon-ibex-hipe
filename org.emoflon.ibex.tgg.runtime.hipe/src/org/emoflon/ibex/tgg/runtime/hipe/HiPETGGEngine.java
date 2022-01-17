@@ -6,8 +6,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.eclipse.emf.common.util.URI;
@@ -29,7 +27,6 @@ import org.emoflon.ibex.tgg.operational.benchmark.TimeRegistry;
 import org.emoflon.ibex.tgg.operational.benchmark.Timer;
 import org.emoflon.ibex.tgg.operational.benchmark.Times;
 import org.emoflon.ibex.tgg.operational.defaults.IbexOptions;
-import org.emoflon.ibex.tgg.operational.strategies.gen.MODELGEN;
 import org.emoflon.ibex.tgg.operational.strategies.integrate.INTEGRATE;
 import org.emoflon.ibex.tgg.operational.strategies.modules.IbexExecutable;
 import org.emoflon.ibex.tgg.operational.strategies.opt.CC;
@@ -37,7 +34,6 @@ import org.emoflon.ibex.tgg.operational.strategies.opt.CO;
 import org.emoflon.ibex.tgg.operational.strategies.sync.INITIAL_BWD;
 import org.emoflon.ibex.tgg.operational.strategies.sync.INITIAL_FWD;
 import org.emoflon.ibex.tgg.operational.strategies.sync.SYNC;
-import org.moflon.smartemf.runtime.SmartPackage;
 
 import hipe.engine.IHiPEEngine;
 import hipe.engine.match.ProductionMatch;
@@ -51,7 +47,7 @@ public class HiPETGGEngine extends HiPEGTEngine implements IBlackInterpreter, Ti
 	private IBeXPatternSet ibexPatterns;
 	private IbexExecutable executable;
 	private final Times times = new Times();
-	
+
 	/**
 	 * Creates a new HiPETGGEngine.
 	 */
@@ -66,7 +62,7 @@ public class HiPETGGEngine extends HiPEGTEngine implements IBlackInterpreter, Ti
 	}
 
 	@Override
-	public void initialise(IbexExecutable executable, final IbexOptions options, Registry registry,  IMatchObserver matchObserver) {
+	public void initialise(IbexExecutable executable, final IbexOptions options, Registry registry, IMatchObserver matchObserver) {
 		super.initialise(registry, matchObserver);
 		
 		this.options = options;
@@ -237,8 +233,12 @@ public class HiPETGGEngine extends HiPEGTEngine implements IBlackInterpreter, Ti
 	}
 	
 	@Override
+	protected boolean cascadingNotifications(Collection<Resource> resources) {
+		return options.project.usesSmartEMF();
+	}
+
+	@Override
 	protected boolean initializeLazy() {
-		// TODO lfritsche: we have to find a better solution to make sure that smartobjects are only contained within these resources
-		return options.tgg.corrMetamodel() instanceof SmartPackage;
+		return options.project.usesSmartEMF();
 	}
 }
