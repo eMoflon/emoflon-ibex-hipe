@@ -40,13 +40,13 @@ import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
 import org.eclipse.emf.importer.ecore.EcoreImporter;
 import org.emoflon.ibex.tgg.operational.defaults.IbexOptions;
 import org.emoflon.ibex.tgg.operational.strategies.modules.TGGResourceHandler;
+import org.emoflon.smartemf.SmartEMFGenerator;
 import org.moflon.core.plugins.manifest.ExportedPackagesInManifestUpdater;
 import org.moflon.core.propertycontainer.MoflonPropertiesContainer;
 import org.moflon.core.propertycontainer.MoflonPropertiesContainerHelper;
 import org.moflon.core.utilities.MoflonUtil;
 import org.moflon.emf.codegen.StandalonePackageDescriptor;
 import org.moflon.emf.codegen.resource.GenModelResourceFactory;
-import org.moflon.smartemf.SmartEMFGenerator;
 
 public class HiPEBuilderUtil {
 	public Collection<String> metaModelImports;

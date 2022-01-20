@@ -36,8 +36,8 @@ import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXContext;
 import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXContextAlternatives;
 import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXContextPattern;
 import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXPatternSet;
-import org.moflon.smartemf.persistence.SmartEMFResource;
-import org.moflon.smartemf.persistence.SmartEMFResourceFactoryImpl;
+import org.emoflon.smartemf.persistence.SmartEMFResource;
+import org.emoflon.smartemf.persistence.SmartEMFResourceFactoryImpl;
 
 import hipe.engine.HiPEContentAdapter;
 import hipe.engine.HiPEOptions;
