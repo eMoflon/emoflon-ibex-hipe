@@ -149,7 +149,7 @@ public class HiPEBuilderUtil {
 		    
 		    MoflonPropertiesContainerHelper helper = new MoflonPropertiesContainerHelper(project, new NullProgressMonitor());
 		    MoflonPropertiesContainer container = helper.load();
-		    switch(container.getUsedCodeGen()) {
+		    switch(container.getCodeGenerator().getGenerator()) {
 		    case EMF:  	
 		    	Generator generator = GenModelUtil.createGenerator(genModel);
 			    generator.setInput(genModel);
