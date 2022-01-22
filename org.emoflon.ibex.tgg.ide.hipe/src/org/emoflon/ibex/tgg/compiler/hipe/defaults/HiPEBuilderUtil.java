@@ -1,5 +1,6 @@
 package org.emoflon.ibex.tgg.compiler.hipe.defaults;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
@@ -10,7 +11,13 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import javax.management.RuntimeErrorException;
+
 import org.apache.commons.lang3.tuple.Pair;
+import org.eclipse.core.resources.IProject;
+import org.eclipse.core.resources.IResource;
+import org.eclipse.core.resources.IWorkspaceRoot;
+import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.emf.codegen.ecore.generator.Generator;
@@ -33,6 +40,10 @@ import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
 import org.eclipse.emf.importer.ecore.EcoreImporter;
 import org.emoflon.ibex.tgg.operational.defaults.IbexOptions;
 import org.emoflon.ibex.tgg.operational.strategies.modules.TGGResourceHandler;
+import org.emoflon.smartemf.SmartEMFGenerator;
+import org.moflon.core.plugins.manifest.ExportedPackagesInManifestUpdater;
+import org.moflon.core.propertycontainer.MoflonPropertiesContainer;
+import org.moflon.core.propertycontainer.MoflonPropertiesContainerHelper;
 import org.moflon.core.utilities.MoflonUtil;
 import org.moflon.emf.codegen.StandalonePackageDescriptor;
 import org.moflon.emf.codegen.resource.GenModelResourceFactory;
@@ -41,24 +52,25 @@ public class HiPEBuilderUtil {
 	public Collection<String> metaModelImports;
 	public Collection<EPackage> importedPackages = new LinkedList<>();
 	private IbexOptions options;
+	private IProject project;
 
-	public HiPEBuilderUtil(IbexOptions options) {
+	public HiPEBuilderUtil(IbexOptions options, IProject project) {
 		this.options = options;
+		this.project = project;
 	}
 
 	public void loadDefaultSettings() {
 		TGGResourceHandler resourceHandler = options.resourceHandler();
-		resourceHandler.getResourceSet().getPackageRegistry().put("http://www.eclipse.org/emf/2002/GenModel",
+		resourceHandler.getModelResourceSet().getPackageRegistry().put("http://www.eclipse.org/emf/2002/GenModel",
 				new StandalonePackageDescriptor("org.eclipse.emf.codegen.ecore.genmodel.GenModelPackage"));
 
-		resourceHandler.getResourceSet().getResourceFactoryRegistry().getExtensionToFactoryMap().put("genmodel",
+		resourceHandler.getModelResourceSet().getResourceFactoryRegistry().getExtensionToFactoryMap().put("genmodel",
 				new GenModelResourceFactory());
-		resourceHandler.getResourceSet().getResourceFactoryRegistry().getExtensionToFactoryMap().put("xmi",
+		resourceHandler.getModelResourceSet().getResourceFactoryRegistry().getExtensionToFactoryMap().put("xmi",
 				new XMIResourceFactoryImpl());
 	}
 
-	protected void generateMetaModelCode(URI base, String metaModelLocation, String genModelLocation,
-			EPackage metaModel) {		
+	protected void generateMetaModelCode(URI base, String metaModelLocation, String genModelLocation, EPackage metaModel) {		
 		String pluginID = options.project.name();
 		
 		URI metaModelUri = URI.createURI(metaModelLocation);
@@ -103,13 +115,13 @@ public class HiPEBuilderUtil {
 			}
 			
 //			List<GenPackage> removalList = removals.stream().collect(Collectors.toList());
-			
 			// create dummy genmodels or else the genpackages can not be found and thus persisted
 			for(GenPackage gp : removals) {
 				// search first in environment in case that the genmodel is exported as plugin
 				URI genURI = pack2genMapEnv.get(gp.getNSURI());
 				if(genURI == null)
 					genURI = pack2genMapTarget.get(gp.getNSURI());
+
 				ResourceSet rs = new ResourceSetImpl();
 				Resource createResource = rs.createResource(genURI);
 				createResource.load(null);
@@ -129,16 +141,42 @@ public class HiPEBuilderUtil {
 			
 			genModel.setGenerateSchema(true);
 			genModel.setCanGenerate(true);
-		    genModel.reconcile();
 
+			genModel.reconcile();
 			EcoreUtil.resolveAll(importer.getGenModelResourceSet());
+
 		    genModel.eResource().save(Collections.emptyMap());
 		    
-			Generator generator = GenModelUtil.createGenerator(genModel);
-		    generator.setInput(genModel);
-			generator.generate(genModel, GenBaseGeneratorAdapter.MODEL_PROJECT_TYPE, monitor);
+		    MoflonPropertiesContainerHelper helper = new MoflonPropertiesContainerHelper(project, new NullProgressMonitor());
+		    MoflonPropertiesContainer container = helper.load();
+		    switch(container.getCodeGenerator().getGenerator()) {
+		    case EMF:  	
+		    	Generator generator = GenModelUtil.createGenerator(genModel);
+			    generator.setInput(genModel);
+				generator.generate(genModel, GenBaseGeneratorAdapter.MODEL_PROJECT_TYPE, monitor);
+				break;
+		    case SMART_EMF:	
+				File ecoreFile = new File(project.getLocation().toOSString() + "/model/" + project.getName() + ".ecore");
+				String ecorePath = ecoreFile.getAbsolutePath();
+				if(ecoreFile.exists() && !ecoreFile.isDirectory()) {
+					//paths of the files necessary for smartEMF extension
+					final SmartEMFGenerator codeGenerator = new SmartEMFGenerator(metaModel, genModel, ecorePath);
+					codeGenerator.generate_all_model_code();				
+				} else {
+					throw new RuntimeException("Problem when generating code: the genmodel file needs to be in the same folder as the ecore file.");
+				}	
+				
+				//because of smartemf: the gen folder needs to be refreshed automatically; 
+				//else the user will need to do this manually 
+				project.refreshLocal(IResource.DEPTH_INFINITE, new NullProgressMonitor());
+				
+		    }
+		    ExportedPackagesInManifestUpdater.updateExportedPackageInManifest(project, genModel);
+		    
+			
 		} catch (Exception e) {
 			System.err.println("Could not generate TGG metamodel code!\nException: \n"+e.getMessage());
+			e.printStackTrace();
 		}
 	}
 
@@ -228,9 +266,9 @@ public class HiPEBuilderUtil {
 		return importedPackages;
 	}
 
-	public static IbexOptions registerResourceHandler(IbexOptions options, List<String> metaModelImports, boolean generateCode)
+	public static IbexOptions registerResourceHandler(IbexOptions options, IProject project, List<String> metaModelImports, boolean generateCode)
 			throws IOException {
-		HiPEBuilderUtil util = new HiPEBuilderUtil(options);
+		HiPEBuilderUtil util = new HiPEBuilderUtil(options, project);
 		options.resourceHandler(new TGGResourceHandler() {
 			@Override
 			protected void registerUserMetamodels() throws IOException {
@@ -247,8 +285,9 @@ public class HiPEBuilderUtil {
 			}
 
 			@Override
-			protected void createAndPrepareResourceSet() {
+			protected void createAndPrepareResourceSets() {
 				rs = new ResourceSetImpl();
+				specificationRS = new ResourceSetImpl();
 				util.loadDefaultSettings();
 			}
 

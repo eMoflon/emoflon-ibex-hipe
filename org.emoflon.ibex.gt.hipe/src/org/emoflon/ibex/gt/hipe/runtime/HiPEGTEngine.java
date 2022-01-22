@@ -36,9 +36,11 @@ import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXContext;
 import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXContextAlternatives;
 import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXContextPattern;
 import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXPatternSet;
-import org.moflon.core.utilities.LogUtils;
+import org.emoflon.smartemf.persistence.SmartEMFResource;
+import org.emoflon.smartemf.persistence.SmartEMFResourceFactoryImpl;
 
 import hipe.engine.HiPEContentAdapter;
+import hipe.engine.HiPEOptions;
 import hipe.engine.IHiPEEngine;
 import hipe.engine.match.ProductionMatch;
 import hipe.engine.message.production.ProductionResult;
@@ -122,7 +124,8 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 	private ResourceSet createAndPrepareResourceSet_internal(final String workspacePath) {
 		ResourceSet rs = new ResourceSetImpl();
 		rs.getResourceFactoryRegistry().getExtensionToFactoryMap()
-				.put(Resource.Factory.Registry.DEFAULT_EXTENSION, new XMIResourceFactoryImpl());
+				.put(Resource.Factory.Registry.DEFAULT_EXTENSION, new SmartEMFResourceFactoryImpl(workspacePath));
+//				.put(Resource.Factory.Registry.DEFAULT_EXTENSION, new XMIResourceFactoryImpl());
 		try {
 			rs.getURIConverter().getURIMap().put(URI.createPlatformResourceURI("/", true), URI.createFileURI(new File(workspacePath).getCanonicalPath() + File.separator));
 		} catch (IOException e) {
@@ -189,14 +192,15 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 	}
 	
 	protected Resource loadResource(String path) throws Exception {
-		Resource.Factory.Registry.INSTANCE.getExtensionToFactoryMap().put("xmi", new XMIResourceFactoryImpl());
-		resourceSet.getResourceFactoryRegistry().getExtensionToFactoryMap().put("xmi", new XMIResourceFactoryImpl());
+		Resource.Factory.Registry.INSTANCE.getExtensionToFactoryMap().put("xmi",new XMIResourceFactoryImpl());
+		resourceSet.getResourceFactoryRegistry().getExtensionToFactoryMap().put("xmi",new XMIResourceFactoryImpl());
+		resourceSet.getResourceFactoryRegistry().getExtensionToFactoryMap().put(Resource.Factory.Registry.DEFAULT_EXTENSION, new XMIResourceFactoryImpl());
 		
 		Resource modelResource = resourceSet.getResource(URI.createURI(path).resolve(base), true);
 		EcoreUtil.resolveAll(resourceSet);
 		
 		if(modelResource == null)
-			throw new IOException("File did not contain a vaild model.");
+			throw new IOException("File did not contain a valid model.");
 		return modelResource;
 	}
 	
@@ -287,7 +291,10 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 			}
 		}
 		try {
-			engine.initialize();
+			HiPEOptions options = new HiPEOptions();
+			options.cascadingNotifications = cascadingNotifications(resources);
+			options.lazyInitialization = initializeLazy();
+			engine.initialize(options);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
@@ -295,6 +302,14 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 		adapter = new HiPEContentAdapter(resources.stream().filter(res -> !res.getURI().toString().contains("-trash")).collect(Collectors.toSet()), engine);
 	}
 	
+	protected boolean cascadingNotifications(final Collection<Resource> resources) {
+		return !resources.stream().filter(res -> !(res instanceof SmartEMFResource && ((SmartEMFResource) res).getCascade())).findAny().isPresent();
+	}
+
+	protected boolean initializeLazy() {
+		return false;
+	}
+
 	protected String getProjectName() {
 		URI patternURI = ibexPatternSet.eResource().getURI();
 		Pattern pattern = Pattern.compile("../(.*)/src-gen/(.*)(/api/ibex-patterns.xmi)$");

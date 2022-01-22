@@ -6,8 +6,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.eclipse.emf.common.util.URI;
@@ -29,7 +27,6 @@ import org.emoflon.ibex.tgg.operational.benchmark.TimeRegistry;
 import org.emoflon.ibex.tgg.operational.benchmark.Timer;
 import org.emoflon.ibex.tgg.operational.benchmark.Times;
 import org.emoflon.ibex.tgg.operational.defaults.IbexOptions;
-import org.emoflon.ibex.tgg.operational.strategies.gen.MODELGEN;
 import org.emoflon.ibex.tgg.operational.strategies.integrate.INTEGRATE;
 import org.emoflon.ibex.tgg.operational.strategies.modules.IbexExecutable;
 import org.emoflon.ibex.tgg.operational.strategies.opt.CC;
@@ -50,7 +47,7 @@ public class HiPETGGEngine extends HiPEGTEngine implements IBlackInterpreter, Ti
 	private IBeXPatternSet ibexPatterns;
 	private IbexExecutable executable;
 	private final Times times = new Times();
-	
+
 	/**
 	 * Creates a new HiPETGGEngine.
 	 */
@@ -65,7 +62,7 @@ public class HiPETGGEngine extends HiPEGTEngine implements IBlackInterpreter, Ti
 	}
 
 	@Override
-	public void initialise(IbexExecutable executable, final IbexOptions options, Registry registry,  IMatchObserver matchObserver) {
+	public void initialise(IbexExecutable executable, final IbexOptions options, Registry registry, IMatchObserver matchObserver) {
 		super.initialise(registry, matchObserver);
 		
 		this.options = options;
@@ -229,5 +226,19 @@ public class HiPETGGEngine extends HiPEGTEngine implements IBlackInterpreter, Ti
 	@Override
 	public Times getTimes() {
 		return times;
+	}
+	
+	public IbexOptions getOptions() {
+		return options;
+	}
+	
+	@Override
+	protected boolean cascadingNotifications(Collection<Resource> resources) {
+		return options.project.usesSmartEMF();
+	}
+
+	@Override
+	protected boolean initializeLazy() {
+		return options.project.usesSmartEMF();
 	}
 }
