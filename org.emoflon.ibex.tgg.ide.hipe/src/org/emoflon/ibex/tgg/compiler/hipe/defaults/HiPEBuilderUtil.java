@@ -160,8 +160,8 @@ public class HiPEBuilderUtil {
 				String ecorePath = ecoreFile.getAbsolutePath();
 				if(ecoreFile.exists() && !ecoreFile.isDirectory()) {
 					//paths of the files necessary for smartEMF extension
-					final SmartEMFGenerator codeGenerator = new SmartEMFGenerator(metaModel, genModel, ecorePath);
-					codeGenerator.generate_all_model_code();				
+					final SmartEMFGenerator codeGenerator = new SmartEMFGenerator(project, metaModel, genModel);
+					codeGenerator.generateModelCode();		
 				} else {
 					throw new RuntimeException("Problem when generating code: the genmodel file needs to be in the same folder as the ecore file.");
 				}	
