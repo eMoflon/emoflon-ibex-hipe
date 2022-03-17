@@ -2,8 +2,6 @@ package org.emoflon.ibex.tgg.compiler.hipe.defaults;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URL;
-import java.net.URLClassLoader;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collection;
@@ -32,19 +30,15 @@ import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.eclipse.emf.ecore.xmi.XMIResource;
 import org.eclipse.emf.ecore.xmi.impl.EcoreResourceFactoryImpl;
 import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
-import org.eclipse.xtext.common.types.impl.TypesPackageImpl;
-import org.eclipse.xtext.xbase.annotations.xAnnotations.impl.XAnnotationsPackageImpl;
-import org.eclipse.xtext.xtype.impl.XtypePackageImpl;
 import org.emoflon.ibex.common.project.BuildPropertiesHelper;
 import org.emoflon.ibex.common.project.ManifestHelper;
 import org.emoflon.ibex.gt.hipe.runtime.IBeXToHiPEPatternTransformation;
 import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXModel;
 import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXPatternModelPackage;
 import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXPatternSet;
+import org.emoflon.ibex.tgg.builder.TGGBuildUtil;
 import org.emoflon.ibex.tgg.codegen.TGGEngineBuilderExtension;
-import org.emoflon.ibex.tgg.compiler.defaults.IRegistrationHelper;
 import org.emoflon.ibex.tgg.compiler.transformations.patterns.ContextPatternTransformation;
-import org.emoflon.ibex.tgg.ide.admin.IbexTGGBuilder;
 import org.emoflon.ibex.tgg.operational.defaults.IbexOptions;
 import org.emoflon.ibex.tgg.operational.strategies.gen.MODELGEN;
 import org.emoflon.ibex.tgg.operational.strategies.integrate.INTEGRATE;
@@ -241,27 +235,27 @@ public class IbexHiPEBuilderExtension implements TGGEngineBuilderExtension {
 	}
 	
 	public void generateDefaultStubs(TripleGraphGrammarFile editorModel, TripleGraphGrammarFile flattenedEditorModel) throws CoreException {
-		IbexTGGBuilder.createDefaultDebugRunFile(project, HiPEFilesGenerator.MODELGEN_APP, (projectName, fileName) 
+		TGGBuildUtil.createDefaultDebugRunFile(project, HiPEFilesGenerator.MODELGEN_APP, (projectName, fileName) 
 				-> HiPEFilesGenerator.generateModelGenDebugFile(projectName, fileName));
-		IbexTGGBuilder.createDefaultRunFile(project, HiPEFilesGenerator.MODELGEN_APP, (projectName, fileName) 
+		TGGBuildUtil.createDefaultRunFile(project, HiPEFilesGenerator.MODELGEN_APP, (projectName, fileName) 
 				-> HiPEFilesGenerator.generateModelGenFile(projectName, fileName));
-		IbexTGGBuilder.createDefaultRunFile(project, HiPEFilesGenerator.SYNC_APP, (projectName, fileName) 
+		TGGBuildUtil.createDefaultRunFile(project, HiPEFilesGenerator.SYNC_APP, (projectName, fileName) 
 				-> HiPEFilesGenerator.generateSyncAppFile(projectName, fileName));
-		IbexTGGBuilder.createDefaultRunFile(project, HiPEFilesGenerator.INITIAL_FWD_APP, (projectName, fileName) 
+		TGGBuildUtil.createDefaultRunFile(project, HiPEFilesGenerator.INITIAL_FWD_APP, (projectName, fileName) 
 				-> HiPEFilesGenerator.generateInitialFwdAppFile(projectName, fileName));
-		IbexTGGBuilder.createDefaultRunFile(project, HiPEFilesGenerator.INITIAL_BWD_APP, (projectName, fileName) 
+		TGGBuildUtil.createDefaultRunFile(project, HiPEFilesGenerator.INITIAL_BWD_APP, (projectName, fileName) 
 				-> HiPEFilesGenerator.generateInitialBwdAppFile(projectName, fileName));
-		IbexTGGBuilder.createDefaultRunFile(project, HiPEFilesGenerator.CC_APP, (projectName, fileName) 
+		TGGBuildUtil.createDefaultRunFile(project, HiPEFilesGenerator.CC_APP, (projectName, fileName) 
 				-> HiPEFilesGenerator.generateCCAppFile(projectName, fileName));
-		IbexTGGBuilder.createDefaultRunFile(project, HiPEFilesGenerator.CO_APP, (projectName, fileName) 
+		TGGBuildUtil.createDefaultRunFile(project, HiPEFilesGenerator.CO_APP, (projectName, fileName) 
 				-> HiPEFilesGenerator.generateCOAppFile(projectName, fileName));
-		IbexTGGBuilder.createDefaultRunFile(project, HiPEFilesGenerator.FWD_OPT_APP, (projectName, fileName) 
+		TGGBuildUtil.createDefaultRunFile(project, HiPEFilesGenerator.FWD_OPT_APP, (projectName, fileName) 
 				-> HiPEFilesGenerator.generateFWDOptAppFile(projectName, fileName));
-		IbexTGGBuilder.createDefaultRunFile(project, HiPEFilesGenerator.BWD_OPT_APP, (projectName, fileName) 
+		TGGBuildUtil.createDefaultRunFile(project, HiPEFilesGenerator.BWD_OPT_APP, (projectName, fileName) 
 				-> HiPEFilesGenerator.generateBWDOptAppFile(projectName, fileName));
-		IbexTGGBuilder.createDefaultRunFile(project, HiPEFilesGenerator.INTEGRATE_APP, (projectName, fileName)
+		TGGBuildUtil.createDefaultRunFile(project, HiPEFilesGenerator.INTEGRATE_APP, (projectName, fileName)
 				-> HiPEFilesGenerator.generateIntegrateAppFile(projectName, fileName));
-		IbexTGGBuilder.createDefaultConfigFile(project, HiPEFilesGenerator.DEFAULT_REGISTRATION_HELPER, (projectName, fileName)
+		TGGBuildUtil.createDefaultConfigFile(project, HiPEFilesGenerator.DEFAULT_REGISTRATION_HELPER, (projectName, fileName)
 				-> HiPEFilesGenerator.generateDefaultRegHelperFile(projectName));
 	}
 	
@@ -271,7 +265,7 @@ public class IbexHiPEBuilderExtension implements TGGEngineBuilderExtension {
 		String input_srcPackage = srcPkg == null ? "<<SRC_Package>>" : srcPkg;
 		String input_trgPackage = trgPkg == null ? "<<TRG_Package>>" : trgPkg;
 		
-		IbexTGGBuilder.createDefaultConfigFile(project, HiPEFilesGenerator.REGISTRATION_HELPER, (projectName, fileName)
+		TGGBuildUtil.createDefaultConfigFile(project, HiPEFilesGenerator.REGISTRATION_HELPER, (projectName, fileName)
 				-> HiPEFilesGenerator.generateRegHelperFile(projectName, input_srcProject, input_trgProject, input_srcPackage, input_trgPackage));
 	}
 	
