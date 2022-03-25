@@ -11,11 +11,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import javax.management.RuntimeErrorException;
-
-import org.apache.commons.lang3.tuple.Pair;
-import org.eclipse.core.resources.IProject;
-import org.eclipse.core.resources.IResource;
+import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.NullProgressMonitor;
@@ -32,7 +28,6 @@ import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.EPackage;
 import org.eclipse.emf.ecore.plugin.EcorePlugin;
 import org.eclipse.emf.ecore.resource.Resource;
-import org.eclipse.emf.ecore.resource.Resource.Factory.Registry;
 import org.eclipse.emf.ecore.resource.ResourceSet;
 import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
 import org.eclipse.emf.ecore.util.EcoreUtil;
@@ -75,12 +70,16 @@ public class HiPEBuilderUtil {
 		
 		URI metaModelUri = URI.createURI(metaModelLocation);
 		metaModelUri = metaModelUri.resolve(base);
+		
+		EPackage corrModel = (EPackage) EPackage.Registry.INSTANCE.get(metaModelUri.toString());
 
 		Monitor monitor = BasicMonitor.toMonitor(new NullProgressMonitor());
 		try {
 			EcoreImporter importer = new EcoreImporter();
 			importer.setModelLocation(metaModelUri.toString());
+			importer.getEPackages().add(corrModel);
 			importer.computeEPackages(monitor);
+			importer.getEPackages().add(corrModel);
 			importer.adjustEPackages(monitor);
 			
 			for(EPackage ePackage : importer.getEPackages()) {
