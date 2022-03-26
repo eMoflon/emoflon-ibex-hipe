@@ -20,7 +20,10 @@ import org.eclipse.core.resources.IWorkspace;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.NullProgressMonitor;
+import org.eclipse.emf.common.util.EList;
 import org.eclipse.emf.common.util.URI;
+import org.eclipse.emf.ecore.EClass;
+import org.eclipse.emf.ecore.EClassifier;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EPackage;
 import org.eclipse.emf.ecore.resource.Resource;
@@ -135,6 +138,10 @@ public class IbexHiPEBuilderExtension implements TGGEngineBuilderExtension {
 			return;
 		}
 		
+		// initialize eclasses to prevent concurrent modification exceptions
+		initializeEClasses(flattenedEditorModel.getSchema().getSourceTypes());
+		initializeEClasses(flattenedEditorModel.getSchema().getTargetTypes());
+		
 		String srcModel = srcPkg.getName();
 		String trgModel = trgPkg.getName();
 		IProject srcProject = getProjectInWorkspace(srcModel, project.getWorkspace());
@@ -226,6 +233,32 @@ public class IbexHiPEBuilderExtension implements TGGEngineBuilderExtension {
 		LogUtils.info(logger, "## HiPE ## --> HiPE build complete!");
 	}
 	
+	/**
+	 * initalize all eclasses (transitively) of a package by calling EAllSuperTypes and EAllReferences once
+	 * @param packages
+	 */
+	private void initializeEClasses(EList<EPackage> packages) {
+		for(EPackage pkg : packages) {
+			initializeEClasses(pkg);
+		}
+	}
+	
+	/**
+	 * initalize all eclasses (transitively) of a package by calling EAllSuperTypes and EAllReferences once
+	 * @param package
+	 */
+	private void initializeEClasses(EPackage pkg) {
+		for(EClassifier c : pkg.getEClassifiers()) {
+			if(c instanceof EClass ec) {
+				ec.getEAllSuperTypes();
+				ec.getEAllReferences();
+			}
+		}
+		for(EPackage sub : pkg.getESubpackages()) {
+			initializeEClasses(sub);
+		}
+	}
+
 	public IbexOptions createIbexOptions(String projectName, String projectPath) {
 		IbexOptions options = new IbexOptions();
 		options.project.name(projectName);
