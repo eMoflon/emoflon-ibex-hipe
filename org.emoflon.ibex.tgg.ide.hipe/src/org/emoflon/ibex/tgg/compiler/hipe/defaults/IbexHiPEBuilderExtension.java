@@ -43,6 +43,7 @@ import org.emoflon.ibex.tgg.builder.TGGBuildUtil;
 import org.emoflon.ibex.tgg.codegen.TGGEngineBuilderExtension;
 import org.emoflon.ibex.tgg.compiler.transformations.patterns.ContextPatternTransformation;
 import org.emoflon.ibex.tgg.operational.defaults.IbexOptions;
+import org.emoflon.ibex.tgg.operational.strategies.OperationalStrategy;
 import org.emoflon.ibex.tgg.operational.strategies.gen.MODELGEN;
 import org.emoflon.ibex.tgg.operational.strategies.integrate.INTEGRATE;
 import org.emoflon.ibex.tgg.operational.strategies.modules.IbexExecutable;
@@ -142,6 +143,8 @@ public class IbexHiPEBuilderExtension implements TGGEngineBuilderExtension {
 		initializeEClasses(flattenedEditorModel.getSchema().getSourceTypes());
 		initializeEClasses(flattenedEditorModel.getSchema().getTargetTypes());
 		
+		executables.forEach(this::initializeEClasses);
+		
 		String srcModel = srcPkg.getName();
 		String trgModel = trgPkg.getName();
 		IProject srcProject = getProjectInWorkspace(srcModel, project.getWorkspace());
@@ -160,7 +163,7 @@ public class IbexHiPEBuilderExtension implements TGGEngineBuilderExtension {
 		try {
 			generateRegHelper(srcProject, trgProject, srcPkgName, trgPkgName);
 			generateDefaultStubs(editorModel, flattenedEditorModel);
-		}catch(Exception e) {
+		} catch(Exception e) {
 			LogUtils.error(logger, e);
 		}
 		
@@ -172,6 +175,11 @@ public class IbexHiPEBuilderExtension implements TGGEngineBuilderExtension {
 		executables.parallelStream().forEach(executable -> {
 			LogUtils.info(logger, executable.getClass().getName() + ": Compiling ibex patterns from TGG patterns...");
 			ContextPatternTransformation compiler = new ContextPatternTransformation(executable.getOptions(), executable.getOptions().matchDistributor());
+		
+			// initialize eclasses to prevent concurrent modification exceptions
+			initializeEClasses(executable.getOptions().tgg.tgg().getSrc());
+			initializeEClasses(executable.getOptions().tgg.tgg().getTrg());
+			
 			IBeXModel ibexModel = compiler.transform();
 			IBeXPatternSet ibexPatterns = ibexModel.getPatternSet();
 			
@@ -180,10 +188,6 @@ public class IbexHiPEBuilderExtension implements TGGEngineBuilderExtension {
 			HiPEContainer container = transformation.transform(ibexPatterns);
 			
 			LogUtils.info(logger,  executable.getClass().getName() + ": Creating search plan & generating Rete network..");
-//			SearchPlan searchPlan = new TGGSimpleSearchPlan(container);
-//			SearchPlan searchPlan = new TGGTriangleSearchPlan(container);
-//			SearchPlan searchPlan = new TriangleSearchPlan(container);
-//			SearchPlan searchPlan = new SimpleSearchPlan(container);
 			SearchPlan searchPlan = new LocalSearchPlan(container);
 			searchPlan.generateSearchPlan();
 			HiPENetwork network = searchPlan.getNetwork();
@@ -257,6 +261,16 @@ public class IbexHiPEBuilderExtension implements TGGEngineBuilderExtension {
 		for(EPackage sub : pkg.getESubpackages()) {
 			initializeEClasses(sub);
 		}
+	}
+	
+	private void initializeEClasses(IbexExecutable ie) {
+		ie.getOptions().tgg.getFlattenedConcreteTGGRules().forEach(r -> {
+			r.getNodes().forEach(n -> {
+				EClass type = n.getType();
+				type.getEAllSuperTypes();
+				type.getEAllReferences();
+			});
+		});
 	}
 
 	public IbexOptions createIbexOptions(String projectName, String projectPath) {
