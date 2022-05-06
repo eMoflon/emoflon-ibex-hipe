@@ -4,7 +4,7 @@ Bundle-Name: HiPE
 Bundle-SymbolicName: org.emoflon.ibex.tgg.runtime.hipe
 Bundle-Version: 1.0.0.qualifier
 Automatic-Module-Name: org.emoflon.ibex.tgg.runtime.hipe
-Bundle-RequiredExecutionEnvironment: JavaSE-16
+Bundle-RequiredExecutionEnvironment: JavaSE-17
 Export-Package: org.emoflon.ibex.tgg.runtime.hipe
 Require-Bundle: hipe.dependencies;bundle-version="1.0.0",
  org.emoflon.ibex.gt.hipe;visibility:=reexport,
