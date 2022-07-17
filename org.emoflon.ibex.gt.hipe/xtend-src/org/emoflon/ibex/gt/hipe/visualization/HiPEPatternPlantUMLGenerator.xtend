@@ -4,7 +4,6 @@ import hipe.pattern.HiPEAbstractPattern
 import java.util.Collection
 import java.util.Map
 import java.util.Optional
-import org.apache.commons.lang.StringUtils
 import org.eclipse.emf.ecore.EAnnotation
 import org.eclipse.emf.ecore.EClass
 import org.eclipse.emf.ecore.ENamedElement
@@ -17,6 +16,7 @@ import org.moflon.core.ui.visualisation.diagrams.EdgeType
 import org.moflon.core.ui.visualisation.diagrams.VisualEdge
 import org.moflon.core.ui.visualisation.metamodels.ClassDiagram
 import org.moflon.core.ui.visualisation.models.ObjectDiagram
+import org.emoflon.ibex.common.StringUtils
 
 class HiPEPatternPlantUMLGenerator {
 	static final String REPL_STR = "…";
