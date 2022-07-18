@@ -24,7 +24,6 @@ Require-Bundle: net.sourceforge.plantuml.eclipse;bundle-version="1.1.24",
  org.emoflon.ibex.gt,
  org.emoflon.ibex.patternmodel,
  org.emoflon.ibex.tgg.runtime;visibility:=reexport,
- org.apache.commons.lang;bundle-version="2.6.0",
  org.emoflon.smartemf;bundle-version="1.0.0"
 Automatic-Module-Name: org.emoflon.ibex.gt.democles
 Bundle-RequiredExecutionEnvironment: JavaSE-17
