@@ -18,7 +18,6 @@ import org.eclipse.emf.ecore.resource.ResourceSet;
 import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
 import org.eclipse.emf.ecore.xmi.XMIResource;
 import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
-import org.emoflon.ibex.common.coremodel.IBeXCoreModel.IBeXPatternSet;
 import org.emoflon.ibex.common.project.BuildPropertiesHelper;
 import org.emoflon.ibex.common.project.ManifestHelper;
 import org.emoflon.ibex.gt.build.IBeXGTEngineBuilderExtension;
@@ -49,9 +48,6 @@ public class GTHiPEBuilderExtension implements IBeXGTEngineBuilderExtension {
 		double tic = System.currentTimeMillis();
 
 		packageName = ibexModel.getMetaData().getPackage();
-
-		IBeXPatternSet ibexPatterns = ibexModel.getPatternSet();
-
 		projectPath = ibexModel.getMetaData().getProjectPath();
 		packagePath = ibexModel.getMetaData().getPackagePath();
 
@@ -70,9 +66,7 @@ public class GTHiPEBuilderExtension implements IBeXGTEngineBuilderExtension {
 
 		LogUtils.info(logger, "Converting IBeX to HiPE Patterns..");
 		IBeXToHiPEPatternTransformation transformation = new IBeXToHiPEPatternTransformation();
-		// TODO: transformation
-		// HiPEContainer container = transformation.transform(ibexPatterns);
-		HiPEContainer container = null;
+		HiPEContainer container = transformation.transform(ibexModel);
 
 		LogUtils.info(logger, "Creating search plan & generating Rete network..");
 		SearchPlan searchPlan = new TriangleSearchPlan(container);

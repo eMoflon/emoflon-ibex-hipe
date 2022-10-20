@@ -20,6 +20,12 @@
            engine_information="org.emoflon.ibex.gt.engine.hipe.GTHiPEExtension">
      </engine_extension>
   </extension>
+  <extension
+        point="org.emoflon.ibex.gt.IBeXGTEngineBuilderExtension">
+     <builder_extension
+           class="org.emoflon.ibex.gt.build.hipe.GTHiPEBuilderExtension">
+     </builder_extension>
+  </extension>
   
    
 </plugin>

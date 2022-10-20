@@ -261,9 +261,7 @@ public class HiPEPatternMatchingEngine extends IBeXGTPatternMatcher<ProductionMa
 
 	@Override
 	protected String extractPatternName(ProductionMatch match) {
-		// match.
-		// TODO:
-		return "";
+		return patterns.get(match.patternName);
 	}
 
 	@Override
