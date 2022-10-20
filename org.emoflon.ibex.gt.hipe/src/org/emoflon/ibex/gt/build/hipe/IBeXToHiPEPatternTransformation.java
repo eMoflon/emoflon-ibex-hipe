@@ -1,4 +1,4 @@
-package org.emoflon.ibex.gt.hipe.runtime;
+package org.emoflon.ibex.gt.build.hipe;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -9,7 +9,6 @@ import java.util.Map.Entry;
 import org.apache.log4j.Logger;
 import org.eclipse.emf.common.util.EMap;
 import org.eclipse.emf.ecore.EEnum;
-import org.emoflon.ibex.gt.hipe.ide.codegen.GTHiPEBuilderExtension;
 import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXArithmeticAttribute;
 import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXArithmeticConstraint;
 import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXArithmeticExpression;

@@ -18,15 +18,13 @@ Require-Bundle: net.sourceforge.plantuml.eclipse;bundle-version="1.1.24",
  hipe.searchplan;bundle-version="1.0.0",
  org.moflon.core.utilities,
  org.emoflon.ibex.common,
- org.emoflon.ibex.gt.editor.ui,
  org.moflon.core.plugins,
  org.moflon.core.ui,
  org.emoflon.ibex.gt,
- org.emoflon.ibex.patternmodel,
- org.emoflon.ibex.tgg.runtime;visibility:=reexport,
- org.emoflon.smartemf;bundle-version="1.0.0"
+ org.emoflon.smartemf;bundle-version="1.0.0",
+ org.emoflon.ibex.gt.gtmodel
 Automatic-Module-Name: org.emoflon.ibex.gt.democles
 Bundle-RequiredExecutionEnvironment: JavaSE-17
-Export-Package: org.emoflon.ibex.gt.hipe.ide.codegen,
- org.emoflon.ibex.gt.hipe.runtime,
+Export-Package: org.emoflon.ibex.gt.build.hipe,
+ org.emoflon.ibex.gt.engine.hipe,
  org.emoflon.ibex.gt.hipe.visualization

@@ -2,7 +2,7 @@ package org.emoflon.ibex.tgg.runtime.hipe;
 
 import java.util.Map;
 
-import org.emoflon.ibex.gt.hipe.runtime.IBeXToHiPEPatternTransformation;
+import org.emoflon.ibex.gt.build.hipe.IBeXToHiPEPatternTransformation;
 import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXContextPattern;
 import org.emoflon.ibex.tgg.operational.defaults.IbexOptions;
 
