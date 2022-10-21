@@ -36,6 +36,7 @@ import org.emoflon.ibex.common.coremodel.IBeXCoreModel.IBeXCoreArithmetic.UnaryE
 import org.emoflon.ibex.common.coremodel.IBeXCoreModel.IBeXCoreArithmetic.ValueExpression;
 import org.emoflon.ibex.common.transformation.DataTypeUtil;
 import org.emoflon.ibex.gt.gtmodel.IBeXGTModel.GTModel;
+import org.emoflon.ibex.gt.gtmodel.IBeXGTModel.GTPattern;
 
 import hipe.pattern.ComparatorType;
 import hipe.pattern.ComplexConstraint;
@@ -77,7 +78,7 @@ public class IBeXToHiPEPatternTransformation {
 			if (pattern.getSignatureNodes().isEmpty() && pattern.getLocalNodes().isEmpty())
 				continue;
 
-			container.getPatterns().add(transform(pattern));
+			container.getPatterns().add(transform((GTPattern) pattern));
 		}
 
 		// Finish count Invocations
@@ -97,7 +98,7 @@ public class IBeXToHiPEPatternTransformation {
 		return container;
 	}
 
-	public HiPEPattern transform(IBeXPattern context) {
+	public HiPEPattern transform(GTPattern context) {
 		context.setName(context.getName().replace("-", "_"));
 
 		if (name2pattern.containsKey(context.getName()))
@@ -111,7 +112,7 @@ public class IBeXToHiPEPatternTransformation {
 		for (IBeXPatternInvocation inv : context.getInvocations()) {
 			HiPEPatternInvocation invocation = factory.createHiPEPatternInvocation();
 
-			HiPEPattern invoked = transform(inv.getInvocation());
+			HiPEPattern invoked = transform((GTPattern) inv.getInvocation());
 			invocation.setInvokedPattern(invoked);
 			invocation.setPositive(inv.isPositive());
 			pattern.getPatternInvocations().add(invocation);
@@ -162,15 +163,18 @@ public class IBeXToHiPEPatternTransformation {
 			transformed.add(constr);
 		}
 
-		// Get the remaining complex constraints and generate code
-		for (BooleanExpression constr : context.getConditions().stream().filter(cond -> !transformed.contains(cond))
-				.collect(Collectors.toList())) {
-			HiPEAttributeConstraint constraint = transformComplexAC(context, pattern, constr);
+		// Get the remaining complex constraints and generate code if the pattern does
+		// not contain any unsupported complex attribute expressions (e.g., parameter
+		// expressions)
+		if (!context.getUsedFeatures().isParameterExpressions()) {
+			for (BooleanExpression constr : context.getConditions().stream().filter(cond -> !transformed.contains(cond))
+					.collect(Collectors.toList())) {
+				HiPEAttributeConstraint constraint = transformComplexAC(context, pattern, constr);
 
-			if (constraint != null)
-				pattern.getAttributeConstraints().add(constraint);
+				if (constraint != null)
+					pattern.getAttributeConstraints().add(constraint);
+			}
 		}
-
 		// TODO: This is a tgg speciality and should be performed in the corresponding
 		// tgg2hipe transformation!
 //		for(IBeXCSP csp : context.getCsps()) {

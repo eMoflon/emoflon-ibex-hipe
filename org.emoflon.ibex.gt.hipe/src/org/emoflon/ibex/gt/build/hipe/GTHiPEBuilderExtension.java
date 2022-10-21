@@ -49,7 +49,7 @@ public class GTHiPEBuilderExtension implements IBeXGTEngineBuilderExtension {
 
 		packageName = ibexModel.getMetaData().getPackage();
 		projectPath = ibexModel.getMetaData().getProjectPath();
-		packagePath = ibexModel.getMetaData().getPackagePath();
+		packagePath = projectPath + "/" + ibexModel.getMetaData().getPackagePath();
 
 		LogUtils.info(logger, "Cleaning old code..");
 		cleanOldCode();
@@ -82,8 +82,8 @@ public class GTHiPEBuilderExtension implements IBeXGTEngineBuilderExtension {
 		LogUtils.info(logger, "Code generation completed in " + (toc - tic) / 1000.0 + " seconds.");
 
 		LogUtils.info(logger, "Saving HiPE patterns and HiPE network..");
-		saveResource(container, packagePath + "/hipe/engine/hipe-patterns.xmi");
-		saveResource(network, packagePath + "/hipe/engine/hipe-network.xmi");
+		saveResource(container, packagePath.replace("src", "src-gen") + "/hipe/engine/hipe-patterns.xmi");
+		saveResource(network, packagePath.replace("src", "src-gen") + "/hipe/engine/hipe-network.xmi");
 
 		LogUtils.info(logger, "Refreshing workspace and cleaning build ..");
 		try {
