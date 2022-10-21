@@ -22,7 +22,7 @@ public class GTHiPEExtension implements IBeXPMEngineInformation {
 
 	@Override
 	public Set<String> getImports() {
-		return new HashSet<String>(Arrays.asList("org.emoflon.ibex.gt.hipe.runtime.HiPEGTEngine"));
+		return new HashSet<String>(Arrays.asList("org.emoflon.ibex.gt.engine.hipe.HiPEPatternMatchingEngine"));
 	}
 
 	@Override
@@ -32,7 +32,7 @@ public class GTHiPEExtension implements IBeXPMEngineInformation {
 
 	@Override
 	public String getEngineClassName() {
-		return "HiPEGTEngine";
+		return "HiPEPatternMatchingEngine";
 	}
 
 	@Override
