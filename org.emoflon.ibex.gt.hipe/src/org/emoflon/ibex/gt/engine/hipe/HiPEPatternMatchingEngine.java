@@ -81,6 +81,7 @@ public class HiPEPatternMatchingEngine extends IBeXGTPatternMatcher<ProductionMa
 	@SuppressWarnings("unchecked")
 	@Override
 	protected void initialize() {
+		super.initialize();
 		hipeEngineClassName = generateHiPEClassName();
 
 		this.patterns = cfactory.createObjectToObjectHashMap();
