@@ -243,7 +243,7 @@ public class IBeXToHiPEPatternTransformation {
 	private HiPEEdge transform(IBeXPattern context, IBeXEdge edge) {
 		HiPEEdge hEdge = factory.createHiPEEdge();
 		container.getEdges().add(hEdge);
-		hEdge.setName(edge.getName());
+		hEdge.setName(edge.getName().replace("[", "").replace("]", "").replace("--", "_").replace(">", ""));
 		hEdge.setType(edge.getType());
 		hEdge.setSource(transform(context, edge.getSource()));
 		hEdge.setTarget(transform(context, edge.getTarget()));
