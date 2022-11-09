@@ -380,8 +380,29 @@ public class IBeXToHiPEPatternTransformation {
 				return transform2Java(relExpr.getLhs(), context, cConstraint, attributes) + " != "
 						+ transform2Java(relExpr.getRhs(), context, cConstraint, attributes);
 			}
-			default:
+			case OBJECT_GREATER: {
+				return "(" + transform2Java(relExpr.getLhs(), context, cConstraint, attributes) + ").compareTo("
+						+ transform2Java(relExpr.getRhs(), context, cConstraint, attributes) + ") > 0";
+			}
+			case OBJECT_GREATER_OR_EQUAL: {
+				return "((" + transform2Java(relExpr.getLhs(), context, cConstraint, attributes) + ").compareTo("
+						+ transform2Java(relExpr.getRhs(), context, cConstraint, attributes) + ") > 0 || ("
+						+ transform2Java(relExpr.getLhs(), context, cConstraint, attributes) + ").equals("
+						+ transform2Java(relExpr.getRhs(), context, cConstraint, attributes) + "))";
+			}
+			case OBJECT_SMALLER: {
+				return "(" + transform2Java(relExpr.getLhs(), context, cConstraint, attributes) + ").compareTo("
+						+ transform2Java(relExpr.getRhs(), context, cConstraint, attributes) + ") < 0";
+			}
+			case OBJECT_SMALLER_OR_EQUAL: {
+				return "((" + transform2Java(relExpr.getLhs(), context, cConstraint, attributes) + ").compareTo("
+						+ transform2Java(relExpr.getRhs(), context, cConstraint, attributes) + ") < 0 || ("
+						+ transform2Java(relExpr.getLhs(), context, cConstraint, attributes) + ").equals("
+						+ transform2Java(relExpr.getRhs(), context, cConstraint, attributes) + "))";
+			}
+			default: {
 				throw new UnsupportedOperationException("Unknown boolean expression type: " + expression);
+			}
 			}
 		} else {
 			throw new UnsupportedOperationException("Unknown boolean expression type: " + expression);
@@ -397,7 +418,7 @@ public class IBeXToHiPEPatternTransformation {
 					.getClassifierName2FQN().get(enm.getType().getName()) + "." + enm.getType().getName() + "."
 					+ enm.getLiteral().getName();
 		} else if (expression instanceof IBeXStringValue str) {
-			return str.getValue();
+			return "\"" + str.getValue() + "\"";
 		} else if (expression instanceof IBeXNullValue) {
 			return "null";
 		} else if (expression instanceof ArithmeticExpression aExpr) {
@@ -660,6 +681,18 @@ public class IBeXToHiPEPatternTransformation {
 			return ComparatorType.LESS_OR_EQUAL;
 		case UNEQUAL:
 			return ComparatorType.UNEQUAL;
+		case OBJECT_EQUALS:
+			return ComparatorType.EQUAL;
+		case OBJECT_GREATER:
+			return ComparatorType.GREATER;
+		case OBJECT_GREATER_OR_EQUAL:
+			return ComparatorType.GREATER_OR_EQUAL;
+		case OBJECT_NOT_EQUALS:
+			return ComparatorType.UNEQUAL;
+		case OBJECT_SMALLER:
+			return ComparatorType.LESS;
+		case OBJECT_SMALLER_OR_EQUAL:
+			return ComparatorType.LESS_OR_EQUAL;
 		default:
 			return null;
 		}
