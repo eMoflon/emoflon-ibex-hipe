@@ -541,6 +541,8 @@ public class IBeXToHiPEPatternTransformation {
 			return Double.toString(dbl.getValue());
 		} else if (expression instanceof IntegerLiteral intgr) {
 			return Integer.toString(intgr.getValue());
+		} else if (expression instanceof IBeXStringValue str) {
+			return "\"" + str.getValue() + "\"";
 		} else {
 			throw new UnsupportedOperationException("Unknown arithmetic expression type: " + expression);
 		}

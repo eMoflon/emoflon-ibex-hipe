@@ -239,6 +239,7 @@ public class HiPEPatternMatchingEngine extends IBeXGTPatternMatcher<ProductionMa
 
 	@Override
 	public void terminate() {
+		super.terminate();
 		adapter.removeAdapter();
 		engine.terminate();
 	}
