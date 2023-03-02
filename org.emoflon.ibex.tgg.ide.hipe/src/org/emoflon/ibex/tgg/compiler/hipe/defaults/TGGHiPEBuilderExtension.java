@@ -64,9 +64,9 @@ import hipe.searchplan.SearchPlan;
 import hipe.searchplan.simple.LocalSearchPlan;
 import language.LanguagePackage;
 
-public class IbexHiPEBuilderExtension implements TGGEngineBuilderExtension {
+public class TGGHiPEBuilderExtension implements TGGEngineBuilderExtension {
 
-	private static final Logger logger = Logger.getLogger(IbexHiPEBuilderExtension.class);
+	private static final Logger logger = Logger.getLogger(TGGHiPEBuilderExtension.class);
 	
 	private IProject project;
 	private String projectName;

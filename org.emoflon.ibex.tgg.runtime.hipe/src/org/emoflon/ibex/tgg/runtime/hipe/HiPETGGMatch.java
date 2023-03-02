@@ -2,9 +2,9 @@ package org.emoflon.ibex.tgg.runtime.hipe;
 
 import org.emoflon.ibex.gt.hipe.runtime.HiPEGTMatch;
 import org.emoflon.ibex.tgg.compiler.patterns.PatternUtil;
+import org.emoflon.ibex.tgg.runtime.matches.ITGGMatch;
+import org.emoflon.ibex.tgg.runtime.matches.SimpleTGGMatch;
 import org.emoflon.ibex.tgg.compiler.patterns.PatternType;
-import org.emoflon.ibex.tgg.operational.matches.ITGGMatch;
-import org.emoflon.ibex.tgg.operational.matches.SimpleTGGMatch;
 
 import hipe.engine.match.ProductionMatch;
 
