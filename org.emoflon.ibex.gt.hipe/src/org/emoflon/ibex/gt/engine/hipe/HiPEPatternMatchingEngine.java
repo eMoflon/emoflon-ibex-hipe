@@ -157,7 +157,6 @@ public class HiPEPatternMatchingEngine extends IBeXGTPatternMatcher<ProductionMa
 			try {
 				engineClass = (Class<? extends IHiPEEngine>) Class.forName(hipeEngineClassName);
 			} catch (ClassNotFoundException e1) {
-				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			}
 

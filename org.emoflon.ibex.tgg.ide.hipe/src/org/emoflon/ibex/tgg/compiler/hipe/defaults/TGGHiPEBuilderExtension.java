@@ -33,25 +33,26 @@ import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.eclipse.emf.ecore.xmi.XMIResource;
 import org.eclipse.emf.ecore.xmi.impl.EcoreResourceFactoryImpl;
 import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
+import org.emoflon.ibex.common.coremodel.IBeXCoreModel.IBeXModel;
+import org.emoflon.ibex.common.coremodel.IBeXCoreModel.IBeXPatternSet;
 import org.emoflon.ibex.common.project.BuildPropertiesHelper;
 import org.emoflon.ibex.common.project.ManifestHelper;
 import org.emoflon.ibex.gt.build.hipe.IBeXToHiPEPatternTransformation;
-import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXModel;
 import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXPatternModelPackage;
-import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXPatternSet;
 import org.emoflon.ibex.tgg.codegen.TGGEngineBuilderExtension;
 import org.emoflon.ibex.tgg.compiler.transformations.patterns.ContextPatternTransformation;
 import org.emoflon.ibex.tgg.editor.builder.TGGBuildUtil;
 import org.emoflon.ibex.tgg.editor.tgg.TripleGraphGrammarFile;
-import org.emoflon.ibex.tgg.operational.defaults.IbexOptions;
-import org.emoflon.ibex.tgg.operational.strategies.gen.MODELGEN;
-import org.emoflon.ibex.tgg.operational.strategies.integrate.INTEGRATE;
-import org.emoflon.ibex.tgg.operational.strategies.modules.IbexExecutable;
-import org.emoflon.ibex.tgg.operational.strategies.opt.CC;
-import org.emoflon.ibex.tgg.operational.strategies.opt.CO;
-import org.emoflon.ibex.tgg.operational.strategies.sync.INITIAL_BWD;
-import org.emoflon.ibex.tgg.operational.strategies.sync.INITIAL_FWD;
-import org.emoflon.ibex.tgg.operational.strategies.sync.SYNC;
+import org.emoflon.ibex.tgg.runtime.config.options.IbexOptions;
+import org.emoflon.ibex.tgg.runtime.strategies.gen.MODELGEN;
+import org.emoflon.ibex.tgg.runtime.strategies.integrate.INTEGRATE;
+import org.emoflon.ibex.tgg.runtime.strategies.modules.IbexExecutable;
+import org.emoflon.ibex.tgg.runtime.strategies.opt.CC;
+import org.emoflon.ibex.tgg.runtime.strategies.opt.CO;
+import org.emoflon.ibex.tgg.runtime.strategies.sync.INITIAL_BWD;
+import org.emoflon.ibex.tgg.runtime.strategies.sync.INITIAL_FWD;
+import org.emoflon.ibex.tgg.runtime.strategies.sync.SYNC;
+import org.emoflon.ibex.tgg.tggl.tGGL.EditorFile;
 import org.moflon.core.plugins.manifest.ManifestFileUpdater;
 import org.moflon.core.utilities.ClasspathUtil;
 import org.moflon.core.utilities.LogUtils;
@@ -62,7 +63,6 @@ import hipe.network.HiPENetwork;
 import hipe.pattern.HiPEContainer;
 import hipe.searchplan.SearchPlan;
 import hipe.searchplan.simple.LocalSearchPlan;
-import language.LanguagePackage;
 
 public class TGGHiPEBuilderExtension implements TGGEngineBuilderExtension {
 
@@ -75,7 +75,7 @@ public class TGGHiPEBuilderExtension implements TGGEngineBuilderExtension {
 	private List<String> metaModelImports;
 	
 	@Override
-	public void run(IProject project, TripleGraphGrammarFile editorModel, TripleGraphGrammarFile flattenedEditorModel) {
+	public void run(IProject project, EditorFile editorModel, EditorFile flattenedEditorModel) {
 		LogUtils.info(logger, "Starting HiPE TGG builder ... ");
 		
 		try {
