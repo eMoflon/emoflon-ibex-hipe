@@ -17,7 +17,6 @@ public class TGGIBeXToHiPEPatternTransformation extends IBeXToHiPEPatternTransfo
 			Map<IBeXContextPattern, TGGNamedElement> patternToRuleMap) {
 		this.options = options;
 		this.patternToRuleMap = patternToRuleMap;
-
 	}
 
 	@Override

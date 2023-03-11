@@ -2,7 +2,6 @@ package org.emoflon.ibex.tgg.runtime.hipe;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.Map;
@@ -13,9 +12,9 @@ import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EPackage.Registry;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.resource.ResourceSet;
+import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
 import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
-import org.emoflon.ibex.common.coremodel.IBeXCoreModel.IBeXPatternSet;
 import org.emoflon.ibex.common.engine.IBeXPMEngineInformation;
 import org.emoflon.ibex.common.engine.IMatch;
 import org.emoflon.ibex.tgg.compiler.patterns.PatternSuffixes;
@@ -38,7 +37,9 @@ import org.emoflon.ibex.tgg.util.benchmark.TimeMeasurable;
 import org.emoflon.ibex.tgg.util.benchmark.TimeRegistry;
 import org.emoflon.ibex.tgg.util.benchmark.Timer;
 import org.emoflon.ibex.tgg.util.benchmark.Times;
+import org.emoflon.smartemf.persistence.SmartEMFResourceFactoryImpl;
 
+import hipe.engine.HiPEContentAdapter;
 import hipe.engine.IHiPEEngine;
 import hipe.engine.match.ProductionMatch;
 import hipe.engine.message.production.ProductionResult;
@@ -50,8 +51,6 @@ public class HiPETGGEngine extends BlackInterpreter<ProductionMatch> implements 
 	
 	private IHiPEEngine engine;
 	
-	private IBeXPatternSet ibexPatterns;
-
 	private final Times times = new Times();
 	
 	protected String engineClassName;
@@ -112,7 +111,6 @@ public class HiPETGGEngine extends BlackInterpreter<ProductionMatch> implements 
 		}
 		
 		TGGModel ibexModel = (TGGModel) r.getContents().get(0);
-		ibexPatterns = ibexModel.getPatternSet();
 		
 		for(TGGRule tggRule : ibexModel.getRuleSet().getRules()) {
 			for(TGGOperationalRule operationalRule : tggRule.getOperationalisations()) {
@@ -322,5 +320,30 @@ public class HiPETGGEngine extends BlackInterpreter<ProductionMatch> implements 
 	@Override
 	public void terminate() {
 		
+	}
+
+	@Override
+	public void monitor(Resource r) {
+		r.eAdapters().add(new HiPEContentAdapter(observedResources, engine));
+	}
+
+	@Override
+	public ResourceSet createAndPrepareResourceSet(final String workspacePath) {
+		model = createAndPrepareResourceSet_internal(workspacePath);
+		return createAndPrepareResourceSet_internal(workspacePath);
+	}
+	
+	private ResourceSet createAndPrepareResourceSet_internal(final String workspacePath) {
+		ResourceSet rs = new ResourceSetImpl();
+		rs.getResourceFactoryRegistry().getExtensionToFactoryMap()
+				.put(Resource.Factory.Registry.DEFAULT_EXTENSION, new SmartEMFResourceFactoryImpl(workspacePath));
+//				.put(Resource.Factory.Registry.DEFAULT_EXTENSION, new XMIResourceFactoryImpl());
+		try {
+			rs.getURIConverter().getURIMap().put(URI.createPlatformResourceURI("/", true), URI.createFileURI(new File(workspacePath).getCanonicalPath() + File.separator));
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+		return rs;
 	}
 }
