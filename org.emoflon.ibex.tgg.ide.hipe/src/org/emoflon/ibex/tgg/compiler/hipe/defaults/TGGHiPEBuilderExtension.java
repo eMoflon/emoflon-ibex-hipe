@@ -44,6 +44,7 @@ import org.emoflon.ibex.tgg.compiler.transformations.patterns.ContextPatternTran
 import org.emoflon.ibex.tgg.editor.builder.TGGBuildUtil;
 import org.emoflon.ibex.tgg.editor.tgg.TripleGraphGrammarFile;
 import org.emoflon.ibex.tgg.runtime.config.options.IbexOptions;
+import org.emoflon.ibex.tgg.runtime.hipe.TGGIBeXToHiPEPatternTransformation;
 import org.emoflon.ibex.tgg.runtime.strategies.gen.MODELGEN;
 import org.emoflon.ibex.tgg.runtime.strategies.integrate.INTEGRATE;
 import org.emoflon.ibex.tgg.runtime.strategies.modules.IbexExecutable;
@@ -75,7 +76,7 @@ public class TGGHiPEBuilderExtension implements TGGEngineBuilderExtension {
 	private List<String> metaModelImports;
 	
 	@Override
-	public void run(IProject project, EditorFile editorModel, EditorFile flattenedEditorModel) {
+	public void run(IProject project, EditorFile editorModel) {
 		LogUtils.info(logger, "Starting HiPE TGG builder ... ");
 		
 		try {
@@ -90,7 +91,7 @@ public class TGGHiPEBuilderExtension implements TGGEngineBuilderExtension {
 		projectPath = projectName;
 		
 
-		metaModelImports = flattenedEditorModel.getImports().stream()
+		metaModelImports = editorModel.getImports().stream()
 				.map(imp -> imp.getName())
 				.collect(Collectors.toList());
 		
@@ -126,9 +127,9 @@ public class TGGHiPEBuilderExtension implements TGGEngineBuilderExtension {
 		
 		// create the actual project path
 		projectPath = project.getLocation().toPortableString();
-		EPackage srcPkg = flattenedEditorModel.getSchema().getSourceTypes().get(0);
-		EPackage trgPkg = flattenedEditorModel.getSchema().getTargetTypes().get(0);
-		EPackage corrPkg = flattenedEditorModel.eClass().getEPackage();
+		EPackage srcPkg = (EPackage) editorModel.getSchema().getSourceTypes().get(0);
+		EPackage trgPkg = (EPackage) editorModel.getSchema().getTargetTypes().get(0);
+		EPackage corrPkg = editorModel.eClass().getEPackage();
 		try {
 			if(srcPkg == null || trgPkg == null || corrPkg == null) {
 				throw new RuntimeException("Could not get flattened trg or src model from editor model.");
@@ -139,8 +140,8 @@ public class TGGHiPEBuilderExtension implements TGGEngineBuilderExtension {
 		}
 		
 		// initialize eclasses to prevent concurrent modification exceptions
-		initializeEClasses(flattenedEditorModel.getSchema().getSourceTypes());
-		initializeEClasses(flattenedEditorModel.getSchema().getTargetTypes());
+		initializeEClasses(editorModel.getSchema().getSourceTypes().stream().map(EPackage.class::cast).toList());
+		initializeEClasses(editorModel.getSchema().getTargetTypes().stream().map(EPackage.class::cast).toList());
 		
 		executables.forEach(this::initializeEClasses);
 		
@@ -161,7 +162,7 @@ public class TGGHiPEBuilderExtension implements TGGEngineBuilderExtension {
 		LogUtils.info(logger, "Building missing app stubs...");
 		try {
 			generateRegHelper(srcProject, trgProject, srcPkgName, trgPkgName);
-			generateDefaultStubs(editorModel, flattenedEditorModel);
+			generateDefaultStubs();
 		} catch(Exception e) {
 			LogUtils.error(logger, e);
 		}
@@ -176,14 +177,14 @@ public class TGGHiPEBuilderExtension implements TGGEngineBuilderExtension {
 			ContextPatternTransformation compiler = new ContextPatternTransformation(executable.getOptions(), executable.getOptions().matchDistributor());
 		
 			// initialize eclasses to prevent concurrent modification exceptions
-			initializeEClasses(executable.getOptions().tgg.tgg().getSrc());
-			initializeEClasses(executable.getOptions().tgg.tgg().getTrg());
+			initializeEClasses(executable.getOptions().tgg.tgg().getSource());
+			initializeEClasses(executable.getOptions().tgg.tgg().getTarget());
 			
 			IBeXModel ibexModel = compiler.transform();
 			IBeXPatternSet ibexPatterns = ibexModel.getPatternSet();
 			
 			LogUtils.info(logger,  executable.getClass().getName() + ": Converting IBeX to HiPE Patterns..");
-			IBeXToHiPEPatternTransformation transformation = new IBeXToHiPEPatternTransformation();
+			TGGToHiPEPatternTransformation transformation = new TGGToHiPEPatternTransformation();
 			HiPEContainer container = transformation.transform(ibexPatterns);
 			
 			LogUtils.info(logger,  executable.getClass().getName() + ": Creating search plan & generating Rete network..");
@@ -240,7 +241,7 @@ public class TGGHiPEBuilderExtension implements TGGEngineBuilderExtension {
 	 * initalize all eclasses (transitively) of a package by calling EAllSuperTypes and EAllReferences once
 	 * @param packages
 	 */
-	private void initializeEClasses(EList<EPackage> packages) {
+	private void initializeEClasses(Collection<EPackage> packages) {
 		for(EPackage pkg : packages) {
 			initializeEClasses(pkg);
 		}
@@ -280,7 +281,7 @@ public class TGGHiPEBuilderExtension implements TGGEngineBuilderExtension {
 		return options;
 	}
 	
-	public void generateDefaultStubs(TripleGraphGrammarFile editorModel, TripleGraphGrammarFile flattenedEditorModel) throws CoreException {
+	public void generateDefaultStubs() throws CoreException {
 		TGGBuildUtil.createDefaultDebugRunFile(project, HiPEFilesGenerator.MODELGEN_APP, (projectName, fileName) 
 				-> HiPEFilesGenerator.generateModelGenDebugFile(projectName, fileName));
 		TGGBuildUtil.createDefaultRunFile(project, HiPEFilesGenerator.MODELGEN_APP, (projectName, fileName) 

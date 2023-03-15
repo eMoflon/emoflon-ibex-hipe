@@ -57,7 +57,7 @@ public class IBeXToHiPEPatternTransformation {
 
 //	private static Logger logger = Logger.getLogger(GTHiPEBuilderExtension.class);
 
-	private HiPEPatternFactory factory;
+	protected HiPEPatternFactory factory;
 	protected GTModel model;
 	protected Map<String, HiPEPattern> name2pattern = new HashMap<>();
 	protected Map<IBeXNode, HiPENode> node2node = new HashMap<>();
@@ -599,7 +599,7 @@ public class IBeXToHiPEPatternTransformation {
 		return node.getName();
 	}
 
-	private HiPEAttribute transformSimple(IBeXPattern context, ValueExpression value) {
+	protected HiPEAttribute transformSimple(IBeXPattern context, ValueExpression value) {
 		if (value instanceof IBeXStringValue str)
 			return transformSimple(context, str);
 		if (value instanceof IBeXEnumValue enm)
@@ -618,49 +618,49 @@ public class IBeXToHiPEPatternTransformation {
 		return null;
 	}
 
-	private HiPEAttribute transformSimple(IBeXPattern context, IBeXStringValue constant) {
+	protected HiPEAttribute transformSimple(IBeXPattern context, IBeXStringValue constant) {
 		HiPEAttribute attr = factory.createHiPEAttribute();
 		container.getAttributes().add(attr);
 		attr.setValue(constant.getValue());
 		return attr;
 	}
 
-	private HiPEAttribute transformSimple(IBeXPattern context, IBeXEnumValue constant) {
+	protected HiPEAttribute transformSimple(IBeXPattern context, IBeXEnumValue constant) {
 		HiPEAttribute attr = factory.createHiPEAttribute();
 		container.getAttributes().add(attr);
 		attr.setValue(constant.getLiteral());
 		return attr;
 	}
 
-	private HiPEAttribute transformSimple(IBeXPattern context, IBeXBooleanValue constant) {
+	protected HiPEAttribute transformSimple(IBeXPattern context, IBeXBooleanValue constant) {
 		HiPEAttribute attr = factory.createHiPEAttribute();
 		container.getAttributes().add(attr);
 		attr.setValue(constant.isValue());
 		return attr;
 	}
 
-	private HiPEAttribute transformSimple(IBeXPattern context, IBeXNullValue constant) {
+	protected HiPEAttribute transformSimple(IBeXPattern context, IBeXNullValue constant) {
 		HiPEAttribute attr = factory.createHiPEAttribute();
 		container.getAttributes().add(attr);
 		attr.setValue(null);
 		return attr;
 	}
 
-	private HiPEAttribute transformSimple(IBeXPattern context, DoubleLiteral constant) {
+	protected HiPEAttribute transformSimple(IBeXPattern context, DoubleLiteral constant) {
 		HiPEAttribute attr = factory.createHiPEAttribute();
 		container.getAttributes().add(attr);
 		attr.setValue(constant.getValue());
 		return attr;
 	}
 
-	private HiPEAttribute transformSimple(IBeXPattern context, IntegerLiteral constant) {
+	protected HiPEAttribute transformSimple(IBeXPattern context, IntegerLiteral constant) {
 		HiPEAttribute attr = factory.createHiPEAttribute();
 		container.getAttributes().add(attr);
 		attr.setValue(constant.getValue());
 		return attr;
 	}
 
-	private HiPEAttribute transformSimple(IBeXPattern context, IBeXAttributeValue attributeExpr) {
+	protected HiPEAttribute transformSimple(IBeXPattern context, IBeXAttributeValue attributeExpr) {
 		HiPEAttribute attr = factory.createHiPEAttribute();
 		container.getAttributes().add(attr);
 		attr.setNode(transform(context, attributeExpr.getNode()));
