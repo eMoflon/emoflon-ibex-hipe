@@ -17,6 +17,7 @@ import org.emoflon.ibex.common.coremodel.IBeXCoreModel.IBeXBooleanValue;
 import org.emoflon.ibex.common.coremodel.IBeXCoreModel.IBeXEdge;
 import org.emoflon.ibex.common.coremodel.IBeXCoreModel.IBeXEnumValue;
 import org.emoflon.ibex.common.coremodel.IBeXCoreModel.IBeXMatchCountValue;
+import org.emoflon.ibex.common.coremodel.IBeXCoreModel.IBeXModel;
 import org.emoflon.ibex.common.coremodel.IBeXCoreModel.IBeXNode;
 import org.emoflon.ibex.common.coremodel.IBeXCoreModel.IBeXNodeValue;
 import org.emoflon.ibex.common.coremodel.IBeXCoreModel.IBeXNullValue;
@@ -58,7 +59,7 @@ public class IBeXToHiPEPatternTransformation {
 //	private static Logger logger = Logger.getLogger(GTHiPEBuilderExtension.class);
 
 	protected HiPEPatternFactory factory;
-	protected GTModel model;
+	protected IBeXModel model;
 	protected Map<String, HiPEPattern> name2pattern = new HashMap<>();
 	protected Map<IBeXNode, HiPENode> node2node = new HashMap<>();
 	protected HiPEContainer container;
@@ -240,7 +241,7 @@ public class IBeXToHiPEPatternTransformation {
 		return hNode;
 	}
 
-	private HiPEEdge transform(IBeXPattern context, IBeXEdge edge) {
+	protected HiPEEdge transform(IBeXPattern context, IBeXEdge edge) {
 		HiPEEdge hEdge = factory.createHiPEEdge();
 		container.getEdges().add(hEdge);
 		hEdge.setName(edge.getName().replace("[", "").replace("]", "").replace("--", "_").replace(">", ""));
@@ -250,7 +251,7 @@ public class IBeXToHiPEPatternTransformation {
 		return hEdge;
 	}
 
-	private UnequalConstraint transformUE(IBeXPattern context, RelationalExpression pair) {
+	protected UnequalConstraint transformUE(IBeXPattern context, RelationalExpression pair) {
 		UnequalConstraint constr = factory.createUnequalConstraint();
 		container.getNodeConstraints().add(constr);
 		constr.setLeftNode(transform(context, ((IBeXNodeValue) pair.getLhs()).getNode()));
@@ -258,7 +259,7 @@ public class IBeXToHiPEPatternTransformation {
 		return constr;
 	}
 
-	private EqualConstraint transformE(IBeXPattern context, RelationalExpression pair) {
+	protected EqualConstraint transformE(IBeXPattern context, RelationalExpression pair) {
 		EqualConstraint constr = factory.createEqualConstraint();
 		container.getNodeConstraints().add(constr);
 		constr.setLeftNode(transform(context, ((IBeXNodeValue) pair.getLhs()).getNode()));
@@ -266,7 +267,7 @@ public class IBeXToHiPEPatternTransformation {
 		return constr;
 	}
 
-	private HiPEAttributeConstraint transformSimpleAC(IBeXPattern context, HiPEPattern pattern,
+	public HiPEAttributeConstraint transformSimpleAC(IBeXPattern context, HiPEPattern pattern,
 			RelationalExpression constr) {
 		RelationalConstraint rConstraint = factory.createRelationalConstraint();
 		HiPEAttribute attrLeft = transformSimple(context, constr.getLhs());
