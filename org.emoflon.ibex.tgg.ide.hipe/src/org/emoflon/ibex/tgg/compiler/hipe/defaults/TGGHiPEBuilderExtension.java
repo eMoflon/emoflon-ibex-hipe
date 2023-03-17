@@ -39,9 +39,11 @@ import org.emoflon.ibex.common.project.BuildPropertiesHelper;
 import org.emoflon.ibex.common.project.ManifestHelper;
 import org.emoflon.ibex.gt.build.hipe.IBeXToHiPEPatternTransformation;
 import org.emoflon.ibex.tgg.codegen.TGGEngineBuilderExtension;
+import org.emoflon.ibex.tgg.compiler.TGGLToTGGModelTransformer;
 import org.emoflon.ibex.tgg.compiler.defaults.TGGBuildUtil;
 import org.emoflon.ibex.tgg.runtime.config.options.IbexOptions;
 import org.emoflon.ibex.tgg.runtime.strategies.StrategyMode;
+import org.emoflon.ibex.tgg.runtime.strategies.StrategyToOperationalization;
 import org.emoflon.ibex.tgg.runtime.strategies.gen.MODELGEN;
 import org.emoflon.ibex.tgg.runtime.strategies.integrate.INTEGRATE;
 import org.emoflon.ibex.tgg.runtime.strategies.modules.IbexExecutable;
@@ -52,6 +54,8 @@ import org.emoflon.ibex.tgg.runtime.strategies.sync.INITIAL_FWD;
 import org.emoflon.ibex.tgg.runtime.strategies.sync.SYNC;
 import org.emoflon.ibex.tgg.tggl.tGGL.EditorFile;
 import org.emoflon.ibex.tgg.tggmodel.IBeXTGGModel.IBeXTGGModelPackage;
+import org.emoflon.ibex.tgg.tggmodel.IBeXTGGModel.OperationalisationMode;
+import org.emoflon.ibex.tgg.tggmodel.IBeXTGGModel.TGGModel;
 import org.moflon.core.plugins.manifest.ManifestFileUpdater;
 import org.moflon.core.utilities.ClasspathUtil;
 import org.moflon.core.utilities.LogUtils;
@@ -105,8 +109,10 @@ public class TGGHiPEBuilderExtension implements TGGEngineBuilderExtension {
 			LogUtils.error(logger, e1.getMessage());
 		}
 
-		LogUtils.info(logger, "Building TGG options...");
-		
+		LogUtils.info(logger, "Building Internal TGG Model");
+		TGGModel model = new TGGLToTGGModelTransformer(editorModel, project).transform();
+		saveResource(model, projectPath +"/model/tggModel.xmi");
+
 		LogUtils.info(logger, "Building TGG operational strategy...");
 		Collection<StrategyMode> strategyModes = new LinkedList<>();
 		strategyModes.add(StrategyMode.INITIAL_FWD);
@@ -167,7 +173,8 @@ public class TGGHiPEBuilderExtension implements TGGEngineBuilderExtension {
 		
 			// initialize eclasses to prevent concurrent modification exceptions
 			TGGToHiPEPatternTransformation transformation = new TGGToHiPEPatternTransformation();
-			HiPEContainer container = transformation.transform(ibexPatterns);
+			Collection<OperationalisationMode> modes = StrategyToOperationalization.getNeededOperationalisationModes(strategy);
+			HiPEContainer container = transformation.transform(model, modes.toArray(new OperationalisationMode[0]));
 			
 			LogUtils.info(logger,  strategy.getClass().getName() + ": Creating search plan & generating Rete network..");
 			SearchPlan searchPlan = new LocalSearchPlan(container);
