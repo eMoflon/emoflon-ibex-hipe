@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -20,7 +19,6 @@ import org.eclipse.core.resources.IWorkspace;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.NullProgressMonitor;
-import org.eclipse.emf.common.util.EList;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.EClassifier;
@@ -33,26 +31,14 @@ import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.eclipse.emf.ecore.xmi.XMIResource;
 import org.eclipse.emf.ecore.xmi.impl.EcoreResourceFactoryImpl;
 import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
-import org.emoflon.ibex.common.coremodel.IBeXCoreModel.IBeXModel;
-import org.emoflon.ibex.common.coremodel.IBeXCoreModel.IBeXPatternSet;
 import org.emoflon.ibex.common.project.BuildPropertiesHelper;
 import org.emoflon.ibex.common.project.ManifestHelper;
-import org.emoflon.ibex.gt.build.hipe.IBeXToHiPEPatternTransformation;
 import org.emoflon.ibex.tgg.codegen.TGGEngineBuilderExtension;
-import org.emoflon.ibex.tgg.compiler.TGGLToTGGModelTransformer;
 import org.emoflon.ibex.tgg.compiler.defaults.TGGBuildUtil;
 import org.emoflon.ibex.tgg.runtime.config.options.IbexOptions;
 import org.emoflon.ibex.tgg.runtime.strategies.StrategyMode;
 import org.emoflon.ibex.tgg.runtime.strategies.StrategyToOperationalization;
-import org.emoflon.ibex.tgg.runtime.strategies.gen.MODELGEN;
-import org.emoflon.ibex.tgg.runtime.strategies.integrate.INTEGRATE;
 import org.emoflon.ibex.tgg.runtime.strategies.modules.IbexExecutable;
-import org.emoflon.ibex.tgg.runtime.strategies.opt.CC;
-import org.emoflon.ibex.tgg.runtime.strategies.opt.CO;
-import org.emoflon.ibex.tgg.runtime.strategies.sync.INITIAL_BWD;
-import org.emoflon.ibex.tgg.runtime.strategies.sync.INITIAL_FWD;
-import org.emoflon.ibex.tgg.runtime.strategies.sync.SYNC;
-import org.emoflon.ibex.tgg.tggl.tGGL.EditorFile;
 import org.emoflon.ibex.tgg.tggmodel.IBeXTGGModel.IBeXTGGModelPackage;
 import org.emoflon.ibex.tgg.tggmodel.IBeXTGGModel.OperationalisationMode;
 import org.emoflon.ibex.tgg.tggmodel.IBeXTGGModel.TGGModel;
@@ -75,10 +61,8 @@ public class TGGHiPEBuilderExtension implements TGGEngineBuilderExtension {
 	private String projectName;
 	private String projectPath;
 	
-	private List<String> metaModelImports;
-	
 	@Override
-	public void run(IProject project, EditorFile editorModel) {
+	public void run(IProject project, TGGModel model) {
 		LogUtils.info(logger, "Starting HiPE TGG builder ... ");
 		
 		try {
@@ -91,10 +75,6 @@ public class TGGHiPEBuilderExtension implements TGGEngineBuilderExtension {
 		this.project = project;
 		projectName = project.getName();
 		projectPath = projectName;
-		
-		metaModelImports = editorModel.getImports().stream()
-				.map(imp -> imp.getName())
-				.collect(Collectors.toList());
 		
 		LogUtils.info(logger, "Cleaning old code..");
 		cleanOldCode(project.getLocation().toPortableString());
@@ -109,10 +89,6 @@ public class TGGHiPEBuilderExtension implements TGGEngineBuilderExtension {
 			LogUtils.error(logger, e1.getMessage());
 		}
 
-		LogUtils.info(logger, "Building Internal TGG Model");
-		TGGModel model = new TGGLToTGGModelTransformer(editorModel, project).transform();
-		saveResource(model, projectPath +"/model/tggModel.xmi");
-
 		LogUtils.info(logger, "Building TGG operational strategy...");
 		Collection<StrategyMode> strategyModes = new LinkedList<>();
 		strategyModes.add(StrategyMode.INITIAL_FWD);
@@ -125,9 +101,9 @@ public class TGGHiPEBuilderExtension implements TGGEngineBuilderExtension {
 		
 		// create the actual project path
 		projectPath = project.getLocation().toPortableString();
-		EPackage srcPkg = (EPackage) editorModel.getSchema().getSourceTypes().get(0);
-		EPackage trgPkg = (EPackage) editorModel.getSchema().getTargetTypes().get(0);
-		EPackage corrPkg = editorModel.eClass().getEPackage();
+		EPackage srcPkg = (EPackage) model.getSource().get(0);
+		EPackage trgPkg = (EPackage) model.getTarget().get(0);
+		EPackage corrPkg = model.getCorrespondence();
 		try {
 			if(srcPkg == null || trgPkg == null || corrPkg == null) {
 				throw new RuntimeException("Could not get flattened trg or src model from editor model.");
@@ -138,8 +114,8 @@ public class TGGHiPEBuilderExtension implements TGGEngineBuilderExtension {
 		}
 		
 		// initialize eclasses to prevent concurrent modification exceptions
-		initializeEClasses(editorModel.getSchema().getSourceTypes().stream().map(EPackage.class::cast).toList());
-		initializeEClasses(editorModel.getSchema().getTargetTypes().stream().map(EPackage.class::cast).toList());
+		initializeEClasses(model.getSource().stream().map(EPackage.class::cast).toList());
+		initializeEClasses(model.getTarget().stream().map(EPackage.class::cast).toList());
 		
 		String srcModel = srcPkg.getName();
 		String trgModel = trgPkg.getName();
