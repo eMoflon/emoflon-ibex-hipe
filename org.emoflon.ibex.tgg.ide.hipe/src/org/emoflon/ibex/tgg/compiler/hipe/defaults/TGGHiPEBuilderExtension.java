@@ -38,13 +38,10 @@ import org.emoflon.ibex.common.coremodel.IBeXCoreModel.IBeXPatternSet;
 import org.emoflon.ibex.common.project.BuildPropertiesHelper;
 import org.emoflon.ibex.common.project.ManifestHelper;
 import org.emoflon.ibex.gt.build.hipe.IBeXToHiPEPatternTransformation;
-import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXPatternModelPackage;
 import org.emoflon.ibex.tgg.codegen.TGGEngineBuilderExtension;
-import org.emoflon.ibex.tgg.compiler.transformations.patterns.ContextPatternTransformation;
-import org.emoflon.ibex.tgg.editor.builder.TGGBuildUtil;
-import org.emoflon.ibex.tgg.editor.tgg.TripleGraphGrammarFile;
+import org.emoflon.ibex.tgg.compiler.defaults.TGGBuildUtil;
 import org.emoflon.ibex.tgg.runtime.config.options.IbexOptions;
-import org.emoflon.ibex.tgg.runtime.hipe.TGGIBeXToHiPEPatternTransformation;
+import org.emoflon.ibex.tgg.runtime.strategies.StrategyMode;
 import org.emoflon.ibex.tgg.runtime.strategies.gen.MODELGEN;
 import org.emoflon.ibex.tgg.runtime.strategies.integrate.INTEGRATE;
 import org.emoflon.ibex.tgg.runtime.strategies.modules.IbexExecutable;
@@ -54,6 +51,7 @@ import org.emoflon.ibex.tgg.runtime.strategies.sync.INITIAL_BWD;
 import org.emoflon.ibex.tgg.runtime.strategies.sync.INITIAL_FWD;
 import org.emoflon.ibex.tgg.runtime.strategies.sync.SYNC;
 import org.emoflon.ibex.tgg.tggl.tGGL.EditorFile;
+import org.emoflon.ibex.tgg.tggmodel.IBeXTGGModel.IBeXTGGModelPackage;
 import org.moflon.core.plugins.manifest.ManifestFileUpdater;
 import org.moflon.core.utilities.ClasspathUtil;
 import org.moflon.core.utilities.LogUtils;
@@ -90,7 +88,6 @@ public class TGGHiPEBuilderExtension implements TGGEngineBuilderExtension {
 		projectName = project.getName();
 		projectPath = projectName;
 		
-
 		metaModelImports = editorModel.getImports().stream()
 				.map(imp -> imp.getName())
 				.collect(Collectors.toList());
@@ -111,19 +108,14 @@ public class TGGHiPEBuilderExtension implements TGGEngineBuilderExtension {
 		LogUtils.info(logger, "Building TGG options...");
 		
 		LogUtils.info(logger, "Building TGG operational strategy...");
-		Collection<IbexExecutable> executables = new HashSet<>();
-		try {
-			executables.add(new INITIAL_FWD(HiPEBuilderUtil.registerResourceHandler(createIbexOptions(projectName, projectPath), project, metaModelImports, true)));
-			executables.add(new INITIAL_BWD(HiPEBuilderUtil.registerResourceHandler(createIbexOptions(projectName, projectPath), project, metaModelImports, false)));
-			executables.add(new SYNC(HiPEBuilderUtil.registerResourceHandler(createIbexOptions(projectName, projectPath), project, metaModelImports, false)));
-			executables.add(new CC(HiPEBuilderUtil.registerResourceHandler(createIbexOptions(projectName, projectPath), project, metaModelImports, false)));
-			executables.add(new CO(HiPEBuilderUtil.registerResourceHandler(createIbexOptions(projectName, projectPath), project, metaModelImports, false)));
-			executables.add(new MODELGEN(HiPEBuilderUtil.registerResourceHandler(createIbexOptions(projectName, projectPath), project, metaModelImports, false)));
-			executables.add(new INTEGRATE(HiPEBuilderUtil.registerResourceHandler(createIbexOptions(projectName, projectPath).patterns.optimizePattern(true), project, metaModelImports, false)));
-		} catch (IOException e) {
-			LogUtils.error(logger, e);
-			return;
-		}
+		Collection<StrategyMode> strategyModes = new LinkedList<>();
+		strategyModes.add(StrategyMode.INITIAL_FWD);
+		strategyModes.add(StrategyMode.INITIAL_BWD);
+		strategyModes.add(StrategyMode.SYNC);
+		strategyModes.add(StrategyMode.CC);
+		strategyModes.add(StrategyMode.CHECK_ONLY);
+		strategyModes.add(StrategyMode.MODELGEN);
+		strategyModes.add(StrategyMode.INTEGRATE);
 		
 		// create the actual project path
 		projectPath = project.getLocation().toPortableString();
@@ -142,8 +134,6 @@ public class TGGHiPEBuilderExtension implements TGGEngineBuilderExtension {
 		// initialize eclasses to prevent concurrent modification exceptions
 		initializeEClasses(editorModel.getSchema().getSourceTypes().stream().map(EPackage.class::cast).toList());
 		initializeEClasses(editorModel.getSchema().getTargetTypes().stream().map(EPackage.class::cast).toList());
-		
-		executables.forEach(this::initializeEClasses);
 		
 		String srcModel = srcPkg.getName();
 		String trgModel = trgPkg.getName();
@@ -172,56 +162,41 @@ public class TGGHiPEBuilderExtension implements TGGEngineBuilderExtension {
 		updateBuildProperties();
 		
 		double tic = System.currentTimeMillis();
-		executables.parallelStream().forEach(executable -> {
-			LogUtils.info(logger, executable.getClass().getName() + ": Compiling ibex patterns from TGG patterns...");
-			ContextPatternTransformation compiler = new ContextPatternTransformation(executable.getOptions(), executable.getOptions().matchDistributor());
+		strategyModes.parallelStream().forEach(strategy -> {
+			LogUtils.info(logger,  strategy.getClass().getName() + ": Converting IBeX to HiPE Patterns..");
 		
 			// initialize eclasses to prevent concurrent modification exceptions
-			initializeEClasses(executable.getOptions().tgg.tgg().getSource());
-			initializeEClasses(executable.getOptions().tgg.tgg().getTarget());
-			
-			IBeXModel ibexModel = compiler.transform();
-			IBeXPatternSet ibexPatterns = ibexModel.getPatternSet();
-			
-			LogUtils.info(logger,  executable.getClass().getName() + ": Converting IBeX to HiPE Patterns..");
 			TGGToHiPEPatternTransformation transformation = new TGGToHiPEPatternTransformation();
 			HiPEContainer container = transformation.transform(ibexPatterns);
 			
-			LogUtils.info(logger,  executable.getClass().getName() + ": Creating search plan & generating Rete network..");
+			LogUtils.info(logger,  strategy.getClass().getName() + ": Creating search plan & generating Rete network..");
 			SearchPlan searchPlan = new LocalSearchPlan(container);
 			searchPlan.generateSearchPlan();
 			HiPENetwork network = searchPlan.getNetwork();
 			
-			LogUtils.info(logger,  executable.getClass().getName() + ": Generating Code..");
+			LogUtils.info(logger,  strategy.getClass().getName() + ": Generating Code..");
 			
-			String packageName = null;
-			if(executable instanceof INITIAL_FWD) 
-				packageName = "initfwd";
-			else if(executable instanceof INITIAL_BWD) 
-				packageName = "initbwd";
-			else if(executable instanceof SYNC) 
-				packageName = "sync";
-			else if(executable instanceof CC && !(executable instanceof CO)) 
-				packageName = "cc";
-			else if(executable instanceof CO) 
-				packageName = "co";
-			else if(executable instanceof MODELGEN) 
-				packageName = "modelgen";
-			else if(executable instanceof INTEGRATE) 
-				packageName = "integrate";
-			else
-				throw new RuntimeException("Unsupported Operational Strategy detected");
+			String packageName = switch(strategy) {
+				case CC -> "cc";
+				case CHECK_ONLY -> "co";
+				case INITIAL_FWD -> "initfwd";
+				case INITIAL_BWD -> "initbwd";
+				case INTEGRATE -> "integrate";
+				case SYNC -> "sync";
+				case MODELGEN -> "modelgen";
+				default -> 
+					throw new RuntimeException("Unsupported Operational Strategy detected: " + strategy);
+			};
 			
 			HiPEGeneratorConfig config = new HiPEGeneratorConfig();
 			HiPEGenerator.generateCode(projectName+"." + packageName + ".", projectPath, network, config);
 			
-			LogUtils.info(logger,  executable.getClass().getName() + ": Code generation completed");
+			LogUtils.info(logger,  strategy.getClass().getName() + ": Code generation completed");
 			String hipePath = "src-gen/" + projectName + "/" + packageName + "/hipe/engine/";
 			
-			LogUtils.info(logger,  executable.getClass().getName() + ": Saving HiPE patterns and HiPE network..");
+			LogUtils.info(logger,  strategy.getClass().getName() + ": Saving HiPE patterns and HiPE network..");
 			saveResource(container, projectPath +"/" + hipePath + "/hipe-patterns.xmi");
 			saveResource(network, projectPath +"/" + hipePath + "/hipe-network.xmi");
-			saveResource(ibexModel, projectPath +"/" + hipePath + "/ibex-patterns.xmi");
 		});
 		double toc = System.currentTimeMillis();
 		LogUtils.info(logger, "Pattern compilation and code generation completed in "+ (toc-tic)/1000.0 + " seconds.");
@@ -499,37 +474,21 @@ public class TGGHiPEBuilderExtension implements TGGEngineBuilderExtension {
 	
 	private static void repairMetamodelResource() throws Exception {
 		org.eclipse.emf.ecore.EPackage.Registry reg = EPackage.Registry.INSTANCE;
-		EPackage pk = reg.getEPackage("platform:/resource/org.emoflon.ibex.patternmodel/model/IBeXPatternModel.ecore");
-		if(pk == null || pk.eIsProxy()) {
-			reg.remove("platform:/resource/org.emoflon.ibex.patternmodel/model/IBeXPatternModel.ecore");
-
-			Resource.Factory.Registry.INSTANCE.getExtensionToFactoryMap().putIfAbsent("ecore", new EcoreResourceFactoryImpl());
-			ResourceSet rs = new ResourceSetImpl();
-			rs.getResourceFactoryRegistry().getExtensionToFactoryMap().putIfAbsent("ecore", new EcoreResourceFactoryImpl());
-			Resource modelResource = rs.createResource(URI.createURI("platform:/resource/org.emoflon.ibex.patternmodel/model/IBeXPatternModel.ecore"));
-			pk = IBeXPatternModelPackage.eINSTANCE;
-			modelResource.getContents().add(pk);
-
-			EcoreUtil.resolveAll(pk);
-			IBeXPatternModelPackage.eINSTANCE.eClass();
-			reg.put("platform:/resource/org.emoflon.ibex.patternmodel/model/IBeXPatternModel.ecore", pk);
-			
-		}
 		
-		EPackage pk2 = reg.getEPackage("platform:/plugin/org.emoflon.ibex.tgg.core.language/model/Language.ecore");
+		EPackage pk2 = reg.getEPackage("platform:/plugin/org.emoflon.ibex.tgg.tggmodel/model/IBeXTGGModel.ecore");
 		if(pk2 == null || pk2.eIsProxy()) {
-			reg.remove("platform:/plugin/org.emoflon.ibex.tgg.core.language/model/Language.ecore");
+			reg.remove("platform:/plugin/org.emoflon.ibex.tgg.tggmodel/model/IBeXTGGModel.ecore");
 
 			Resource.Factory.Registry.INSTANCE.getExtensionToFactoryMap().putIfAbsent("ecore", new EcoreResourceFactoryImpl());
 			ResourceSet rs = new ResourceSetImpl();
 			rs.getResourceFactoryRegistry().getExtensionToFactoryMap().putIfAbsent("ecore", new EcoreResourceFactoryImpl());
-			Resource modelResource = rs.createResource(URI.createURI("platform:/plugin/org.emoflon.ibex.tgg.core.language/model/Language.ecore"));
-			pk2 = LanguagePackage.eINSTANCE;
+			Resource modelResource = rs.createResource(URI.createURI("platform:/plugin/org.emoflon.ibex.tgg.tggmodel/model/IBeXTGGModel.ecore"));
+			pk2 = IBeXTGGModelPackage.eINSTANCE;
 			modelResource.getContents().add(pk2);
 
 			EcoreUtil.resolveAll(pk2);
-			LanguagePackage.eINSTANCE.eClass();
-			reg.put("platform:/plugin/org.emoflon.ibex.tgg.core.language/model/Language.ecore", pk2);
+			IBeXTGGModelPackage.eINSTANCE.eClass();
+			reg.put("platform:/resource/org.emoflon.ibex.tgg.tggmodel/model/IBeXTGGModel.ecore", pk2);
 		}
 	}
 }

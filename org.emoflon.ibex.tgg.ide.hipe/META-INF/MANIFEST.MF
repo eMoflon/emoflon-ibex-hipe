@@ -30,7 +30,8 @@ Require-Bundle: com.google.guava,
  org.emoflon.smartemf;bundle-version="1.0.0",
  org.emoflon.ibex.tgg.tggl,
  org.emoflon.ibex.common.slimgt;bundle-version="1.0.0",
- org.emoflon.ibex.tgg.tggmodel
+ org.emoflon.ibex.tgg.tggmodel,
+ org.emoflon.ibex.tgg.compiler
 Export-Package: org.emoflon.ibex.tgg.compiler.hipe.defaults
 Bundle-ActivationPolicy: lazy
 Import-Package: org.apache.log4j;version="1.2.19",

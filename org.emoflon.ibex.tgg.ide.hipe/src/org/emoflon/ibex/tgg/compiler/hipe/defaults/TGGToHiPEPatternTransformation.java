@@ -2,6 +2,7 @@ package org.emoflon.ibex.tgg.compiler.hipe.defaults;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -19,8 +20,11 @@ import org.emoflon.ibex.common.coremodel.IBeXCoreModel.IBeXCoreArithmetic.Relati
 import org.emoflon.ibex.common.coremodel.IBeXCoreModel.IBeXCoreArithmetic.RelationalOperator;
 import org.emoflon.ibex.gt.build.hipe.IBeXToHiPEPatternTransformation;
 import org.emoflon.ibex.gt.gtmodel.IBeXGTModel.GTPattern;
+import org.emoflon.ibex.tgg.tggmodel.IBeXTGGModel.OperationalisationMode;
 import org.emoflon.ibex.tgg.tggmodel.IBeXTGGModel.TGGModel;
+import org.emoflon.ibex.tgg.tggmodel.IBeXTGGModel.TGGOperationalRule;
 import org.emoflon.ibex.tgg.tggmodel.IBeXTGGModel.TGGPattern;
+import org.emoflon.ibex.tgg.tggmodel.IBeXTGGModel.TGGRule;
 import org.emoflon.ibex.tgg.tggmodel.IBeXTGGModel.CSP.TGGAttributeConstraint;
 import org.emoflon.ibex.tgg.tggmodel.IBeXTGGModel.CSP.TGGAttributeConstraintParameterValue;
 
@@ -38,18 +42,32 @@ public class TGGToHiPEPatternTransformation extends IBeXToHiPEPatternTransformat
 	private int csp_id = 0;
 	
 	
-	public HiPEContainer transform(TGGModel model) {
+	public HiPEContainer transform(TGGModel model, OperationalisationMode... modes) {
+		var allModes = new HashSet<>();
+		for(var mode : modes) 
+			allModes.add(mode);
+			
+		
 		factory = HiPEPatternFactory.eINSTANCE;
 		this.model = model;
 		name2pattern = new HashMap<>();
 		node2node = new HashMap<>();
 
 		container = factory.createHiPEContainer();
-		for (IBeXPattern pattern : model.getPatternSet().getPatterns()) {
-			if (pattern.getSignatureNodes().isEmpty() && pattern.getLocalNodes().isEmpty())
-				continue;
-
-			container.getPatterns().add(transform((TGGPattern) pattern));
+		for (TGGRule rule : model.getRuleSet().getRules()) {
+			for(TGGOperationalRule operationalRule : rule.getOperationalisations()) {
+				var pattern = operationalRule.getPrecondition();
+				
+				// do not transform if the right mode has not been given as a parameter
+				if(!allModes.contains(operationalRule.getOperationalisationMode()))
+					continue;
+					
+				// if the pattern is empty, then do not generate anything
+				if (pattern.getSignatureNodes().isEmpty() && pattern.getLocalNodes().isEmpty())
+					continue;
+				
+				container.getPatterns().add(transform((TGGPattern) pattern));
+			}
 		}
 
 		// Finish count Invocations
