@@ -33,7 +33,7 @@ import org.eclipse.emf.ecore.xmi.impl.EcoreResourceFactoryImpl;
 import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
 import org.emoflon.ibex.common.project.BuildPropertiesHelper;
 import org.emoflon.ibex.common.project.ManifestHelper;
-import org.emoflon.ibex.tgg.codegen.TGGEngineBuilderExtension;
+import org.emoflon.ibex.tgg.compiler.builder.TGGEngineBuilderExtension;
 import org.emoflon.ibex.tgg.compiler.defaults.TGGBuildUtil;
 import org.emoflon.ibex.tgg.runtime.config.options.IbexOptions;
 import org.emoflon.ibex.tgg.runtime.strategies.StrategyMode;
@@ -85,7 +85,6 @@ public class TGGHiPEBuilderExtension implements TGGEngineBuilderExtension {
 			ClasspathUtil.makeSourceFolderIfNecessary(srcGenFolder);
 			ClasspathUtil.makeSourceFolderIfNecessary(genFolder);
 		} catch (CoreException e1) {
-			// TODO Auto-generated catch block
 			LogUtils.error(logger, e1.getMessage());
 		}
 
