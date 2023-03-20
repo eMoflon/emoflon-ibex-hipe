@@ -87,7 +87,7 @@ public class TGGToHiPEPatternTransformation extends IBeXToHiPEPatternTransformat
 		return container;
 	}
 	
-	private HiPEPattern transform(TGGPattern context) {
+	private HiPEPattern transform(IBeXPattern context) {
 		context.setName(context.getName().replace("-", "_"));
 
 		if (name2pattern.containsKey(context.getName()))
@@ -95,13 +95,14 @@ public class TGGToHiPEPatternTransformation extends IBeXToHiPEPatternTransformat
 
 		HiPEPattern pattern = factory.createHiPEPattern();
 		pattern.setName(context.getName());
-
+		
+		container.getPatterns().add(pattern);
 		name2pattern.put(pattern.getName(), pattern);
 
 		for (IBeXPatternInvocation inv : context.getInvocations()) {
 			HiPEPatternInvocation invocation = factory.createHiPEPatternInvocation();
 
-			HiPEPattern invoked = transform((GTPattern) inv.getInvocation());
+			HiPEPattern invoked = transform((IBeXPattern) inv.getInvocation());
 			invocation.setInvokedPattern(invoked);
 			invocation.setPositive(inv.isPositive());
 			pattern.getPatternInvocations().add(invocation);
@@ -152,8 +153,10 @@ public class TGGToHiPEPatternTransformation extends IBeXToHiPEPatternTransformat
 			transformed.add(constr);
 		}
 
-		for(var csp : context.getAttributeConstraints().getTggAttributeConstraints()) {
-			pattern.getAttributeConstraints().add(transform(context, pattern, csp));
+		if(context instanceof TGGPattern tggPattern) {
+			for(var csp : tggPattern.getAttributeConstraints().getTggAttributeConstraints()) {
+				pattern.getAttributeConstraints().add(transform(context, pattern, csp));
+			}			
 		}
 
 		ibexPattern2pattern.put(context, pattern);
