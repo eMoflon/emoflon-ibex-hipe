@@ -9,7 +9,6 @@ Export-Package: org.emoflon.ibex.tgg.runtime.hipe
 Require-Bundle: hipe.dependencies;bundle-version="1.0.0",
  org.emoflon.ibex.gt.hipe;visibility:=reexport,
  org.emoflon.ibex.tgg.runtime,
- org.emoflon.ibex.tgg.language,
  org.emoflon.smartemf;bundle-version="1.0.0",
  org.emoflon.ibex.tgg.util;bundle-version="1.0.0",
  org.emoflon.ibex.tgg.analysis,

@@ -239,8 +239,8 @@ public class TGGHiPEBuilderExtension implements TGGEngineBuilderExtension {
 	}
 	
 	public void generateDefaultStubs() throws CoreException {
-		TGGBuildUtil.createDefaultDebugRunFile(project, HiPEFilesGenerator.MODELGEN_APP, (projectName, fileName) 
-				-> HiPEFilesGenerator.generateModelGenDebugFile(projectName, fileName));
+//		TGGBuildUtil.createDefaultDebugRunFile(project, HiPEFilesGenerator.MODELGEN_APP, (projectName, fileName) 
+//				-> HiPEFilesGenerator.generateModelGenDebugFile(projectName, fileName));
 		TGGBuildUtil.createDefaultRunFile(project, HiPEFilesGenerator.MODELGEN_APP, (projectName, fileName) 
 				-> HiPEFilesGenerator.generateModelGenFile(projectName, fileName));
 		TGGBuildUtil.createDefaultRunFile(project, HiPEFilesGenerator.SYNC_APP, (projectName, fileName) 
