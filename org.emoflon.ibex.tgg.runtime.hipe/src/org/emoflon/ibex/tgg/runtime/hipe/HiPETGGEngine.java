@@ -17,8 +17,8 @@ import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
 import org.emoflon.ibex.common.engine.IBeXPMEngineInformation;
 import org.emoflon.ibex.common.engine.IMatch;
-import org.emoflon.ibex.tgg.compiler.patterns.PatternSuffixes;
-import org.emoflon.ibex.tgg.compiler.patterns.PatternUtil;
+import org.emoflon.ibex.tgg.patterns.PatternSuffixes;
+import org.emoflon.ibex.tgg.patterns.PatternUtil;
 import org.emoflon.ibex.tgg.runtime.config.options.IbexOptions;
 import org.emoflon.ibex.tgg.runtime.interpreter.BlackInterpreter;
 import org.emoflon.ibex.tgg.runtime.matches.SimpleTGGMatch;
@@ -65,10 +65,15 @@ public class HiPETGGEngine extends BlackInterpreter<ProductionMatch> implements 
 	 */
 	protected URI base;
 
+	public HiPETGGEngine() {
+		// The super call is hacky because we do not support this and have to load the resources first
+		super(null, null);
+	}
+	
 	/**
 	 * Creates a new HiPETGGEngine.
 	 */
-	public HiPETGGEngine(TGGModel model, ResourceSet resourceSet) {
+	protected HiPETGGEngine(TGGModel model, ResourceSet resourceSet) {
 		super(model, resourceSet);
 		TimeRegistry.register(this);
 		base = URI.createPlatformResourceURI("/", true);

@@ -3,9 +3,9 @@ package org.emoflon.ibex.tgg.runtime.hipe;
 import java.util.List;
 
 import org.emoflon.ibex.common.engine.SimpleMatch;
-import org.emoflon.ibex.tgg.compiler.patterns.PatternSuffixes;
-import org.emoflon.ibex.tgg.compiler.patterns.PatternType;
-import org.emoflon.ibex.tgg.compiler.patterns.PatternUtil;
+import org.emoflon.ibex.tgg.patterns.PatternSuffixes;
+import org.emoflon.ibex.tgg.patterns.PatternType;
+import org.emoflon.ibex.tgg.patterns.PatternUtil;
 import org.emoflon.ibex.tgg.runtime.matches.ITGGMatch;
 import org.emoflon.ibex.tgg.runtime.matches.SimpleTGGMatch;
 import org.emoflon.ibex.tgg.runtime.matches.TGGMatchParameterOrderProvider;
