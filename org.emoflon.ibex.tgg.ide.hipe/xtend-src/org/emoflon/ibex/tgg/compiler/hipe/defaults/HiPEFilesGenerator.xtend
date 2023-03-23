@@ -135,7 +135,8 @@ class HiPEFilesGenerator extends DefaultFilesGenerator {
 					options.project.name("«MoflonUtil.lastCapitalizedSegmentOf(projectName)»");
 					options.project.path("«projectName»");
 					options.debug.ibexDebug(false);
-					options.csp.userDefinedConstraints(new UserDefinedRuntimeTGGAttrConstraintFactory());
+					for(var factory : new RuntimeTGGAttrConstraintFactoryContainer().getFactories())
+						options.csp.constraintProvider().registerFactory(factory);					
 					options.registrationHelper(this);
 					return options;
 				}
