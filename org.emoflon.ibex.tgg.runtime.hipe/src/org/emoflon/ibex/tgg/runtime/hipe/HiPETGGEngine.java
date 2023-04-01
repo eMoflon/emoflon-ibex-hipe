@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -63,7 +64,7 @@ public class HiPETGGEngine extends BlackInterpreter<ProductionMatch> implements 
 	/**
 	 * The HiPE patterns.
 	 */
-	protected Map<String, String> patterns;
+//	protected Map<String, String> patterns = new HashMap<>();
 	
 	/**
 	 * The base uri
@@ -118,7 +119,7 @@ public class HiPETGGEngine extends BlackInterpreter<ProductionMatch> implements 
 		
 		for(TGGRule tggRule : ibexModel.getRuleSet().getRules()) {
 			for(TGGOperationalRule operationalRule : tggRule.getOperationalisations()) {
-				PatternUtil.registerPattern(operationalRule.getName(), PatternSuffixes.extractType(operationalRule.getName()));				
+				PatternUtil.registerPattern(operationalRule.getName(), PatternSuffixes.extractType(operationalRule.getName()));			
 			}
 		}
 	}
@@ -236,9 +237,6 @@ public class HiPETGGEngine extends BlackInterpreter<ProductionMatch> implements 
 		for (String patternName : extractData.keySet()) {
 			Collection<ProductionMatch> matches = extractData.get(patternName).getNewMatches();
 			for (ProductionMatch match : matches) {
-				if (!patterns.containsKey(patternName))
-					continue;
-
 				addMatch(match);
 			}
 		}
@@ -248,9 +246,6 @@ public class HiPETGGEngine extends BlackInterpreter<ProductionMatch> implements 
 		for (String patternName : extractData.keySet()) {
 			Collection<ProductionMatch> matches = extractData.get(patternName).getDeleteMatches();
 			for (ProductionMatch match : matches) {
-				if (!patterns.containsKey(patternName))
-					continue;
-
 				removeMatch(match);
 			}
 		}
@@ -265,11 +260,8 @@ public class HiPETGGEngine extends BlackInterpreter<ProductionMatch> implements 
 		
 		Collection<IMatch> iMatches = new LinkedList<>();
 		for(String patternName : extractData.keySet()) {
-			if(patterns.get(patternName) == null)
-				continue;
-			String pName = patterns.get(patternName);
 			Collection<ProductionMatch> matches = extractData.get(patternName).getNewMatches();
-			iMatches.addAll(matches.parallelStream().map(m -> createMatch(m, pName)).collect(Collectors.toList()));
+			iMatches.addAll(matches.parallelStream().map(m -> createMatch(m, patternName)).collect(Collectors.toList()));
 		}
 		matchObserver.addMatches(iMatches);
 	}
@@ -281,11 +273,8 @@ public class HiPETGGEngine extends BlackInterpreter<ProductionMatch> implements 
 		}
 		
 		for(String patternName : extractData.keySet()) {
-			if(patterns.get(patternName) == null)
-				continue;
-			String pName = patterns.get(patternName);
 			Collection<ProductionMatch> matches = extractData.get(patternName).getDeleteMatches();
-			Collection<IMatch> iMatches = matches.parallelStream().map(m -> createMatch(m, pName)).collect(Collectors.toList());
+			Collection<IMatch> iMatches = matches.parallelStream().map(m -> createMatch(m, patternName)).collect(Collectors.toList());
 			matchObserver.removeMatches(iMatches);
 		}
 	}
