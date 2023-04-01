@@ -2,6 +2,8 @@ package org.emoflon.ibex.tgg.runtime.hipe;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.Map;
@@ -40,6 +42,7 @@ import org.emoflon.ibex.tgg.util.benchmark.Times;
 import org.emoflon.smartemf.persistence.SmartEMFResourceFactoryImpl;
 
 import hipe.engine.HiPEContentAdapter;
+import hipe.engine.HiPEOptions;
 import hipe.engine.IHiPEEngine;
 import hipe.engine.match.ProductionMatch;
 import hipe.engine.message.production.ProductionResult;
@@ -50,6 +53,8 @@ import hipe.engine.message.production.ProductionResult;
 public class HiPETGGEngine extends BlackInterpreter<ProductionMatch> implements TimeMeasurable {
 	
 	private IHiPEEngine engine;
+	
+	private HiPEContentAdapter adapter;
 	
 	private final Times times = new Times();
 	
@@ -108,21 +113,49 @@ public class HiPETGGEngine extends BlackInterpreter<ProductionMatch> implements 
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
-		Resource r = null;
-		try {
-			r = loadResource("file://" + cp);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
 		
-		TGGModel ibexModel = (TGGModel) r.getContents().get(0);
+		TGGModel ibexModel = options.tgg.flattenedTGG();
 		
 		for(TGGRule tggRule : ibexModel.getRuleSet().getRules()) {
 			for(TGGOperationalRule operationalRule : tggRule.getOperationalisations()) {
 				PatternUtil.registerPattern(operationalRule.getName(), PatternSuffixes.extractType(operationalRule.getName()));				
 			}
 		}
+	}
+
+	protected void initEngine(final Collection<Resource> resources) {
+		if(engine == null) {
+			Class<? extends IHiPEEngine> engineClass = null;
+			try {
+				engineClass = (Class<? extends IHiPEEngine>) Class.forName(engineClassName);
+			} catch (ClassNotFoundException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
+			
+			try {
+				if(engineClass == null) {
+					throw new RuntimeException("Engine class: "+engineClassName+ " -> not found!");
+				}
+				Constructor<? extends IHiPEEngine> constructor = engineClass.getConstructor();
+				constructor.setAccessible(true);
+				
+				engine = constructor.newInstance();
+			} catch (InstantiationException | IllegalAccessException | NoSuchMethodException | 
+					SecurityException | IllegalArgumentException | InvocationTargetException e) {
+				e.printStackTrace();
+			}
+		}
+		try {
+			HiPEOptions options = new HiPEOptions();
+			options.cascadingNotifications = cascadingNotifications(resources);
+			options.lazyInitialization = initializeLazy();
+			engine.initialize(options);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
 		
+		adapter = new HiPEContentAdapter(resources.stream().filter(res -> !res.getURI().toString().contains("-trash")).collect(Collectors.toSet()), engine);
 	}
 	
 	protected Resource loadResource(String path) throws Exception {
@@ -328,8 +361,13 @@ public class HiPETGGEngine extends BlackInterpreter<ProductionMatch> implements 
 	}
 
 	@Override
+	public void monitor(Collection<Resource> resources) {
+		initEngine(observedResources);
+	}
+	
+	@Override
 	public void monitor(Resource r) {
-		r.eAdapters().add(new HiPEContentAdapter(observedResources, engine));
+		throw new UnsupportedOperationException("Register all resources at once");
 	}
 
 	@Override
