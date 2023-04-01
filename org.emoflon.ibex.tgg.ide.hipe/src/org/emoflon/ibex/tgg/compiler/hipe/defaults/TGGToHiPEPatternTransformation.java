@@ -170,7 +170,7 @@ public class TGGToHiPEPatternTransformation extends IBeXToHiPEPatternTransformat
 		
 		String initCode = definition.getLibrary().getPackageName() + "." + getCSPName(definition.getName()) + " csp_" + csp_id + " = new " + definition.getLibrary().getPackageName() + "." + getCSPName(csp.getDefinition().getName()) + "();\n";
 		for(TGGAttributeConstraintParameterValue value : csp.getParameters()) {
-			initCode += "csp_" + csp_id + ".getVariables().add(new org.emoflon.ibex.tgg.operational.csp.RuntimeTGGAttributeConstraintVariable(true, ";
+			initCode += "csp_" + csp_id + ".getVariables().add(new org.emoflon.ibex.tgg.runtime.csp.RuntimeTGGAttributeConstraintVariable(true, ";
 			if(value.getExpression() instanceof IBeXAttributeValue attributeValue) {
 				String getOrIs = ".get";
 				if(attributeValue.getAttribute().getEType().getInstanceClassName() != null) {

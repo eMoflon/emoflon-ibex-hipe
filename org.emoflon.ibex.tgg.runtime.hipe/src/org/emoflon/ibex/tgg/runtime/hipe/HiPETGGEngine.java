@@ -155,7 +155,7 @@ public class HiPETGGEngine extends BlackInterpreter<ProductionMatch> implements 
 			e.printStackTrace();
 		}
 		
-		adapter = new HiPEContentAdapter(resources.stream().filter(res -> !res.getURI().toString().contains("-trash")).collect(Collectors.toSet()), engine);
+		adapter = new HiPEContentAdapter(resources, engine);
 	}
 	
 	protected Resource loadResource(String path) throws Exception {
@@ -362,7 +362,8 @@ public class HiPETGGEngine extends BlackInterpreter<ProductionMatch> implements 
 
 	@Override
 	public void monitor(Collection<Resource> resources) {
-		initEngine(observedResources);
+		observedResources = resources;
+		initEngine(resources);
 	}
 	
 	@Override
