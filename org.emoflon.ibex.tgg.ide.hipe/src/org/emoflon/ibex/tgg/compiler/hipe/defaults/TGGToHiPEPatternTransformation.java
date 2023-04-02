@@ -7,6 +7,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.eclipse.emf.common.util.EMap;
+import org.eclipse.emf.ecore.EDataType;
 import org.eclipse.emf.ecore.EEnum;
 import org.emoflon.ibex.common.coremodel.IBeXCoreModel.IBeXAttributeValue;
 import org.emoflon.ibex.common.coremodel.IBeXCoreModel.IBeXEdge;
@@ -15,6 +16,7 @@ import org.emoflon.ibex.common.coremodel.IBeXCoreModel.IBeXMatchCountValue;
 import org.emoflon.ibex.common.coremodel.IBeXCoreModel.IBeXNode;
 import org.emoflon.ibex.common.coremodel.IBeXCoreModel.IBeXPattern;
 import org.emoflon.ibex.common.coremodel.IBeXCoreModel.IBeXPatternInvocation;
+import org.emoflon.ibex.common.coremodel.IBeXCoreModel.IBeXStringValue;
 import org.emoflon.ibex.common.coremodel.IBeXCoreModel.IBeXCoreArithmetic.BooleanExpression;
 import org.emoflon.ibex.common.coremodel.IBeXCoreModel.IBeXCoreArithmetic.RelationalExpression;
 import org.emoflon.ibex.common.coremodel.IBeXCoreModel.IBeXCoreArithmetic.RelationalOperator;
@@ -196,7 +198,10 @@ public class TGGToHiPEPatternTransformation extends IBeXToHiPEPatternTransformat
 				initCode += ", \"" + literal.getLiteral().getClass().getName() + "\"));\n";
 			} else {
 				HiPEAttribute hAttr = transformSimple(ibexPattern, value.getExpression());
-				initCode += hAttr.getValue();
+				if(value.getExpression() instanceof IBeXStringValue) 
+					initCode += "\""+hAttr.getValue()+"\"";
+				else
+					initCode += hAttr.getValue();
 				cConstraint.getAttributes().add(hAttr);
 				hipePattern.getAttributes().add(hAttr);
 				initCode += ", \"" + hAttr.getValue().getClass().getName() + "\"));\n";
