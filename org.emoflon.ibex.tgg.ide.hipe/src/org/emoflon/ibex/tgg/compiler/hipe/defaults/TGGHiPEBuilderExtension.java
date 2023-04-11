@@ -81,7 +81,12 @@ public class TGGHiPEBuilderExtension implements TGGEngineBuilderExtension {
 		
 		IFolder srcGenFolder = project.getFolder("src-gen");
 		IFolder genFolder = project.getFolder("gen");
+
 		try {
+			if(!srcGenFolder.exists())
+				srcGenFolder.create(false, true, null);
+			if(!genFolder.exists())
+				genFolder.create(false, true, null);
 			ClasspathUtil.makeSourceFolderIfNecessary(srcGenFolder);
 			ClasspathUtil.makeSourceFolderIfNecessary(genFolder);
 		} catch (CoreException e1) {
