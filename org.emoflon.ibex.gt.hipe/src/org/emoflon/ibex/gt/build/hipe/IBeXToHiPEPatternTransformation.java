@@ -141,7 +141,8 @@ public class IBeXToHiPEPatternTransformation {
 		Set<BooleanExpression> transformed = new HashSet<>();
 		// Filter simple node constraints and transform to hipe node constraints
 		for (RelationalExpression nodeConstraint : context.getConditions().stream()
-				.filter(expr -> isSimpleNodeConstraint(expr)).map(expr -> (RelationalExpression) expr)
+				.filter(expr -> isSimpleNodeConstraint(expr))
+				.map(expr -> (RelationalExpression) expr)
 				.collect(Collectors.toList())) {
 			if (nodeConstraint.getOperator() == RelationalOperator.OBJECT_EQUALS) {
 				pattern.getNodeConstraints().add(transformE(context, nodeConstraint));
@@ -154,7 +155,8 @@ public class IBeXToHiPEPatternTransformation {
 		// Filter simple attribute constraints and transform to hipe attribute
 		// constraints
 		for (RelationalExpression constr : context.getConditions().stream()
-				.filter(expr -> isSimpleAttributeConstraint(expr)).map(expr -> (RelationalExpression) expr)
+				.filter(expr -> isSimpleAttributeConstraint(expr))
+				.map(expr -> (RelationalExpression) expr)
 				.collect(Collectors.toList())) {
 			HiPEAttributeConstraint constraint = transformSimpleAC(context, pattern, constr);
 
