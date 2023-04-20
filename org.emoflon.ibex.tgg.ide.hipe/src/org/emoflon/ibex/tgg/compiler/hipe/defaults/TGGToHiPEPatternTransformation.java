@@ -68,6 +68,18 @@ public class TGGToHiPEPatternTransformation extends IBeXToHiPEPatternTransformat
 				if (pattern.getSignatureNodes().isEmpty() && pattern.getLocalNodes().isEmpty())
 					continue;
 				
+				switch(operationalRule.getOperationalisationMode()) {
+					case FORWARD:
+						if(rule.getCreateSource().getNodes().isEmpty() && rule.getCreateSource().getEdges().isEmpty())
+							continue;
+						break;
+					case BACKWARD:
+						if(rule.getCreateTarget().getNodes().isEmpty() && rule.getCreateTarget().getEdges().isEmpty())
+							continue;
+						break;
+					default:
+				}
+				
 				container.getPatterns().add(transform((TGGPattern) pattern));
 			}
 		}
