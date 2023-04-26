@@ -280,7 +280,7 @@ public class TGGHiPEBuilderExtension implements TGGEngineBuilderExtension {
 	
 	private void cleanOldCode(String projectPath) {
 		List<File> hipeRootDirectories = new LinkedList<>();
-		hipeRootDirectories.add(new File(projectPath+"/gen"));
+//		hipeRootDirectories.add(new File(projectPath+"/gen"));
 		hipeRootDirectories.add(new File(projectPath+"/src-gen/" + projectName + "/sync/hipe"));
 		hipeRootDirectories.add(new File(projectPath+"/src-gen/" + projectName + "/cc/hipe"));
 		hipeRootDirectories.add(new File(projectPath+"/src-gen/" + projectName + "/co/hipe"));
