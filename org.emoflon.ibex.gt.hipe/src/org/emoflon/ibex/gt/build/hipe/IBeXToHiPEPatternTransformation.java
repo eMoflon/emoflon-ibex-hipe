@@ -200,8 +200,8 @@ public class IBeXToHiPEPatternTransformation {
 	}
 
 	public boolean isSimpleAttributeConstraint(BooleanExpression expr) {
-		if (expr instanceof RelationalExpression relExpr && !(relExpr.getOperator() == RelationalOperator.OBJECT_EQUALS
-				|| relExpr.getOperator() == RelationalOperator.OBJECT_NOT_EQUALS)) {
+		if (expr instanceof RelationalExpression relExpr) {
+//				(relExpr.getOperator() == RelationalOperator.OBJECT_EQUALS /|| relExpr.getOperator() == RelationalOperator.OBJECT_NOT_EQUALS)) {
 			if (isSimpleAttributeValue(relExpr.getLhs()) && isSimpleAttributeValue(relExpr.getRhs())) {
 				return true;
 			}
