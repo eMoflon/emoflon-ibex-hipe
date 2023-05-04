@@ -226,7 +226,7 @@ public class TGGHiPEBuilderExtension implements TGGEngineBuilderExtension {
 	}
 	
 	private void initializeEClasses(IbexExecutable ie) {
-		ie.getOptions().tgg.getFlattenedConcreteTGGRules().forEach(r -> {
+		ie.getOptions().tgg.getConcreteTGGRules().forEach(r -> {
 			r.getNodes().forEach(n -> {
 				EClass type = n.getType();
 				type.getEAllSuperTypes();

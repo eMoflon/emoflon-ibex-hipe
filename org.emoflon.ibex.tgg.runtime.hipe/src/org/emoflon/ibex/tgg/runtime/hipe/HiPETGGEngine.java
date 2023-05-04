@@ -115,7 +115,7 @@ public class HiPETGGEngine extends BlackInterpreter<ProductionMatch> implements 
 			e1.printStackTrace();
 		}
 		
-		TGGModel ibexModel = options.tgg.flattenedTGG();
+		TGGModel ibexModel = options.tgg.tgg();
 		
 		for(TGGRule tggRule : ibexModel.getRuleSet().getRules()) {
 			for(TGGOperationalRule operationalRule : tggRule.getOperationalisations()) {
