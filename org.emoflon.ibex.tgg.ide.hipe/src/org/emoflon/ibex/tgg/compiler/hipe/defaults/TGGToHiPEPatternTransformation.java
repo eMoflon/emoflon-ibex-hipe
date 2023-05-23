@@ -186,11 +186,7 @@ public class TGGToHiPEPatternTransformation extends IBeXToHiPEPatternTransformat
 		for(TGGAttributeConstraintParameterValue value : csp.getParameters()) {
 			initCode += "csp_" + csp_id + ".getVariables().add(new org.emoflon.ibex.tgg.runtime.csp.RuntimeTGGAttributeConstraintVariable(true, ";
 			if(value.getExpression() instanceof IBeXAttributeValue attributeValue) {
-				String getOrIs = ".get";
-				if(attributeValue.getAttribute().getEType().getInstanceClassName() != null) {
-					getOrIs = attributeValue.getAttribute().getEType().getInstanceClassName().equals("boolean") ? ".is" : ".get";
-				}
-				initCode += attributeValue.getNode().getName() + getOrIs + attributeValue.getAttribute().getName().substring(0, 1).toUpperCase() + attributeValue.getAttribute().getName().substring(1) + "()";
+				initCode += attributeValue.getNode().getName() + "_" + attributeValue.getAttribute().getName();
 				HiPEAttribute hAttr = transformSimple(ibexPattern, attributeValue);
 				cConstraint.getAttributes().add(hAttr);
 				hipePattern.getAttributes().add(hAttr);

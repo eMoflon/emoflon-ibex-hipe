@@ -52,6 +52,7 @@ import hipe.network.HiPENetwork;
 import hipe.pattern.HiPEContainer;
 import hipe.searchplan.SearchPlan;
 import hipe.searchplan.simple.LocalSearchPlan;
+import hipe.searchplan.simple.StatelessSearchPlan;
 
 public class TGGHiPEBuilderExtension implements TGGEngineBuilderExtension {
 
@@ -157,7 +158,8 @@ public class TGGHiPEBuilderExtension implements TGGEngineBuilderExtension {
 			HiPEContainer container = transformation.transform(model, modes.toArray(new OperationalisationMode[0]));
 			
 			LogUtils.info(logger,  strategy.getClass().getName() + ": Creating search plan & generating Rete network..");
-			SearchPlan searchPlan = new LocalSearchPlan(container);
+//			SearchPlan searchPlan = new LocalSearchPlan(container);
+			SearchPlan searchPlan = new StatelessSearchPlan(container);
 			searchPlan.generateSearchPlan();
 			HiPENetwork network = searchPlan.getNetwork();
 			
