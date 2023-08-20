@@ -247,9 +247,18 @@ public class IBeXToHiPEPatternTransformation {
 		HiPEEdge hEdge = factory.createHiPEEdge();
 		container.getEdges().add(hEdge);
 		hEdge.setName(edge.getName().replace("[", "").replace("]", "").replace("--", "_").replace(">", ""));
-		hEdge.setType(edge.getType());
-		hEdge.setSource(transform(context, edge.getSource()));
-		hEdge.setTarget(transform(context, edge.getTarget()));
+		
+		if(edge.getType().isContainer()) {
+			hEdge.setType(edge.getType().getEOpposite());
+			hEdge.setSource(transform(context, edge.getTarget()));
+			hEdge.setTarget(transform(context, edge.getSource()));
+		}
+		else {
+			hEdge.setType(edge.getType());
+			hEdge.setSource(transform(context, edge.getSource()));
+			hEdge.setTarget(transform(context, edge.getTarget()));
+		}
+		
 		return hEdge;
 	}
 
@@ -586,8 +595,7 @@ public class IBeXToHiPEPatternTransformation {
 		attr.setEAttribute(expr.getAttribute());
 		attributes.add(attr);
 
-		return node.getName() + ".get" + expr.getAttribute().getName().substring(0, 1).toUpperCase()
-				+ expr.getAttribute().getName().substring(1) + "()";
+		return node.getName() + "_" + expr.getAttribute().getName();
 	}
 
 	private String transformNodeValue2Java(IBeXPattern context, IBeXNodeValue expr,
