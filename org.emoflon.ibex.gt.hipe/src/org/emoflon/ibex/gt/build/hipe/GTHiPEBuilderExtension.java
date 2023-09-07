@@ -31,6 +31,7 @@ import hipe.generator.HiPEGeneratorConfig;
 import hipe.network.HiPENetwork;
 import hipe.pattern.HiPEContainer;
 import hipe.searchplan.SearchPlan;
+import hipe.searchplan.simple.StatelessSearchPlan;
 import hipe.searchplan.simple.TriangleSearchPlan;
 
 public class GTHiPEBuilderExtension implements IBeXGTEngineBuilderExtension {
@@ -69,13 +70,15 @@ public class GTHiPEBuilderExtension implements IBeXGTEngineBuilderExtension {
 		HiPEContainer container = transformation.transform(ibexModel);
 
 		LogUtils.info(logger, "Creating search plan & generating Rete network..");
-		SearchPlan searchPlan = new TriangleSearchPlan(container);
+		SearchPlan searchPlan = new StatelessSearchPlan(container);
+//		SearchPlan searchPlan = new TriangleSearchPlan(container);
 //		SearchPlan searchPlan = new SimpleSearchPlan(container);
 		searchPlan.generateSearchPlan();
 		HiPENetwork network = searchPlan.getNetwork();
 
 		LogUtils.info(logger, "Generating Code..");
 		HiPEGeneratorConfig config = new HiPEGeneratorConfig();
+		config.setEnforcedBidirectionalRefs(true);
 		HiPEGenerator.generateCode(packageName + ".", projectPath, network, config);
 
 		double toc = System.currentTimeMillis();

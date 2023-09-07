@@ -8,7 +8,6 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import org.apache.log4j.Logger;
 import org.eclipse.core.resources.IFile;
@@ -51,7 +50,6 @@ import hipe.generator.HiPEGeneratorConfig;
 import hipe.network.HiPENetwork;
 import hipe.pattern.HiPEContainer;
 import hipe.searchplan.SearchPlan;
-import hipe.searchplan.simple.LocalSearchPlan;
 import hipe.searchplan.simple.StatelessSearchPlan;
 
 public class TGGHiPEBuilderExtension implements TGGEngineBuilderExtension {
@@ -178,6 +176,7 @@ public class TGGHiPEBuilderExtension implements TGGEngineBuilderExtension {
 			};
 			
 			HiPEGeneratorConfig config = new HiPEGeneratorConfig();
+			config.setEnforcedBidirectionalRefs(true);
 			HiPEGenerator.generateCode(projectName+"." + packageName + ".", projectPath, network, config);
 			
 			LogUtils.info(logger,  strategy.getClass().getName() + ": Code generation completed");

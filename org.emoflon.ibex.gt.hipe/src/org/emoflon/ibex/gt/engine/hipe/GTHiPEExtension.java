@@ -52,6 +52,6 @@ public class GTHiPEExtension implements IBeXPMEngineInformation {
 
 	@Override
 	public boolean supports_count_matches() {
-		return true;
+		return false;
 	}
 }

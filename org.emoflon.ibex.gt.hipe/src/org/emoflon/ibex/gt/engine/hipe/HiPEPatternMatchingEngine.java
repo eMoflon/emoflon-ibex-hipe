@@ -270,4 +270,11 @@ public class HiPEPatternMatchingEngine extends IBeXGTPatternMatcher<ProductionMa
 		return new GTHiPEExtension();
 	}
 
+	public HiPEContentAdapter getAdapter() {
+		return adapter;
+	}
+	
+	public IHiPEEngine getEngine() {
+		return engine;
+	}
 }
