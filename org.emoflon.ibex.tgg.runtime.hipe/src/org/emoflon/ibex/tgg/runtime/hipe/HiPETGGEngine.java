@@ -346,7 +346,7 @@ public class HiPETGGEngine extends BlackInterpreter<ProductionMatch> implements 
 
 	@Override
 	public void terminate() {
-		
+		engine.terminate();
 	}
 
 	@Override
