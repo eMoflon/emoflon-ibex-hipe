@@ -2,8 +2,10 @@ package org.emoflon.ibex.tgg.runtime.hipe;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Arrays;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -13,28 +15,35 @@ import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EPackage.Registry;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.resource.ResourceSet;
-import org.emoflon.ibex.common.operational.IMatch;
-import org.emoflon.ibex.common.operational.IMatchObserver;
-import org.emoflon.ibex.gt.hipe.runtime.HiPEGTEngine;
-import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXContext;
-import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXModel;
-import org.emoflon.ibex.patternmodel.IBeXPatternModel.IBeXPatternSet;
-import org.emoflon.ibex.tgg.compiler.patterns.PatternSuffixes;
-import org.emoflon.ibex.tgg.compiler.patterns.PatternUtil;
-import org.emoflon.ibex.tgg.operational.IBlackInterpreter;
-import org.emoflon.ibex.tgg.operational.benchmark.TimeMeasurable;
-import org.emoflon.ibex.tgg.operational.benchmark.TimeRegistry;
-import org.emoflon.ibex.tgg.operational.benchmark.Timer;
-import org.emoflon.ibex.tgg.operational.benchmark.Times;
-import org.emoflon.ibex.tgg.operational.defaults.IbexOptions;
-import org.emoflon.ibex.tgg.operational.strategies.integrate.INTEGRATE;
-import org.emoflon.ibex.tgg.operational.strategies.modules.IbexExecutable;
-import org.emoflon.ibex.tgg.operational.strategies.opt.CC;
-import org.emoflon.ibex.tgg.operational.strategies.opt.CO;
-import org.emoflon.ibex.tgg.operational.strategies.sync.INITIAL_BWD;
-import org.emoflon.ibex.tgg.operational.strategies.sync.INITIAL_FWD;
-import org.emoflon.ibex.tgg.operational.strategies.sync.SYNC;
+import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
+import org.eclipse.emf.ecore.util.EcoreUtil;
+import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
+import org.emoflon.ibex.common.engine.IBeXPMEngineInformation;
+import org.emoflon.ibex.common.engine.IMatch;
+import org.emoflon.ibex.tgg.patterns.PatternSuffixes;
+import org.emoflon.ibex.tgg.patterns.PatternUtil;
+import org.emoflon.ibex.tgg.runtime.config.options.IbexOptions;
+import org.emoflon.ibex.tgg.runtime.interpreter.BlackInterpreter;
+import org.emoflon.ibex.tgg.runtime.matches.SimpleTGGMatch;
+import org.emoflon.ibex.tgg.runtime.strategies.integrate.INTEGRATE;
+import org.emoflon.ibex.tgg.runtime.strategies.modules.IMatchObserver;
+import org.emoflon.ibex.tgg.runtime.strategies.modules.IbexExecutable;
+import org.emoflon.ibex.tgg.runtime.strategies.opt.CC;
+import org.emoflon.ibex.tgg.runtime.strategies.opt.CO;
+import org.emoflon.ibex.tgg.runtime.strategies.sync.INITIAL_BWD;
+import org.emoflon.ibex.tgg.runtime.strategies.sync.INITIAL_FWD;
+import org.emoflon.ibex.tgg.runtime.strategies.sync.SYNC;
+import org.emoflon.ibex.tgg.tggmodel.IBeXTGGModel.TGGModel;
+import org.emoflon.ibex.tgg.tggmodel.IBeXTGGModel.TGGOperationalRule;
+import org.emoflon.ibex.tgg.tggmodel.IBeXTGGModel.TGGRule;
+import org.emoflon.ibex.tgg.util.benchmark.TimeMeasurable;
+import org.emoflon.ibex.tgg.util.benchmark.TimeRegistry;
+import org.emoflon.ibex.tgg.util.benchmark.Timer;
+import org.emoflon.ibex.tgg.util.benchmark.Times;
+import org.emoflon.smartemf.persistence.SmartEMFResourceFactoryImpl;
 
+import hipe.engine.HiPEContentAdapter;
+import hipe.engine.HiPEOptions;
 import hipe.engine.IHiPEEngine;
 import hipe.engine.match.ProductionMatch;
 import hipe.engine.message.production.ProductionResult;
@@ -42,31 +51,53 @@ import hipe.engine.message.production.ProductionResult;
 /**
  * Engine for (bidirectional) graph transformations with HiPE.
  */
-public class HiPETGGEngine extends HiPEGTEngine implements IBlackInterpreter, TimeMeasurable {
-	private IbexOptions options;
-	private IBeXPatternSet ibexPatterns;
-	private IbexExecutable executable;
+public class HiPETGGEngine extends BlackInterpreter<ProductionMatch> implements TimeMeasurable {
+	
+	private IHiPEEngine engine;
+	
+	private HiPEContentAdapter adapter;
+	
 	private final Times times = new Times();
+	
+	protected String engineClassName;
+	
+	/**
+	 * The HiPE patterns.
+	 */
+//	protected Map<String, String> patterns = new HashMap<>();
+	
+	/**
+	 * The base uri
+	 */
+	protected URI base;
 
+	public HiPETGGEngine() {
+		// The super call is hacky because we do not support this and have to load the resources first
+		super(null, null);
+	}
+	
 	/**
 	 * Creates a new HiPETGGEngine.
 	 */
-	public HiPETGGEngine() {
-		super();
+	protected HiPETGGEngine(TGGModel model, ResourceSet resourceSet) {
+		super(model, resourceSet);
 		TimeRegistry.register(this);
+		base = URI.createPlatformResourceURI("/", true);
 	}
 	
-	public HiPETGGEngine(IHiPEEngine engine) {
-		this();
+	public HiPETGGEngine(TGGModel model, ResourceSet resourceSet, IHiPEEngine engine) {
+		this(model, resourceSet);
 		this.engine = engine;
 	}
 
 	@Override
-	public void initialise(IbexExecutable executable, final IbexOptions options, Registry registry, IMatchObserver matchObserver) {
-		super.initialise(registry, matchObserver);
-		
+	public void initialize(IbexExecutable executable, final IbexOptions options, Registry registry, IMatchObserver matchObserver) {
+		this.executable = executable;
 		this.options = options;
-		this.executable = executable; 
+		this.registry = registry;
+		this.matchObserver = matchObserver;
+		engineClassName = generateHiPEClassName();
+		
 		String cp = "";
 		
 		String path = executable.getClass().getProtectionDomain().getCodeSource().getLocation().getPath();
@@ -83,37 +114,68 @@ public class HiPETGGEngine extends HiPEGTEngine implements IBlackInterpreter, Ti
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
-		Resource r = null;
+		
+		TGGModel ibexModel = options.tgg.tgg();
+		
+		for(TGGRule tggRule : ibexModel.getRuleSet().getRules()) {
+			for(TGGOperationalRule operationalRule : tggRule.getOperationalisations()) {
+				PatternUtil.registerPattern(operationalRule.getName(), PatternSuffixes.extractType(operationalRule.getName()));			
+			}
+		}
+	}
+
+	protected void initEngine(final Collection<Resource> resources) {
+		if(engine == null) {
+			Class<? extends IHiPEEngine> engineClass = null;
+			try {
+				engineClass = (Class<? extends IHiPEEngine>) Class.forName(engineClassName);
+			} catch (ClassNotFoundException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
+			
+			try {
+				if(engineClass == null) {
+					throw new RuntimeException("Engine class: "+engineClassName+ " -> not found!");
+				}
+				Constructor<? extends IHiPEEngine> constructor = engineClass.getConstructor();
+				constructor.setAccessible(true);
+				
+				engine = constructor.newInstance();
+			} catch (InstantiationException | IllegalAccessException | NoSuchMethodException | 
+					SecurityException | IllegalArgumentException | InvocationTargetException e) {
+				e.printStackTrace();
+			}
+		}
 		try {
-			//r = loadResource("file://" + executable.getClass().getProtectionDomain().getCodeSource().getLocation().getPath()+ generateHiPEClassName().replace(".", "/").replace("HiPEEngine", "ibex-patterns.xmi"));
-			r = loadResource("file://" + cp);
-		} catch (Exception e) {
+			HiPEOptions options = new HiPEOptions();
+			options.cascadingNotifications = cascadingNotifications(resources);
+			options.lazyInitialization = initializeLazy();
+			engine.initialize(options);
+		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
 		
-		IBeXModel ibexModel = (IBeXModel)r.getContents().get(0);
-		ibexPatterns = ibexModel.getPatternSet();
+		adapter = new HiPEContentAdapter(resources, engine);
+	}
+	
+	protected Resource loadResource(String path) throws Exception {
+		Resource.Factory.Registry.INSTANCE.getExtensionToFactoryMap().put("xmi",new XMIResourceFactoryImpl());
+		model.getResourceFactoryRegistry().getExtensionToFactoryMap().put("xmi",new XMIResourceFactoryImpl());
+		model.getResourceFactoryRegistry().getExtensionToFactoryMap().put(Resource.Factory.Registry.DEFAULT_EXTENSION, new XMIResourceFactoryImpl());
 		
-		for(IBeXContext context : ibexPatterns.getContextPatterns()) {
-			PatternUtil.registerPattern(context.getName(), PatternSuffixes.extractType(context.getName()));
-		}
+		Resource modelResource = model.getResource(URI.createURI(path).resolve(base), true);
+		EcoreUtil.resolveAll(model);
 		
-		initPatterns(ibexPatterns);
+		if(modelResource == null)
+			throw new IOException("File did not contain a valid model.");
+		return modelResource;
 	}
 
-	@Override
-	public void initPatterns(final IBeXPatternSet ibexPatternSet) {
-		this.ibexPatternSet = ibexPatternSet;
-		setPatterns(ibexPatternSet);
-		engineClassName = generateHiPEClassName();
-	}	
-	
-	@Override
 	protected String getProjectName() {
 		return options.project.name();
 	}
 	
-	@Override
 	protected String generateHiPEClassName() {
 		String projectName = options.project.name();
 		if(executable instanceof INITIAL_FWD) {
@@ -139,15 +201,6 @@ public class HiPETGGEngine extends HiPEGTEngine implements IBlackInterpreter, Ti
 		}
 	}
 	
-	@Override
-	public void monitor(final Collection<Resource> resources) {
-		if (options.debug.ibexDebug()) {
-			savePatterns(resourceSet, options.project.path() + "/debug/ibex-patterns.xmi", Arrays.asList(ibexPatterns));
-		}
-
-		super.monitor(resources);
-	}
-
 	/**
 	 * Use this method to get extra debug information concerning the rete network.
 	 * Currently not used to reduce debug output.
@@ -169,42 +222,63 @@ public class HiPETGGEngine extends HiPEGTEngine implements IBlackInterpreter, Ti
 	}
 	
 	@Override
+	public void fetchMatches() {
+		// Trigger the Rete network
+		try {
+			Map<String, ProductionResult> extractData = engine.extractData();
+			addNewMatches(extractData);
+			deleteInvalidMatches(extractData);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	protected void addNewMatches_slowly(Map<String, ProductionResult> extractData) {
+		for (String patternName : extractData.keySet()) {
+			Collection<ProductionMatch> matches = extractData.get(patternName).getNewMatches();
+			for (ProductionMatch match : matches) {
+				addMatch(match);
+			}
+		}
+	}
+
+	protected void deleteInvalidMatches_slowly(Map<String, ProductionResult> extractData) {
+		for (String patternName : extractData.keySet()) {
+			Collection<ProductionMatch> matches = extractData.get(patternName).getDeleteMatches();
+			for (ProductionMatch match : matches) {
+				removeMatch(match);
+			}
+		}
+	}
+	
 	protected void addNewMatches(Map<String, ProductionResult> extractData) {
 		// TODO Auto-generated method stub
 		if(!options.patterns.parallelizeMatchProcessing()) {
-			super.addNewMatches(extractData);
+			addNewMatches_slowly(extractData);
 			return;
 		}
 		
 		Collection<IMatch> iMatches = new LinkedList<>();
 		for(String patternName : extractData.keySet()) {
-			if(patterns.get(patternName) == null)
-				continue;
-			String pName = patterns.get(patternName);
 			Collection<ProductionMatch> matches = extractData.get(patternName).getNewMatches();
-			iMatches.addAll(matches.parallelStream().map(m -> createMatch(m, pName)).collect(Collectors.toList()));
+			iMatches.addAll(matches.parallelStream().map(m -> createMatch(m, patternName)).collect(Collectors.toList()));
 		}
-		app.addMatches(iMatches);
+		matchObserver.addMatches(iMatches);
 	}
 	
-	@Override
 	protected void deleteInvalidMatches(Map<String, ProductionResult> extractData) {
 		if(!options.patterns.parallelizeMatchProcessing()) {
-			super.deleteInvalidMatches(extractData);
+			deleteInvalidMatches_slowly(extractData);
 			return;
 		}
 		
 		for(String patternName : extractData.keySet()) {
-			if(patterns.get(patternName) == null)
-				continue;
-			String pName = patterns.get(patternName);
 			Collection<ProductionMatch> matches = extractData.get(patternName).getDeleteMatches();
-			Collection<IMatch> iMatches = matches.parallelStream().map(m -> createMatch(m, pName)).collect(Collectors.toList());
-			app.removeMatches(iMatches);
+			Collection<IMatch> iMatches = matches.parallelStream().map(m -> createMatch(m, patternName)).collect(Collectors.toList());
+			matchObserver.removeMatches(iMatches);
 		}
 	}
 
-	@Override
 	protected IMatch createMatch(ProductionMatch match, final String patternName) {
 		return new HiPETGGMatch(match, patternName);
 	}
@@ -232,13 +306,77 @@ public class HiPETGGEngine extends HiPEGTEngine implements IBlackInterpreter, Ti
 		return options;
 	}
 	
-	@Override
 	protected boolean cascadingNotifications(Collection<Resource> resources) {
 		return options.project.usesSmartEMF();
 	}
 
-	@Override
 	protected boolean initializeLazy() {
 		return options.project.usesSmartEMF();
+	}
+
+	@Override
+	public void addMatch(IMatch match) {
+
+	}
+
+	@Override
+	public void addMatches(Collection<IMatch> matches) {
+		
+	}
+
+	@Override
+	public void removeMatch(IMatch match) {
+		
+	}
+
+	@Override
+	public void removeMatches(Collection<IMatch> matches) {
+		
+	}
+
+	@Override
+	public SimpleTGGMatch transformToIMatch(ProductionMatch match) {
+		return null;
+	}
+
+	@Override
+	protected IBeXPMEngineInformation createEngineProperties() {
+		return null;
+	}
+
+	@Override
+	public void terminate() {
+		engine.terminate();
+	}
+
+	@Override
+	public void monitor(Collection<Resource> resources) {
+		observedResources = resources;
+		initEngine(resources);
+	}
+	
+	@Override
+	public void monitor(Resource r) {
+		throw new UnsupportedOperationException("Register all resources at once");
+	}
+
+	@Override
+	public ResourceSet createAndPrepareResourceSet(final String workspacePath) {
+		model = createAndPrepareResourceSet_internal(workspacePath);
+		return createAndPrepareResourceSet_internal(workspacePath);
+	}
+	
+	private ResourceSet createAndPrepareResourceSet_internal(final String workspacePath) {
+		ResourceSet rs = new ResourceSetImpl();
+		rs.getResourceFactoryRegistry().getExtensionToFactoryMap()
+				.put(Resource.Factory.Registry.DEFAULT_EXTENSION, new SmartEMFResourceFactoryImpl(workspacePath));
+//				.put(Resource.Factory.Registry.DEFAULT_EXTENSION, new XMIResourceFactoryImpl());
+		try {
+			rs.getURIConverter().getURIMap().put(URI.createPlatformResourceURI("/", true), URI.createFileURI(new File(workspacePath).getCanonicalPath() + File.separator));
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+		return rs;
 	}
 }
