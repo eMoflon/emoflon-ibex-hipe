@@ -178,17 +178,31 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 		}
 	}
 	
+	/**
+	 * This method returns the HiPE engine class name for the HiPE project build.
+	 * There are two possible outcomes:
+	 * (1): If the env "hipe_engine_class_name" is set, its value will be used.
+	 * (2): Otherwise, the class name gets extracted of the corresponding IBeX
+	 *      pattern set's path.
+	 * 
+	 * @return HiPE engine class name.
+	 */
 	protected String generateHiPEClassName() {
-		URI patternURI = ibexPatternSet.eResource().getURI();
-		Pattern pattern = Pattern.compile("^(.*src-gen/)(.*)(api/ibex-patterns.xmi)$");
-		Matcher matcher = pattern.matcher(patternURI.toString());
-		matcher.matches();
-		String packageName = matcher.group(2);
-		
-		packageName = packageName.substring(0, packageName.length()-1);
-		packageName = packageName.replace("/", ".");
-		
-		return packageName+".hipe.engine.HiPEEngine";
+		final String hipeEngineClassName = System.getenv("hipe_engine_class_name");
+		if (hipeEngineClassName != null && !hipeEngineClassName.isBlank()) {
+			return hipeEngineClassName;
+		} else {
+			URI patternURI = ibexPatternSet.eResource().getURI();
+			Pattern pattern = Pattern.compile("^(.*src-gen/)(.*)(api/ibex-patterns.xmi)$");
+			Matcher matcher = pattern.matcher(patternURI.toString());
+			matcher.matches();
+			String packageName = matcher.group(2);
+			
+			packageName = packageName.substring(0, packageName.length()-1);
+			packageName = packageName.replace("/", ".");
+			
+			return packageName+".hipe.engine.HiPEEngine";
+		}
 	}
 	
 	protected Resource loadResource(String path) throws Exception {
