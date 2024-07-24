@@ -40,8 +40,9 @@ import org.emoflon.smartemf.persistence.SmartEMFResource;
 import org.emoflon.smartemf.persistence.SmartEMFResourceFactoryImpl;
 
 import hipe.engine.HiPEContentAdapter;
-import hipe.engine.HiPEOptions;
 import hipe.engine.IHiPEEngine;
+import hipe.engine.config.HiPEOptions;
+import hipe.engine.config.HiPEPathOptions;
 import hipe.engine.match.ProductionMatch;
 import hipe.engine.message.production.ProductionResult;
 import hipe.network.HiPENetwork;
@@ -179,6 +180,11 @@ public class HiPEGTEngine implements IContextPatternInterpreter {
 	}
 	
 	protected String generateHiPEClassName() {
+		// If the static override of the HiPE engine class name is set, use it
+		if (HiPEPathOptions.engineClassNameOverrideIsSet()) {
+			return HiPEPathOptions.getAndResetEngineClassName();
+		}
+		
 		URI patternURI = ibexPatternSet.eResource().getURI();
 		Pattern pattern = Pattern.compile("^(.*src-gen/)(.*)(api/ibex-patterns.xmi)$");
 		Matcher matcher = pattern.matcher(patternURI.toString());
