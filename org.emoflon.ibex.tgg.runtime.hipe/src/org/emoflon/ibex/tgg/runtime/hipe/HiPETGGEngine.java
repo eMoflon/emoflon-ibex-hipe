@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -54,30 +53,31 @@ import hipe.engine.message.production.ProductionResult;
  * Engine for (bidirectional) graph transformations with HiPE.
  */
 public class HiPETGGEngine extends BlackInterpreter<ProductionMatch> implements TimeMeasurable {
-	
+
 	private IHiPEEngine engine;
-	
+
 	private HiPEContentAdapter adapter;
-	
+
 	private final Times times = new Times();
-	
+
 	protected String engineClassName;
-	
+
 	/**
 	 * The HiPE patterns.
 	 */
 //	protected Map<String, String> patterns = new HashMap<>();
-	
+
 	/**
 	 * The base uri
 	 */
 	protected URI base;
 
 	public HiPETGGEngine() {
-		// The super call is hacky because we do not support this and have to load the resources first
+		// The super call is hacky because we do not support this and have to load the
+		// resources first
 		super(null, null);
 	}
-	
+
 	/**
 	 * Creates a new HiPETGGEngine.
 	 */
@@ -86,7 +86,7 @@ public class HiPETGGEngine extends BlackInterpreter<ProductionMatch> implements 
 		TimeRegistry.register(this);
 		base = URI.createPlatformResourceURI("/", true);
 	}
-	
+
 	public HiPETGGEngine(TGGModel model, ResourceSet resourceSet, IHiPEEngine engine) {
 		this(model, resourceSet);
 		this.engine = engine;
@@ -99,15 +99,16 @@ public class HiPETGGEngine extends BlackInterpreter<ProductionMatch> implements 
 		this.registry = registry;
 		this.matchObserver = matchObserver;
 		engineClassName = generateHiPEClassName();
-		
+
 		String cp = "";
-		
+
 		String path = executable.getClass().getProtectionDomain().getCodeSource().getLocation().getPath();
-		// this is a fix for situation where emoflon is executed within an eclipse plugin
-		if(!path.contains("bin/"))
+		// this is a fix for situation where emoflon is executed within an eclipse
+		// plugin
+		if (!path.contains("bin/"))
 			path += "bin/";
-		path +=  generateHiPEClassName().replace(".", "/").replace("HiPEEngine", "ibex-patterns.xmi");
-		
+		path += generateHiPEClassName().replace(".", "/").replace("HiPEEngine", "ibex-patterns.xmi");
+
 		File file = new File(path);
 		try {
 			cp = file.getCanonicalPath();
@@ -116,18 +117,18 @@ public class HiPETGGEngine extends BlackInterpreter<ProductionMatch> implements 
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
-		
+
 		TGGModel ibexModel = options.tgg.tgg();
-		
-		for(TGGRule tggRule : ibexModel.getRuleSet().getRules()) {
-			for(TGGOperationalRule operationalRule : tggRule.getOperationalisations()) {
-				PatternUtil.registerPattern(operationalRule.getName(), PatternSuffixes.extractType(operationalRule.getName()));			
+
+		for (TGGRule tggRule : ibexModel.getRuleSet().getRules()) {
+			for (TGGOperationalRule operationalRule : tggRule.getOperationalisations()) {
+				PatternUtil.registerPattern(operationalRule.getName(), PatternSuffixes.extractType(operationalRule.getName()));
 			}
 		}
 	}
 
 	protected void initEngine(final Collection<Resource> resources) {
-		if(engine == null) {
+		if (engine == null) {
 			Class<? extends IHiPEEngine> engineClass = null;
 			try {
 				engineClass = (Class<? extends IHiPEEngine>) Class.forName(engineClassName);
@@ -135,17 +136,16 @@ public class HiPETGGEngine extends BlackInterpreter<ProductionMatch> implements 
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			}
-			
+
 			try {
-				if(engineClass == null) {
-					throw new RuntimeException("Engine class: "+engineClassName+ " -> not found!");
+				if (engineClass == null) {
+					throw new RuntimeException("Engine class: " + engineClassName + " -> not found!");
 				}
 				Constructor<? extends IHiPEEngine> constructor = engineClass.getConstructor();
 				constructor.setAccessible(true);
-				
+
 				engine = constructor.newInstance();
-			} catch (InstantiationException | IllegalAccessException | NoSuchMethodException | 
-					SecurityException | IllegalArgumentException | InvocationTargetException e) {
+			} catch (InstantiationException | IllegalAccessException | NoSuchMethodException | SecurityException | IllegalArgumentException | InvocationTargetException e) {
 				e.printStackTrace();
 			}
 		}
@@ -157,19 +157,19 @@ public class HiPETGGEngine extends BlackInterpreter<ProductionMatch> implements 
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
-		
+
 		adapter = new HiPEContentAdapter(resources, engine);
 	}
-	
+
 	protected Resource loadResource(String path) throws Exception {
-		Resource.Factory.Registry.INSTANCE.getExtensionToFactoryMap().put("xmi",new XMIResourceFactoryImpl());
-		model.getResourceFactoryRegistry().getExtensionToFactoryMap().put("xmi",new XMIResourceFactoryImpl());
+		Resource.Factory.Registry.INSTANCE.getExtensionToFactoryMap().put("xmi", new XMIResourceFactoryImpl());
+		model.getResourceFactoryRegistry().getExtensionToFactoryMap().put("xmi", new XMIResourceFactoryImpl());
 		model.getResourceFactoryRegistry().getExtensionToFactoryMap().put(Resource.Factory.Registry.DEFAULT_EXTENSION, new XMIResourceFactoryImpl());
-		
+
 		Resource modelResource = model.getResource(URI.createURI(path).resolve(base), true);
 		EcoreUtil.resolveAll(model);
-		
-		if(modelResource == null)
+
+		if (modelResource == null)
 			throw new IOException("File did not contain a valid model.");
 		return modelResource;
 	}
@@ -177,7 +177,7 @@ public class HiPETGGEngine extends BlackInterpreter<ProductionMatch> implements 
 	protected String getProjectName() {
 		return options.project.name();
 	}
-	
+
 	protected String generateHiPEClassName() {
 		// If the static override of the HiPE engine class name is set, use it
 		if (HiPEPathOptions.engineClassNameOverrideIsSet()) {
@@ -185,36 +185,30 @@ public class HiPETGGEngine extends BlackInterpreter<ProductionMatch> implements 
 		}
 		
 		String projectName = options.project.name();
-		if(executable instanceof INITIAL_FWD) {
-			return projectName.replace("/", ".")+".initfwd.hipe.engine.HiPEEngine";	
-		} 
-		else if(executable instanceof INITIAL_BWD) {
-			return projectName.replace("/", ".")+".initbwd.hipe.engine.HiPEEngine";	
-		}
-		else if(executable instanceof CC) {
-			return projectName.replace("/", ".")+".cc.hipe.engine.HiPEEngine";	
-		}
-		else if(executable instanceof CO) {
-			return projectName.replace("/", ".")+".co.hipe.engine.HiPEEngine";	
-		}
-		else if(executable instanceof SYNC) {
-			return projectName.replace("/", ".")+".sync.hipe.engine.HiPEEngine";	
-		}
-		else if(executable instanceof INTEGRATE) {
-			return projectName.replace("/", ".")+".integrate.hipe.engine.HiPEEngine";	
-		}
-		else {
-			return projectName.replace("/", ".")+".modelgen.hipe.engine.HiPEEngine";	
+		if (executable instanceof INITIAL_FWD) {
+			return projectName.replace("/", ".") + ".initfwd.hipe.engine.HiPEEngine";
+		} else if (executable instanceof INITIAL_BWD) {
+			return projectName.replace("/", ".") + ".initbwd.hipe.engine.HiPEEngine";
+		} else if (executable instanceof CC) {
+			return projectName.replace("/", ".") + ".cc.hipe.engine.HiPEEngine";
+		} else if (executable instanceof CO) {
+			return projectName.replace("/", ".") + ".co.hipe.engine.HiPEEngine";
+		} else if (executable instanceof SYNC) {
+			return projectName.replace("/", ".") + ".sync.hipe.engine.HiPEEngine";
+		} else if (executable instanceof INTEGRATE) {
+			return projectName.replace("/", ".") + ".integrate.hipe.engine.HiPEEngine";
+		} else {
+			return projectName.replace("/", ".") + ".modelgen.hipe.engine.HiPEEngine";
 		}
 	}
-	
+
 	/**
 	 * Use this method to get extra debug information concerning the rete network.
 	 * Currently not used to reduce debug output.
 	 */
 	@SuppressWarnings("unused")
 	private void printReteNetwork() {
-		//TODO
+		// TODO
 	}
 
 	private void savePatterns(ResourceSet rs, String path, Collection<EObject> patterns) {
@@ -227,7 +221,7 @@ public class HiPETGGEngine extends BlackInterpreter<ProductionMatch> implements 
 			e.printStackTrace();
 		}
 	}
-	
+
 	@Override
 	public void fetchMatches() {
 		// Trigger the Rete network
@@ -239,7 +233,7 @@ public class HiPETGGEngine extends BlackInterpreter<ProductionMatch> implements 
 			e.printStackTrace();
 		}
 	}
-	
+
 	protected void addNewMatches_slowly(Map<String, ProductionResult> extractData) {
 		for (String patternName : extractData.keySet()) {
 			Collection<ProductionMatch> matches = extractData.get(patternName).getNewMatches();
@@ -257,29 +251,29 @@ public class HiPETGGEngine extends BlackInterpreter<ProductionMatch> implements 
 			}
 		}
 	}
-	
+
 	protected void addNewMatches(Map<String, ProductionResult> extractData) {
 		// TODO Auto-generated method stub
-		if(!options.patterns.parallelizeMatchProcessing()) {
+		if (!options.patterns.parallelizeMatchProcessing()) {
 			addNewMatches_slowly(extractData);
 			return;
 		}
-		
+
 		Collection<IMatch> iMatches = new LinkedList<>();
-		for(String patternName : extractData.keySet()) {
+		for (String patternName : extractData.keySet()) {
 			Collection<ProductionMatch> matches = extractData.get(patternName).getNewMatches();
 			iMatches.addAll(matches.parallelStream().map(m -> createMatch(m, patternName)).collect(Collectors.toList()));
 		}
 		matchObserver.addMatches(iMatches);
 	}
-	
+
 	protected void deleteInvalidMatches(Map<String, ProductionResult> extractData) {
-		if(!options.patterns.parallelizeMatchProcessing()) {
+		if (!options.patterns.parallelizeMatchProcessing()) {
 			deleteInvalidMatches_slowly(extractData);
 			return;
 		}
-		
-		for(String patternName : extractData.keySet()) {
+
+		for (String patternName : extractData.keySet()) {
 			Collection<ProductionMatch> matches = extractData.get(patternName).getDeleteMatches();
 			Collection<IMatch> iMatches = matches.parallelStream().map(m -> createMatch(m, patternName)).collect(Collectors.toList());
 			matchObserver.removeMatches(iMatches);
@@ -289,7 +283,7 @@ public class HiPETGGEngine extends BlackInterpreter<ProductionMatch> implements 
 	protected IMatch createMatch(ProductionMatch match, final String patternName) {
 		return new HiPETGGMatch(match, patternName);
 	}
-	
+
 	@Override
 	public void updateMatches() {
 		Timer.start();
@@ -308,11 +302,11 @@ public class HiPETGGEngine extends BlackInterpreter<ProductionMatch> implements 
 	public Times getTimes() {
 		return times;
 	}
-	
+
 	public IbexOptions getOptions() {
 		return options;
 	}
-	
+
 	protected boolean cascadingNotifications(Collection<Resource> resources) {
 		return options.project.usesSmartEMF();
 	}
@@ -328,17 +322,17 @@ public class HiPETGGEngine extends BlackInterpreter<ProductionMatch> implements 
 
 	@Override
 	public void addMatches(Collection<IMatch> matches) {
-		
+
 	}
 
 	@Override
 	public void removeMatch(IMatch match) {
-		
+
 	}
 
 	@Override
 	public void removeMatches(Collection<IMatch> matches) {
-		
+
 	}
 
 	@Override
@@ -361,7 +355,7 @@ public class HiPETGGEngine extends BlackInterpreter<ProductionMatch> implements 
 		observedResources = resources;
 		initEngine(resources);
 	}
-	
+
 	@Override
 	public void monitor(Resource r) {
 		throw new UnsupportedOperationException("Register all resources at once");
@@ -372,18 +366,17 @@ public class HiPETGGEngine extends BlackInterpreter<ProductionMatch> implements 
 		model = createAndPrepareResourceSet_internal(workspacePath);
 		return createAndPrepareResourceSet_internal(workspacePath);
 	}
-	
+
 	private ResourceSet createAndPrepareResourceSet_internal(final String workspacePath) {
 		ResourceSet rs = new ResourceSetImpl();
-		rs.getResourceFactoryRegistry().getExtensionToFactoryMap()
-				.put(Resource.Factory.Registry.DEFAULT_EXTENSION, new SmartEMFResourceFactoryImpl(workspacePath));
+		rs.getResourceFactoryRegistry().getExtensionToFactoryMap().put(Resource.Factory.Registry.DEFAULT_EXTENSION, new SmartEMFResourceFactoryImpl(workspacePath));
 //				.put(Resource.Factory.Registry.DEFAULT_EXTENSION, new XMIResourceFactoryImpl());
 		try {
 			rs.getURIConverter().getURIMap().put(URI.createPlatformResourceURI("/", true), URI.createFileURI(new File(workspacePath).getCanonicalPath() + File.separator));
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		
+
 		return rs;
 	}
 }
