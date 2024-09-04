@@ -43,8 +43,10 @@ import org.emoflon.ibex.tgg.util.benchmark.Times;
 import org.emoflon.smartemf.persistence.SmartEMFResourceFactoryImpl;
 
 import hipe.engine.HiPEContentAdapter;
-import hipe.engine.HiPEOptions;
+
 import hipe.engine.IHiPEEngine;
+import hipe.engine.config.HiPEOptions;
+import hipe.engine.config.HiPEPathOptions;
 import hipe.engine.match.ProductionMatch;
 import hipe.engine.message.production.ProductionResult;
 
@@ -177,6 +179,11 @@ public class HiPETGGEngine extends BlackInterpreter<ProductionMatch> implements 
 	}
 	
 	protected String generateHiPEClassName() {
+		// If the static override of the HiPE engine class name is set, use it
+		if (HiPEPathOptions.engineClassNameOverrideIsSet()) {
+			return HiPEPathOptions.getAndResetEngineClassName();
+		}
+		
 		String projectName = options.project.name();
 		if(executable instanceof INITIAL_FWD) {
 			return projectName.replace("/", ".")+".initfwd.hipe.engine.HiPEEngine";	
