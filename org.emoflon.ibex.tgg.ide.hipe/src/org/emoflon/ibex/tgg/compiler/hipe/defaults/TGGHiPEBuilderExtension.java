@@ -55,36 +55,36 @@ import hipe.searchplan.simple.StatelessSearchPlan;
 public class TGGHiPEBuilderExtension implements TGGEngineBuilderExtension {
 
 	private static final Logger logger = Logger.getLogger(TGGHiPEBuilderExtension.class);
-	
+
 	private IProject project;
 	private String projectName;
 	private String projectPath;
-	
+
 	@Override
 	public void run(IProject project, TGGModel model) {
 		LogUtils.info(logger, "Starting HiPE TGG builder ... ");
-		
+
 		try {
 			repairMetamodelResource();
 		} catch (Exception e2) {
 			LogUtils.error(logger, e2.getMessage());
 			return;
 		}
-		
+
 		this.project = project;
 		projectName = project.getName();
 		projectPath = projectName;
-		
+
 		LogUtils.info(logger, "Cleaning old code..");
 		cleanOldCode(project.getLocation().toPortableString());
-		
+
 		IFolder srcGenFolder = project.getFolder("src-gen");
 		IFolder genFolder = project.getFolder("gen");
 
 		try {
-			if(!srcGenFolder.exists())
+			if (!srcGenFolder.exists())
 				srcGenFolder.create(false, true, null);
-			if(!genFolder.exists())
+			if (!genFolder.exists())
 				genFolder.create(false, true, null);
 			ClasspathUtil.makeSourceFolderIfNecessary(srcGenFolder);
 			ClasspathUtil.makeSourceFolderIfNecessary(genFolder);
@@ -101,94 +101,93 @@ public class TGGHiPEBuilderExtension implements TGGEngineBuilderExtension {
 		strategyModes.add(StrategyMode.CHECK_ONLY);
 		strategyModes.add(StrategyMode.MODELGEN);
 		strategyModes.add(StrategyMode.INTEGRATE);
-		
+
 		// create the actual project path
 		projectPath = project.getLocation().toPortableString();
 		EPackage srcPkg = (EPackage) model.getSource().get(0);
 		EPackage trgPkg = (EPackage) model.getTarget().get(0);
 		EPackage corrPkg = model.getCorrespondence();
 		try {
-			if(srcPkg == null || trgPkg == null || corrPkg == null) {
+			if (srcPkg == null || trgPkg == null || corrPkg == null) {
 				throw new RuntimeException("Could not get flattened trg or src model from editor model.");
 			}
 		} catch (Exception e) {
-			LogUtils.error(logger, e); 
+			LogUtils.error(logger, e);
 			return;
 		}
-		
+
 		// initialize eclasses to prevent concurrent modification exceptions
 		initializeEClasses(model.getSource().stream().map(EPackage.class::cast).toList());
 		initializeEClasses(model.getTarget().stream().map(EPackage.class::cast).toList());
-		
+
 		String srcModel = srcPkg.getName();
 		String trgModel = trgPkg.getName();
 		IProject srcProject = getProjectInWorkspace(srcModel, project.getWorkspace());
 		IProject trgProject = getProjectInWorkspace(trgModel, project.getWorkspace());
 		String srcPkgName = null;
 		String trgPkgName = null;
-		
-		if(srcProject != null) {
+
+		if (srcProject != null) {
 			srcPkgName = getRootPackageName(srcProject);
 		}
-		if(trgProject != null) {
+		if (trgProject != null) {
 			trgPkgName = getRootPackageName(trgProject);
 		}
-		
+
 		LogUtils.info(logger, "Building missing app stubs...");
 		try {
 			generateRegHelper(srcProject, trgProject, srcPkgName, trgPkgName);
 			generateDefaultStubs();
-		} catch(Exception e) {
+		} catch (Exception e) {
 			LogUtils.error(logger, e);
 		}
-		
+
 		LogUtils.info(logger, "Updating Manifest & build properties..");
 		updateManifest();
 		updateBuildProperties();
-		
+
 		double tic = System.currentTimeMillis();
 		strategyModes.parallelStream().forEach(strategy -> {
-			LogUtils.info(logger,  strategy.getClass().getName() + ": Converting IBeX to HiPE Patterns..");
-		
+			LogUtils.info(logger, strategy.getClass().getName() + ": Converting IBeX to HiPE Patterns..");
+
 			// initialize eclasses to prevent concurrent modification exceptions
 			TGGToHiPEPatternTransformation transformation = new TGGToHiPEPatternTransformation();
 			Collection<OperationalisationMode> modes = StrategyToOperationalization.getNeededOperationalisationModes(strategy);
 			HiPEContainer container = transformation.transform(model, modes.toArray(new OperationalisationMode[0]));
-			
-			LogUtils.info(logger,  strategy.getClass().getName() + ": Creating search plan & generating Rete network..");
+
+			LogUtils.info(logger, strategy.getClass().getName() + ": Creating search plan & generating Rete network..");
 //			SearchPlan searchPlan = new LocalSearchPlan(container);
 			SearchPlan searchPlan = new StatelessSearchPlan(container);
 			searchPlan.generateSearchPlan();
 			HiPENetwork network = searchPlan.getNetwork();
-			
-			LogUtils.info(logger,  strategy.getClass().getName() + ": Generating Code..");
-			
-			String packageName = switch(strategy) {
-				case CC -> "cc";
-				case CHECK_ONLY -> "co";
-				case INITIAL_FWD -> "initfwd";
-				case INITIAL_BWD -> "initbwd";
-				case INTEGRATE -> "integrate";
-				case SYNC -> "sync";
-				case MODELGEN -> "modelgen";
-				default -> 
-					throw new RuntimeException("Unsupported Operational Strategy detected: " + strategy);
+
+			LogUtils.info(logger, strategy.getClass().getName() + ": Generating Code..");
+
+			String packageName = switch (strategy) {
+			case CC -> "cc";
+			case CHECK_ONLY -> "co";
+			case INITIAL_FWD -> "initfwd";
+			case INITIAL_BWD -> "initbwd";
+			case INTEGRATE -> "integrate";
+			case SYNC -> "sync";
+			case MODELGEN -> "modelgen";
+			default -> throw new RuntimeException("Unsupported Operational Strategy detected: " + strategy);
 			};
-			
+
 			HiPEGeneratorConfig config = new HiPEGeneratorConfig();
 			config.setEnforcedBidirectionalRefs(true);
-			HiPEGenerator.generateCode(projectName+"." + packageName + ".", projectPath, network, config);
-			
-			LogUtils.info(logger,  strategy.getClass().getName() + ": Code generation completed");
+			HiPEGenerator.generateCode(projectName + "." + packageName + ".", projectPath, network, config);
+
+			LogUtils.info(logger, strategy.getClass().getName() + ": Code generation completed");
 			String hipePath = "src-gen/" + projectName + "/" + packageName + "/hipe/engine/";
-			
-			LogUtils.info(logger,  strategy.getClass().getName() + ": Saving HiPE patterns and HiPE network..");
-			saveResource(container, projectPath +"/" + hipePath + "/hipe-patterns.xmi");
-			saveResource(network, projectPath +"/" + hipePath + "/hipe-network.xmi");
+
+			LogUtils.info(logger, strategy.getClass().getName() + ": Saving HiPE patterns and HiPE network..");
+			saveResource(container, projectPath + "/" + hipePath + "/hipe-patterns.xmi");
+			saveResource(network, projectPath + "/" + hipePath + "/hipe-network.xmi");
 		});
 		double toc = System.currentTimeMillis();
-		LogUtils.info(logger, "Pattern compilation and code generation completed in "+ (toc-tic)/1000.0 + " seconds.");
-		
+		LogUtils.info(logger, "Pattern compilation and code generation completed in " + (toc - tic) / 1000.0 + " seconds.");
+
 		LogUtils.info(logger, "Refreshing workspace and cleaning build ..");
 		try {
 			project.getWorkspace().getRoot().refreshLocal(IResource.DEPTH_ONE, new NullProgressMonitor());
@@ -196,36 +195,40 @@ public class TGGHiPEBuilderExtension implements TGGEngineBuilderExtension {
 		} catch (CoreException e) {
 			LogUtils.error(logger, e.getMessage());
 		}
-		
+
 		LogUtils.info(logger, "## HiPE ## --> HiPE build complete!");
 	}
-	
+
 	/**
-	 * initalize all eclasses (transitively) of a package by calling EAllSuperTypes and EAllReferences once
+	 * initalize all eclasses (transitively) of a package by calling EAllSuperTypes
+	 * and EAllReferences once
+	 * 
 	 * @param packages
 	 */
 	private void initializeEClasses(Collection<EPackage> packages) {
-		for(EPackage pkg : packages) {
+		for (EPackage pkg : packages) {
 			initializeEClasses(pkg);
 		}
 	}
-	
+
 	/**
-	 * initalize all eclasses (transitively) of a package by calling EAllSuperTypes and EAllReferences once
+	 * initalize all eclasses (transitively) of a package by calling EAllSuperTypes
+	 * and EAllReferences once
+	 * 
 	 * @param package
 	 */
 	private void initializeEClasses(EPackage pkg) {
-		for(EClassifier c : pkg.getEClassifiers()) {
-			if(c instanceof EClass ec) {
+		for (EClassifier c : pkg.getEClassifiers()) {
+			if (c instanceof EClass ec) {
 				ec.getEAllSuperTypes();
 				ec.getEAllReferences();
 			}
 		}
-		for(EPackage sub : pkg.getESubpackages()) {
+		for (EPackage sub : pkg.getESubpackages()) {
 			initializeEClasses(sub);
 		}
 	}
-	
+
 	private void initializeEClasses(IbexExecutable ie) {
 		ie.getOptions().tgg.getConcreteTGGRules().forEach(r -> {
 			r.getNodes().forEach(n -> {
@@ -243,228 +246,217 @@ public class TGGHiPEBuilderExtension implements TGGEngineBuilderExtension {
 		options.debug.ibexDebug(false);
 		return options;
 	}
-	
+
 	public void generateDefaultStubs() throws CoreException {
 //		TGGBuildUtil.createDefaultDebugRunFile(project, HiPEFilesGenerator.MODELGEN_APP, (projectName, fileName) 
 //				-> HiPEFilesGenerator.generateModelGenDebugFile(projectName, fileName));
-		TGGBuildUtil.createDefaultRunFile(project, HiPEFilesGenerator.MODELGEN_APP, (projectName, fileName) 
-				-> HiPEFilesGenerator.generateModelGenFile(projectName, fileName));
-		TGGBuildUtil.createDefaultRunFile(project, HiPEFilesGenerator.SYNC_APP, (projectName, fileName) 
-				-> HiPEFilesGenerator.generateSyncAppFile(projectName, fileName));
-		TGGBuildUtil.createDefaultRunFile(project, HiPEFilesGenerator.INITIAL_FWD_APP, (projectName, fileName) 
-				-> HiPEFilesGenerator.generateInitialFwdAppFile(projectName, fileName));
-		TGGBuildUtil.createDefaultRunFile(project, HiPEFilesGenerator.INITIAL_BWD_APP, (projectName, fileName) 
-				-> HiPEFilesGenerator.generateInitialBwdAppFile(projectName, fileName));
-		TGGBuildUtil.createDefaultRunFile(project, HiPEFilesGenerator.CC_APP, (projectName, fileName) 
-				-> HiPEFilesGenerator.generateCCAppFile(projectName, fileName));
-		TGGBuildUtil.createDefaultRunFile(project, HiPEFilesGenerator.CO_APP, (projectName, fileName) 
-				-> HiPEFilesGenerator.generateCOAppFile(projectName, fileName));
-		TGGBuildUtil.createDefaultRunFile(project, HiPEFilesGenerator.FWD_OPT_APP, (projectName, fileName) 
-				-> HiPEFilesGenerator.generateFWDOptAppFile(projectName, fileName));
-		TGGBuildUtil.createDefaultRunFile(project, HiPEFilesGenerator.BWD_OPT_APP, (projectName, fileName) 
-				-> HiPEFilesGenerator.generateBWDOptAppFile(projectName, fileName));
-		TGGBuildUtil.createDefaultRunFile(project, HiPEFilesGenerator.INTEGRATE_APP, (projectName, fileName)
-				-> HiPEFilesGenerator.generateIntegrateAppFile(projectName, fileName));
-		TGGBuildUtil.createDefaultConfigFile(project, HiPEFilesGenerator.DEFAULT_REGISTRATION_HELPER, (projectName, fileName)
-				-> HiPEFilesGenerator.generateDefaultRegHelperFile(projectName));
+		TGGBuildUtil.createDefaultRunFile(project, HiPEFilesGenerator.MODELGEN_APP, (projectName, fileName) -> HiPEFilesGenerator.generateModelGenFile(projectName, fileName));
+		TGGBuildUtil.createDefaultRunFile(project, HiPEFilesGenerator.SYNC_APP, (projectName, fileName) -> HiPEFilesGenerator.generateSyncAppFile(projectName, fileName));
+		TGGBuildUtil.createDefaultRunFile(project, HiPEFilesGenerator.INITIAL_FWD_APP, (projectName, fileName) -> HiPEFilesGenerator.generateInitialFwdAppFile(projectName, fileName));
+		TGGBuildUtil.createDefaultRunFile(project, HiPEFilesGenerator.INITIAL_BWD_APP, (projectName, fileName) -> HiPEFilesGenerator.generateInitialBwdAppFile(projectName, fileName));
+		TGGBuildUtil.createDefaultRunFile(project, HiPEFilesGenerator.CC_APP, (projectName, fileName) -> HiPEFilesGenerator.generateCCAppFile(projectName, fileName));
+		TGGBuildUtil.createDefaultRunFile(project, HiPEFilesGenerator.CO_APP, (projectName, fileName) -> HiPEFilesGenerator.generateCOAppFile(projectName, fileName));
+		TGGBuildUtil.createDefaultRunFile(project, HiPEFilesGenerator.FWD_OPT_APP, (projectName, fileName) -> HiPEFilesGenerator.generateFWDOptAppFile(projectName, fileName));
+		TGGBuildUtil.createDefaultRunFile(project, HiPEFilesGenerator.BWD_OPT_APP, (projectName, fileName) -> HiPEFilesGenerator.generateBWDOptAppFile(projectName, fileName));
+		TGGBuildUtil.createDefaultRunFile(project, HiPEFilesGenerator.INTEGRATE_APP, (projectName, fileName) -> HiPEFilesGenerator.generateIntegrateAppFile(projectName, fileName));
+		TGGBuildUtil.createDefaultConfigFile(project, HiPEFilesGenerator.DEFAULT_REGISTRATION_HELPER, (projectName, fileName) -> HiPEFilesGenerator.generateDefaultRegHelperFile(projectName));
 	}
-	
+
 	public void generateRegHelper(IProject srcProject, IProject trgProject, String srcPkg, String trgPkg) throws Exception {
 		String input_srcProject = srcProject == null ? "<<SRC_Project>>" : srcProject.getName();
 		String input_trgProject = trgProject == null ? "<<TRG_Project>>" : trgProject.getName();
 		String input_srcPackage = srcPkg == null ? "<<SRC_Package>>" : srcPkg;
 		String input_trgPackage = trgPkg == null ? "<<TRG_Package>>" : trgPkg;
-		
-		TGGBuildUtil.createDefaultConfigFile(project, HiPEFilesGenerator.REGISTRATION_HELPER, (projectName, fileName)
-				-> HiPEFilesGenerator.generateRegHelperFile(projectName, input_srcProject, input_trgProject, input_srcPackage, input_trgPackage));
+
+		TGGBuildUtil.createDefaultConfigFile(project, HiPEFilesGenerator.REGISTRATION_HELPER,
+				(projectName, fileName) -> HiPEFilesGenerator.generateRegHelperFile(projectName, input_srcProject, input_trgProject, input_srcPackage, input_trgPackage));
 	}
-	
+
 	private void cleanOldCode(String projectPath) {
 		List<File> hipeRootDirectories = new LinkedList<>();
 //		hipeRootDirectories.add(new File(projectPath+"/gen"));
-		hipeRootDirectories.add(new File(projectPath+"/src-gen/" + projectName + "/sync/hipe"));
-		hipeRootDirectories.add(new File(projectPath+"/src-gen/" + projectName + "/cc/hipe"));
-		hipeRootDirectories.add(new File(projectPath+"/src-gen/" + projectName + "/co/hipe"));
-		hipeRootDirectories.add(new File(projectPath+"/src-gen/" + projectName + "/initbwd/hipe"));
-		hipeRootDirectories.add(new File(projectPath+"/src-gen/" + projectName + "/initfwd/hipe"));
-		hipeRootDirectories.add(new File(projectPath+"/src-gen/" + projectName + "/modelgen/hipe"));
-		hipeRootDirectories.add(new File(projectPath+"/src-gen/" + projectName + "/integrate/hipe"));
+		hipeRootDirectories.add(new File(projectPath + "/src-gen/" + projectName + "/sync/hipe"));
+		hipeRootDirectories.add(new File(projectPath + "/src-gen/" + projectName + "/cc/hipe"));
+		hipeRootDirectories.add(new File(projectPath + "/src-gen/" + projectName + "/co/hipe"));
+		hipeRootDirectories.add(new File(projectPath + "/src-gen/" + projectName + "/initbwd/hipe"));
+		hipeRootDirectories.add(new File(projectPath + "/src-gen/" + projectName + "/initfwd/hipe"));
+		hipeRootDirectories.add(new File(projectPath + "/src-gen/" + projectName + "/modelgen/hipe"));
+		hipeRootDirectories.add(new File(projectPath + "/src-gen/" + projectName + "/integrate/hipe"));
 		hipeRootDirectories.parallelStream().forEach(dir -> {
-			if(dir.exists()) {
-				LogUtils.info(logger, "--> Cleaning old source files in root folder: "+dir.getPath());
-				if(!deleteDirectory(dir)) {
+			if (dir.exists()) {
+				LogUtils.info(logger, "--> Cleaning old source files in root folder: " + dir.getPath());
+				if (!deleteDirectory(dir)) {
 					LogUtils.error(logger, "Folder couldn't be deleted!");
 
 				}
 			} else {
-				LogUtils.info(logger, "--> "+ dir.getPath() + ":\n No previously generated code found, nothing to do!");
+				LogUtils.info(logger, "--> " + dir.getPath() + ":\n No previously generated code found, nothing to do!");
 			}
 		});
 	}
-	
+
 	private void updateManifest() {
 		try {
 			IFile manifest = ManifestFileUpdater.getManifestFile(project);
 			ManifestHelper helper = new ManifestHelper();
 			helper.loadManifest(manifest);
-			if(!helper.sectionContainsContent("Require-Bundle", "org.emoflon.ibex.tgg.runtime.hipe")) {
+			if (!helper.sectionContainsContent("Require-Bundle", "org.emoflon.ibex.tgg.runtime.hipe")) {
 				helper.addContentToSection("Require-Bundle", "org.emoflon.ibex.tgg.runtime.hipe");
 			}
-			
-			File rawManifest = new File(projectPath+"/"+manifest.getFullPath().removeFirstSegments(1).toPortableString());
-			
+
+			File rawManifest = new File(projectPath + "/" + manifest.getFullPath().removeFirstSegments(1).toPortableString());
+
 			helper.updateManifest(rawManifest);
-			
+
 		} catch (CoreException | IOException e) {
-			LogUtils.error(logger, "Failed to update MANIFEST.MF \n"+e.getMessage());
+			LogUtils.error(logger, "Failed to update MANIFEST.MF \n" + e.getMessage());
 		}
 	}
-	
+
 	private void updateBuildProperties() {
-		File buildProps = new File(projectPath+"/build.properties");
+		File buildProps = new File(projectPath + "/build.properties");
 		BuildPropertiesHelper helper = new BuildPropertiesHelper();
 		try {
 			helper.loadProperties(buildProps);
-			
-			if(!helper.containsSection("source..")) {
+
+			if (!helper.containsSection("source..")) {
 				helper.appendSection("source..");
 			}
-			
-			if(!helper.sectionContainsContent("source..", "src-gen/")) {
+
+			if (!helper.sectionContainsContent("source..", "src-gen/")) {
 				helper.addContentToSection("source..", "src-gen/");
 			}
-			
-			if(!helper.sectionContainsContent("source..", "gen/")) {
+
+			if (!helper.sectionContainsContent("source..", "gen/")) {
 				helper.addContentToSection("source..", "gen/");
 			}
 			helper.updateProperties(buildProps);
-			
+
 		} catch (CoreException | IOException e) {
-			LogUtils.error(logger, "Failed to update build.properties. \n"+e.getMessage());
+			LogUtils.error(logger, "Failed to update build.properties. \n" + e.getMessage());
 		}
-		
+
 	}
 
 	private static boolean deleteDirectory(File dir) {
-		File[] contents  = dir.listFiles();
-		if(contents != null) {
-			for(File file : contents) {
+		File[] contents = dir.listFiles();
+		if (contents != null) {
+			for (File file : contents) {
 				deleteDirectory(file);
 			}
 		}
 		return dir.delete();
 	}
-	
+
 	private void createNewDirectory(String path) {
 		File dir = new File(path);
-		if(!dir.exists()) {
-			if(!dir.mkdir()) {
-				LogUtils.error(logger, "Directory in: "+path+" could not be created!");
-			}else {
-				LogUtils.info(logger, "--> Directory in: "+path+" created!");
+		if (!dir.exists()) {
+			if (!dir.mkdir()) {
+				LogUtils.error(logger, "Directory in: " + path + " could not be created!");
+			} else {
+				LogUtils.info(logger, "--> Directory in: " + path + " created!");
 			}
-		}else {
-			LogUtils.info(logger, "--> Directory already present in: "+path+", nothing to do.");
+		} else {
+			LogUtils.info(logger, "--> Directory already present in: " + path + ", nothing to do.");
 		}
 	}
-	
+
 	private void saveResource(EObject model, String path) {
 		Resource.Factory.Registry.INSTANCE.getExtensionToFactoryMap().put("xmi-resource", new XMIResourceFactoryImpl());
 		ResourceSet rs = new ResourceSetImpl();
 		rs.getResourceFactoryRegistry().getExtensionToFactoryMap().put("xmi", new XMIResourceFactoryImpl());
-		
+
 		URI uri = URI.createFileURI(path);
 		Resource modelResource = rs.createResource(uri);
 		modelResource.getContents().add(model);
-		
-		Map<Object, Object> saveOptions = ((XMIResource)modelResource).getDefaultSaveOptions();
-		saveOptions.put(XMIResource.OPTION_ENCODING,"UTF-8");
+
+		Map<Object, Object> saveOptions = ((XMIResource) modelResource).getDefaultSaveOptions();
+		saveOptions.put(XMIResource.OPTION_ENCODING, "UTF-8");
 		saveOptions.put(XMIResource.OPTION_USE_XMI_TYPE, Boolean.TRUE);
-		saveOptions.put(XMIResource.OPTION_SAVE_TYPE_INFORMATION,Boolean.TRUE);
+		saveOptions.put(XMIResource.OPTION_SAVE_TYPE_INFORMATION, Boolean.TRUE);
 		saveOptions.put(XMIResource.OPTION_SCHEMA_LOCATION_IMPLEMENTATION, Boolean.TRUE);
-		
+
 		try {
-			((XMIResource)modelResource).save(saveOptions);
+			((XMIResource) modelResource).save(saveOptions);
 		} catch (IOException e) {
-			LogUtils.error(logger, "Couldn't save debug resource: \n "+e.getMessage());
+			LogUtils.error(logger, "Couldn't save debug resource: \n " + e.getMessage());
 		}
 	}
-	
+
 	private static IProject getProjectInWorkspace(String modelName, IWorkspace workspace) {
 		IProject[] projects = workspace.getRoot().getProjects();
-		for(IProject project : projects) {
-			if(project.getName().toLowerCase().equals(modelName.toLowerCase())) {
+		for (IProject project : projects) {
+			if (project.getName().toLowerCase().equals(modelName.toLowerCase())) {
 				return project;
 			}
 		}
-		LogUtils.info(logger, "The project belonging to model "+modelName+" could not be found in the workspace.");
+		LogUtils.info(logger, "The project belonging to model " + modelName + " could not be found in the workspace.");
 		return null;
 	}
-	
+
 	private static String getRootPackageName(IProject project) {
 		String upperPkgName = project.getName();
-		String firstLower = project.getName().substring(0, 1).toLowerCase()+project.getName().substring(1);
+		String firstLower = project.getName().substring(0, 1).toLowerCase() + project.getName().substring(1);
 		String lowerPkgName = project.getName().toLowerCase();
-		
+
 		IPath projectPath = project.getLocation().makeAbsolute();
-		Path srcPath = Paths.get(projectPath.toPortableString()+"/src");
+		Path srcPath = Paths.get(projectPath.toPortableString() + "/src");
 		File srcFolder = srcPath.toFile();
-		if(srcFolder.exists() && srcFolder.isDirectory()) {
-			for(String fName : srcFolder.list()) {
-				if(fName.equals(upperPkgName)) {
+		if (srcFolder.exists() && srcFolder.isDirectory()) {
+			for (String fName : srcFolder.list()) {
+				if (fName.equals(upperPkgName)) {
 					return upperPkgName;
 				}
-				if(fName.equals(firstLower)) {
+				if (fName.equals(firstLower)) {
 					return firstLower;
 				}
-				if(fName.equals(lowerPkgName)) {
-					return lowerPkgName;
-				}
-			}	
-		}
-		
-		
-		srcPath = Paths.get(projectPath.toPortableString()+"/src-gen");
-		srcFolder = srcPath.toFile();
-		if(srcFolder.exists() && srcFolder.isDirectory()) {
-			for(String fName : srcFolder.list()) {
-				if(fName.equals(upperPkgName)) {
-					return upperPkgName;
-				}
-				if(fName.equals(firstLower)) {
-					return firstLower;
-				}
-				if(fName.equals(lowerPkgName)) {
+				if (fName.equals(lowerPkgName)) {
 					return lowerPkgName;
 				}
 			}
 		}
-		
-		srcPath = Paths.get(projectPath.toPortableString()+"/gen");
+
+		srcPath = Paths.get(projectPath.toPortableString() + "/src-gen");
 		srcFolder = srcPath.toFile();
-		if(srcFolder.exists() && srcFolder.isDirectory()) {
-			for(String fName : srcFolder.list()) {
-				if(fName.equals(upperPkgName)) {
+		if (srcFolder.exists() && srcFolder.isDirectory()) {
+			for (String fName : srcFolder.list()) {
+				if (fName.equals(upperPkgName)) {
 					return upperPkgName;
 				}
-				if(fName.equals(firstLower)) {
+				if (fName.equals(firstLower)) {
 					return firstLower;
 				}
-				if(fName.equals(lowerPkgName)) {
+				if (fName.equals(lowerPkgName)) {
 					return lowerPkgName;
 				}
 			}
 		}
-		
-		LogUtils.info(logger, "The project belonging to model "+project.getName()+" does not seem to have generated code.");
+
+		srcPath = Paths.get(projectPath.toPortableString() + "/gen");
+		srcFolder = srcPath.toFile();
+		if (srcFolder.exists() && srcFolder.isDirectory()) {
+			for (String fName : srcFolder.list()) {
+				if (fName.equals(upperPkgName)) {
+					return upperPkgName;
+				}
+				if (fName.equals(firstLower)) {
+					return firstLower;
+				}
+				if (fName.equals(lowerPkgName)) {
+					return lowerPkgName;
+				}
+			}
+		}
+
+		LogUtils.info(logger, "The project belonging to model " + project.getName() + " does not seem to have generated code.");
 		return null;
 	}
-	
+
 	private static void repairMetamodelResource() throws Exception {
 		org.eclipse.emf.ecore.EPackage.Registry reg = EPackage.Registry.INSTANCE;
-		
+
 		EPackage pk2 = reg.getEPackage("platform:/plugin/org.emoflon.ibex.tgg.tggmodel/model/IBeXTGGModel.ecore");
-		if(pk2 == null || pk2.eIsProxy()) {
+		if (pk2 == null || pk2.eIsProxy()) {
 			reg.remove("platform:/plugin/org.emoflon.ibex.tgg.tggmodel/model/IBeXTGGModel.ecore");
 
 			Resource.Factory.Registry.INSTANCE.getExtensionToFactoryMap().putIfAbsent("ecore", new EcoreResourceFactoryImpl());
