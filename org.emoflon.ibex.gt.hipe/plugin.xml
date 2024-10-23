@@ -1,15 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?eclipse version="3.4"?>
 <plugin>
-  <extension point="org.emoflon.ibex.gt.GTEngineExtension">
-    <engine_extension class="org.emoflon.ibex.gt.hipe.ide.codegen.GTHiPEExtension"/>
-  </extension>
-  <extension
-        point="org.emoflon.ibex.gt.GTEngineBuilderExtension">
-     <builder_extension
-           class="org.emoflon.ibex.gt.hipe.ide.codegen.GTHiPEBuilderExtension">
-     </builder_extension>
-  </extension>
   <extension
         point="org.moflon.core.ui.DiagramTextProvider">
      <diagram_text_provider
@@ -21,6 +12,19 @@
      <diagram_text_provider
            class="org.emoflon.ibex.gt.hipe.visualization.HiPEPatternModelVisualiser">
      </diagram_text_provider>
+  </extension>
+  <extension
+        point="org.emoflon.ibex.common.IBeXPMEngineExtension">
+     <engine_extension
+           engine_extension="org.emoflon.ibex.gt.engine.hipe.HiPEPatternMatchingEngine"
+           engine_information="org.emoflon.ibex.gt.engine.hipe.GTHiPEExtension">
+     </engine_extension>
+  </extension>
+  <extension
+        point="org.emoflon.ibex.gt.IBeXGTEngineBuilderExtension">
+     <builder_extension
+           class="org.emoflon.ibex.gt.build.hipe.GTHiPEBuilderExtension">
+     </builder_extension>
   </extension>
   
    

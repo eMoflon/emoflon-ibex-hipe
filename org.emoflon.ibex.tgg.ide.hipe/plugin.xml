@@ -2,9 +2,9 @@
 <?eclipse version="3.4"?>
 <plugin>
    <extension
-         point="org.emoflon.ibex.tgg.language.TGGEngineBuilderExtension">
+         point="org.emoflon.ibex.tgg.compiler.TGGEngineBuilderExtension">
       <builder_extension
-            class="org.emoflon.ibex.tgg.compiler.hipe.defaults.IbexHiPEBuilderExtension">
+            builder="org.emoflon.ibex.tgg.compiler.hipe.defaults.TGGHiPEBuilderExtension">
       </builder_extension>
    </extension>
 
