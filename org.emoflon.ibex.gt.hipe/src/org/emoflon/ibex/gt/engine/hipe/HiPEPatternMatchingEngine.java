@@ -150,8 +150,8 @@ public class HiPEPatternMatchingEngine extends IBeXGTPatternMatcher<ProductionMa
 
 	protected String generateHiPEClassName() {
 		// If the static override of the HiPE engine class name is set, use it
-		if (HiPEPathOptions.engineClassNameOverrideIsSet()) {
-			return HiPEPathOptions.getAndResetEngineClassName();
+		if (HiPEPathOptions.getInstance().engineClassNameOverrideIsSet()) {
+			return HiPEPathOptions.getInstance().getAndResetEngineClassName();
 		}
 
 		return ibexModel.getMetaData().getPackage() + ".hipe.engine.HiPEEngine";
