@@ -1,7 +1,7 @@
 package org.emoflon.ibex.tgg.compiler.hipe.defaults
 
+import org.emoflon.ibex.tgg.compiler.codegen.DefaultFilesGenerator
 import org.moflon.core.utilities.MoflonUtil
-import org.emoflon.ibex.tgg.codegen.DefaultFilesGenerator
 
 class HiPEFilesGenerator extends DefaultFilesGenerator {
 	
@@ -24,9 +24,9 @@ class HiPEFilesGenerator extends DefaultFilesGenerator {
 			import java.io.IOException;
 				
 			import org.eclipse.emf.ecore.resource.ResourceSet;
-			import org.emoflon.ibex.tgg.compiler.defaults.IRegistrationHelper;
-			import org.emoflon.ibex.tgg.operational.defaults.IbexOptions;
-			import org.emoflon.ibex.tgg.operational.strategies.modules.IbexExecutable;
+			import org.emoflon.ibex.tgg.runtime.config.IRegistrationHelper;
+			import org.emoflon.ibex.tgg.runtime.config.options.IbexOptions;
+			import org.emoflon.ibex.tgg.runtime.strategies.modules.IbexExecutable;
 			
 			public class _DefaultRegistrationHelper implements IRegistrationHelper{
 			
@@ -55,13 +55,13 @@ class HiPEFilesGenerator extends DefaultFilesGenerator {
 			import org.eclipse.emf.ecore.EPackage;
 			import org.eclipse.emf.ecore.resource.Resource;
 			import org.eclipse.emf.ecore.resource.ResourceSet;
-			import org.emoflon.ibex.tgg.operational.csp.constraints.factories.«MoflonUtil.lastCapitalizedSegmentOf(projectName).toLowerCase».UserDefinedRuntimeTGGAttrConstraintFactory;
-			import org.emoflon.ibex.tgg.operational.defaults.IbexOptions;
-			import org.emoflon.ibex.tgg.operational.strategies.modules.IbexExecutable;
-			import org.emoflon.ibex.tgg.operational.strategies.opt.BWD_OPT;
-			import org.emoflon.ibex.tgg.operational.strategies.opt.FWD_OPT;
+			import org.emoflon.ibex.tgg.operational.csp.constraints.custom.«MoflonUtil.lastCapitalizedSegmentOf(projectName).toLowerCase».*;
+			import org.emoflon.ibex.tgg.runtime.config.IRegistrationHelper;
+			import org.emoflon.ibex.tgg.runtime.config.options.IbexOptions;
 			import org.emoflon.ibex.tgg.runtime.hipe.HiPETGGEngine;
-			import org.emoflon.ibex.tgg.compiler.defaults.IRegistrationHelper;
+			import org.emoflon.ibex.tgg.runtime.strategies.modules.IbexExecutable;
+			import org.emoflon.ibex.tgg.runtime.strategies.opt.BWD_OPT;
+			import org.emoflon.ibex.tgg.runtime.strategies.opt.FWD_OPT;
 			
 			import «projectName».«projectName»Package;
 			import «projectName».impl.«projectName»PackageImpl;
@@ -135,7 +135,7 @@ class HiPEFilesGenerator extends DefaultFilesGenerator {
 					options.project.name("«MoflonUtil.lastCapitalizedSegmentOf(projectName)»");
 					options.project.path("«projectName»");
 					options.debug.ibexDebug(false);
-					options.csp.userDefinedConstraints(new UserDefinedRuntimeTGGAttrConstraintFactory());
+					options.csp.registerConstraintFactories(new RuntimeTGGAttrConstraintFactoryContainer().getFactories());
 					options.registrationHelper(this);
 					return options;
 				}
