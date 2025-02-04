@@ -594,8 +594,17 @@ public class IBeXToHiPEPatternTransformation {
 		attr.setValue(expr.getAttribute());
 		attr.setEAttribute(expr.getAttribute());
 		attributes.add(attr);
-
-		return node.getName() + "_" + expr.getAttribute().getName();
+		
+		
+		String firstChar = ("" + expr.getAttribute().getName().charAt(0)).toUpperCase();
+		String rest = expr.getAttribute().getName().substring(1);
+		String camelCase = firstChar+rest;
+		
+		if(DataTypeUtil.simplifiyType(expr.getAttribute().getEType()) == EcorePackage.Literals.EBOOLEAN ){
+			return node.getName() + ".is" + camelCase + "()";
+		} else {
+			return node.getName() + ".get" + camelCase + "()";	
+		}
 	}
 
 	private String transformNodeValue2Java(IBeXPattern context, IBeXNodeValue expr,
@@ -738,72 +747,5 @@ public class IBeXToHiPEPatternTransformation {
 			throw new IllegalArgumentException("Unknown or unsupported data type: " + type);
 		}
 	}
-
-	// TODO: This is a tgg speciality and should be performed in the corresponding
-//	private HiPEAttributeConstraint transform(IBeXContextPattern context, HiPEPattern pattern, IBeXCSP csp) {
-//		ComplexConstraint cConstraint = factory.createComplexConstraint();
-//		container.getAttributeConstraints().add(cConstraint);
-//		String initCode = csp.getPackage() + "." + getCSPName(csp.getName()) + " csp_" + csp_id + " = new "
-//				+ csp.getPackage() + "." + getCSPName(csp.getName()) + "();\n";
-//		for (IBeXAttributeValue value : csp.getValues()) {
-//			initCode += "csp_" + csp_id
-//					+ ".getVariables().add(new org.emoflon.ibex.tgg.operational.csp.RuntimeTGGAttributeConstraintVariable(true, ";
-//			if (value instanceof IBeXAttributeExpression) {
-//				IBeXAttributeExpression iExpr = (IBeXAttributeExpression) value;
-//				String getOrIs = ".get";
-//				if (iExpr.getAttribute().getEType().getInstanceClassName() != null) {
-//					getOrIs = iExpr.getAttribute().getEType().getInstanceClassName().equals("boolean") ? ".is" : ".get";
-//				}
-//				initCode += iExpr.getNode().getName() + getOrIs
-//						+ iExpr.getAttribute().getName().substring(0, 1).toUpperCase()
-//						+ iExpr.getAttribute().getName().substring(1) + "()";
-//				HiPEAttribute hAttr = transform(context, iExpr);
-//				cConstraint.getAttributes().add(hAttr);
-//				pattern.getAttributes().add(hAttr);
-//				if (iExpr.getAttribute().getEType().getInstanceClassName() != null) {
-//					initCode += ", \"" + iExpr.getAttribute().getEType().getInstanceClassName() + "\"));\n";
-//				} else {
-//					initCode += ", \"Enum::" + iExpr.getAttribute().getEType().getName() + "\"));\n";
-//				}
-//			}
-//			if (value instanceof IBeXEnumLiteral) {
-//				IBeXEnumLiteral literal = (IBeXEnumLiteral) value;
-//				EEnum eenum = literal.getLiteral().getEEnum();
-//
-//				IBeXConstant iConst = IBeXPatternModelFactory.eINSTANCE.createIBeXConstant();
-//				iConst.setValue(literal.getLiteral());
-//				iConst.setStringValue(eenum.getEPackage().getNsPrefix() + "." + eenum.getName() + "."
-//						+ literal.getLiteral().getName());
-//
-//				initCode += iConst.getStringValue().replaceAll("\"\"", "\"");
-//				HiPEAttribute hAttr = transform(context, iConst);
-//				cConstraint.getAttributes().add(hAttr);
-//				pattern.getAttributes().add(hAttr);
-//				initCode += ", \"" + iConst.getValue().getClass().getName() + "\"));\n";
-//			}
-//			if (value instanceof IBeXConstant) {
-//				IBeXConstant iConst = (IBeXConstant) value;
-//				initCode += iConst.getStringValue().replaceAll("\"", "\"");
-//				HiPEAttribute hAttr = transform(context, iConst);
-//				cConstraint.getAttributes().add(hAttr);
-//				pattern.getAttributes().add(hAttr);
-//				initCode += ", \"" + iConst.getValue().getClass().getName() + "\"));\n";
-//			}
-//		}
-//		initCode += "csp_" + csp_id + ".solve();\n";
-//
-//		cConstraint.setInitializationCode(initCode);
-//		cConstraint.setPredicateCode("csp_" + csp_id + ".isSatisfied()");
-//
-//		csp_id++;
-//		return cConstraint;
-//	}
-//
-//	private String getCSPName(String name) {
-//		if (name.startsWith("eq_"))
-//			return "Eq";
-//
-//		return name.substring(0, 1).toUpperCase() + name.substring(1);
-//	}
 
 }
