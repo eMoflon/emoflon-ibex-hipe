@@ -181,7 +181,7 @@ public class HiPETGGEngine extends BlackInterpreter<ProductionMatch> implements 
 	protected String generateHiPEClassName() {
 		// If the static override of the HiPE engine class name is set, use it
 		if (HiPEPathOptions.getInstance().engineClassNameOverrideIsSet()) {
-			return HiPEPathOptions.getInstance().getAndResetEngineClassName();
+			return HiPEPathOptions.getInstance().getEngineClassName();
 		}
 		
 		String projectName = options.project.name();
